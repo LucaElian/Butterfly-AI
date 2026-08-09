@@ -1,0 +1,6 @@
+Teacher: Qwen/Qwen3-0.6B
+Role: local synthetic-data teacher only
+Student initialization: random weights
+Teacher weights copied into student: NO
+Teacher license at time of project creation: Apache-2.0
+Factual teacher outputs: not automatically VERIFIED by ButterflyAI

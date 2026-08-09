@@ -1,0 +1,11 @@
+{
+  "previous": "D:\\Downloads\\ButterflyAI-v0.0002",
+  "training_rows": 127,
+  "memory": {
+    "experiences": 0,
+    "claims": 0,
+    "rules": 0
+  },
+  "legacy_lessons": 26,
+  "legacy_model": "D:\\Downloads\\ButterflyAI-v0.0002\\models\\butterfly-v0.0002.pt"
+}

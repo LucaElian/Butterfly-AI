@@ -1,0 +1,16 @@
+{
+  "active": "0.0003",
+  "versions": [
+    {
+      "version": "0.0003",
+      "path": "butterfly-v0.0003.pt",
+      "score": null,
+      "metadata": {
+        "train_loss": 1.0532397031784058,
+        "steps": 1400,
+        "parameters": 15904512,
+        "tokenizer_vocab": 4096
+      }
+    }
+  ]
+}
