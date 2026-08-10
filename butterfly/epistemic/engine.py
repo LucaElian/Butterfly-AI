@@ -23,7 +23,7 @@ class EpistemicEngine:
                     confidence=min(0.65, sum(e.trust for e in evidence) / max(1, len(evidence))),
                     method="web_research",
                     evidence=evidence,
-                    explanation="Web search found related evidence, but v0.0001 does not equate search results with truth.",
+                    explanation="Web search found related evidence, but ButterflyAI does not equate search results with truth; related web evidence remains UNCERTAIN until a stronger verifier confirms it.",
                 )
             except Exception as e:
                 result = VerificationResult(claim, ClaimStatus.UNKNOWN, 0.0, "web_research", explanation=str(e))

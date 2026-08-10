@@ -1,6 +1,5 @@
-Teacher: Qwen/Qwen3-0.6B
-Role: local synthetic-data teacher only
-Student initialization: random weights
-Teacher weights copied into student: NO
-Teacher license at time of project creation: Apache-2.0
-Factual teacher outputs: not automatically VERIFIED by ButterflyAI
+Legacy teacher used by v0.0002/v0.0003: Qwen/Qwen3-0.6B
+v0.0004 main corpus builder: NO teacher model required
+Old teacher-generated examples: retained only as inherited instruction data if already present
+Old Butterfly raw generations: NOT trusted as teaching data
+Factual training text: NOT automatically VERIFIED in Butterfly epistemic memory

@@ -2,32 +2,107 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from ..memory import MemoryStore
-from ..checkpoint import load_active, save_checkpoint
-from ..config import MODELS_DIR, DATA_DIR
-from ..registry import register_model, promote, get_active_entry, compact_to_active
+from ..checkpoint import load_active, save_stable_model, delete_model_artifacts, move_model_artifacts
+from ..config import MODELS_DIR, CORPUS_DIR, ROOT
+from ..registry import (
+    register_model, promote, get_active_entry, compact_to_active,
+    update_entry, append_history, load_registry, save_registry,
+)
 from ..trainer import continue_training, best_device
-from .evaluator import composite_score
+from .evaluator import behavior_benchmark
 
 
 def experiences_to_text(rows):
-    chunks=[]; ids=[]
+    chunks = []
+    ids = []
     for row in rows:
-        id_,task,context,actions_json,result,lesson,quality=row; ids.append(id_); actions=json.loads(actions_json or "[]")
-        chunks.append(f"Task: {task}\nContext: {context}\nActions: {actions}\nResult: {result}\nLesson: {lesson}\nQuality: {quality}\n")
-    return "\n".join(chunks),ids
+        id_, task, context, actions_json, result, lesson, quality = row
+        ids.append(id_)
+        actions = json.loads(actions_json or "[]")
+        chunks.append(
+            f"User: Tarea: {task}\nButterfly: Contexto: {context}\n"
+            f"Acciones: {actions}\nResultado: {result}\nLeccion verificada: {lesson}\n<END>\n"
+        )
+    return "\n".join(chunks), ids
+
 
 def next_version(active):
-    if not active:return "0.0003"
-    parts=active.split("."); return ".".join(parts[:-1]+[f"{int(parts[-1])+1:04d}"])
+    if not active:
+        return "0.0004"
+    parts = active.split(".")
+    return ".".join(parts[:-1] + [f"{int(parts[-1]) + 1:04d}"])
+
+
+def _replay_text(limit_chars=250_000):
+    chunks = []
+    for name in ("conversation_train.txt", "instruction_train.txt"):
+        p = CORPUS_DIR / name
+        if p.exists():
+            chunks.append(p.read_text(encoding="utf-8", errors="ignore")[: limit_chars // 2])
+    return "\n".join(chunks)
+
+
+def _remove_registry_version(version: str):
+    reg = load_registry()
+    reg["versions"] = [x for x in reg.get("versions", []) if x["version"] != version]
+    save_registry(reg)
+
 
 def run_sleep_cycle(steps=120):
-    memory=MemoryStore(); rows=memory.approved_experiences()
-    if not rows: print("No verified high-quality unused experiences. Nothing to learn tonight."); return False
-    model,payload,tokenizer=load_active(device=best_device()); active=get_active_entry()["version"]; baseline=composite_score(model,DATA_DIR/"eval.txt",tokenizer)
-    candidate=deepcopy(model); text,ids=experiences_to_text(rows); candidate,loss=continue_training(candidate,text,tokenizer,steps=steps)
-    metrics=composite_score(candidate,DATA_DIR/"eval.txt",tokenizer); version=next_version(active); path=MODELS_DIR/f"butterfly-v{version}.pt"
-    save_checkpoint(path,candidate,extra={"sleep_cycle":True,"source_experiences":ids,"baseline":baseline,"candidate":metrics,"train_loss":loss})
-    promoted=metrics["score"]>baseline["score"]; register_model(path,version,score=metrics["score"],active=False,metadata={"baseline":baseline,"candidate":metrics,"promoted":promoted})
-    print("Baseline:",baseline);print("Candidate:",metrics)
-    if promoted: promote(version); compact_to_active(); memory.mark_used(ids); print(f"PROMOTED Butterfly v{version}; previous checkpoint burned after passing evaluation."); return True
-    path.unlink(missing_ok=True); print(f"REJECTED Butterfly v{version}; candidate file deleted to save space.");return False
+    memory = MemoryStore()
+    rows = memory.approved_experiences()
+    if not rows:
+        print("No verified high-quality unused experiences. Nothing to learn tonight.")
+        return False
+
+    model, payload, tokenizer = load_active(device=best_device())
+    active_entry = get_active_entry()
+    active = active_entry["version"]
+    baseline = behavior_benchmark(model, tokenizer)
+    candidate = deepcopy(model)
+    new_text, ids = experiences_to_text(rows)
+    training_text = _replay_text() + "\n" + new_text
+    candidate, loss = continue_training(candidate, training_text, tokenizer, steps=steps)
+    metrics = behavior_benchmark(candidate, tokenizer)
+
+    version = next_version(active)
+    path = MODELS_DIR / f"butterfly-v{version}-candidate.safetensors"
+    tp = (active_entry.get("metadata") or {}).get("tokenizer_path")
+    save_stable_model(path, candidate, extra={
+        "sleep_cycle": True,
+        "source_experiences": ids,
+        "baseline": baseline,
+        "candidate": metrics,
+        "train_loss": loss,
+    })
+    improved = metrics["score"] > baseline["score"] and metrics["language_component"] >= baseline["language_component"] - .01
+    register_model(path, version, score=metrics["score"], active=False, metadata={
+        "baseline": baseline,
+        "candidate": metrics,
+        "promoted": improved,
+        "tokenizer_path": tp,
+        "storage_format": "safetensors-weights-only",
+        "optimizer_included": False,
+    })
+    print("Baseline:", baseline["score"], "Candidate:", metrics["score"])
+
+    if improved:
+        canonical = MODELS_DIR / f"butterfly-v{version}.safetensors"
+        move_model_artifacts(path, canonical)
+        update_entry(version, path=canonical.name)
+        promote(version)
+        append_history(version, "promoted", score=metrics["score"], metadata={
+            "source": "sleep_cycle",
+            "source_experiences": ids,
+            "brain_format": "safetensors-weights-only",
+        })
+        compact_to_active()
+        memory.mark_used(ids)
+        print(f"PROMOTED Butterfly v{version}; old physical brain burned after evaluation.")
+        return True
+
+    append_history(version, "rejected", score=metrics["score"], metadata={"source": "sleep_cycle"})
+    delete_model_artifacts(path)
+    _remove_registry_version(version)
+    print(f"REJECTED Butterfly v{version}; candidate deleted, memories retained.")
+    return False

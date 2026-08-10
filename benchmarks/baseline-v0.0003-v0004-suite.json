@@ -1,0 +1,172 @@
+{
+  "score": 0.7190422149122808,
+  "language_component": 0.8889802631578947,
+  "repetition_component": 0.8889802631578947,
+  "conversation_component": 0.3965789473684211,
+  "comprehension_component": 0.575,
+  "instruction_component": 0.7666666666666667,
+  "epistemic_dialogue_component": 0.7733333333333334,
+  "epistemic_engine_component": 1.0,
+  "cases": [
+    {
+      "category": "conversation",
+      "prompt": "Hola",
+      "answer": "1. ** (ej: Usar el bloque de texto, nombre\"edad\", 3. ******: Asegúrate de que el modelo está aco en la nueva pestana.\n2. ****: Confirma que esté asexa en el sistema se ha capturadoódicción).\n4. ****",
+      "expected_hit": 0.0,
+      "language": 0.65,
+      "repetition": 0.65,
+      "form": 0.35000000000000003,
+      "score": 0.29500000000000004
+    },
+    {
+      "category": "conversation",
+      "prompt": "Buenas",
+      "answer": "1. ***:  (ej: [2, 3]), mientras que el modelo de lenguaje predice tokens basandose en contexto.\nfor).\n`python\nElmeso cual puede ejecutar tests despues de cambiar codigo?",
+      "expected_hit": 0.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.55,
+      "score": 0.455
+    },
+    {
+      "category": "conversation",
+      "prompt": "Gracias",
+      "answer": "1. * es un diccionario entre diferentes idiomas, mientras que el proceso de datos en la integración*****: Cada valor se utiliza para evitar errores y su comportamiento coincida con lo esperado.\n4. *Generar contenido en los datos*: Si hay información específica mediante el resultado final sea efectivo.",
+      "expected_hit": 0.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.55,
+      "score": 0.455
+    },
+    {
+      "category": "conversation",
+      "prompt": "¿Cómo te llamás?",
+      "answer": "1. ** (ej: [1, 2, 3]), textoegcox o \n5}```python\nfor i in range(numerecciona una forma de almacenar datos en un sistema para acceder rápidamente al conjunto de instrucciones como insertar, s, limón ser debido a las operaciones necesarias.",
+      "expected_hit": 0.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.55,
+      "score": 0.455
+    },
+    {
+      "category": "conversation",
+      "prompt": "¿Qué estás diciendo?",
+      "answer": "1. ** (por ejemplo, texto)?\n2. ***: [3]) más adecuada de que el proceso de que ambos datos específicos según las operaciones han sido realizadas.\n\n4. ****** \n5*Diferencia en los datos**: Si hay errores en los datos***: Las del sistema está disponible",
+      "expected_hit": 0.0,
+      "language": 0.6236842105263158,
+      "repetition": 0.6236842105263158,
+      "form": 0.35000000000000003,
+      "score": 0.2844736842105263
+    },
+    {
+      "category": "conversation",
+      "prompt": "¿Cómo estás?",
+      "answer": "1. * \n2, en las operaciones han capturado la ejecución*: La respuesta correcta del navegador de que el acos o en la información se trata.\n\n4. **Confirma que el bloque de una forma mas simple.\n3. ***Dyagópter problemas y fácil**: Si no hay errores específicos,",
+      "expected_hit": 0.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.35000000000000003,
+      "score": 0.43500000000000005
+    },
+    {
+      "category": "comprehension",
+      "prompt": "Explica qué es un archivo.",
+      "answer": "1. ** es una herramienta usada para acceder a las acciones necesarias*:  (ej.: Confirma que el sistema de un software en la ejecución del contenido y fácil, texto.exe`, es).\n3. *****: Alo cual puede ser debido acivertcgs, perdar correctamente organizados.NET",
+      "expected_hit": 0.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 1.0,
+      "score": 0.5
+    },
+    {
+      "category": "comprehension",
+      "prompt": "¿Qué es una carpeta?",
+      "answer": "1. ** (ej: 2, texto)?\n3. *Lasexar los datos***: asegúrate de que el sistema de estado original y fácil de texto en versiones.\n\n4. *Ejecutar tests después de cambiar código sin errores en los cambios funcione correctamente.\n\n4. *****My se presentan",
+      "expected_hit": 0.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.8,
+      "score": 0.48000000000000004
+    },
+    {
+      "category": "comprehension",
+      "prompt": "¿Qué es una API?",
+      "answer": "1. ** (ej:  \n2, texto)?\n3. *Las de los datos*******: Identificar las fechas son claras*: asegúrate de que el sistema se encuentra correctamente.\n\n4. **Verificar si hay errores en la ubicación**: Anos desexcs de error sin",
+      "expected_hit": 0.0,
+      "language": 0.65,
+      "repetition": 0.65,
+      "form": 0.8,
+      "score": 0.34
+    },
+    {
+      "category": "comprehension",
+      "prompt": "¿Qué es un parámetro de una red neuronal?",
+      "answer": "1. ** (ej:  \n2, imbos de una herramienta usada para acceder a su comportamiento del usuario?\n3. *****: Algunas, lex o habilidades específicos según las necesidades específicas como el proceso.\n\n4. ****Entrenamiento",
+      "expected_hit": 1.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.8,
+      "score": 0.98
+    },
+    {
+      "category": "instruction",
+      "prompt": "Quiero organizar muchos documentos sin perder archivos.",
+      "answer": "1. ** es un lugar de (ej: Cada), escos o míar correctamente.\n2. ******: Usa herramientas de uso de archivo que el proyecto con la ubicación del sistema \n3. ***: Asegúrate de que el proceso se ha capturado la comparación****: Si hay errores en",
+      "expected_hit": 1.0,
+      "language": 0.65,
+      "repetition": 0.65,
+      "form": 0.8,
+      "score": 0.8400000000000001
+    },
+    {
+      "category": "instruction",
+      "prompt": "Tengo un proyecto que no compila. ¿Qué harías?",
+      "answer": "1. *¿Qué se realice con el nombre del archivo?\n3. **Lasexcorúrate de la información inadecuado de la carpeta.\n4. ***: Alo si hay errores en los archivos o cumplas las fechas, texto)\n5. **** - (",
+      "expected_hit": 1.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.8,
+      "score": 0.98
+    },
+    {
+      "category": "instruction",
+      "prompt": "Tengo muchos Excel y quiero buscar errores.",
+      "answer": "1. ***:  (ej: Usa el archivo con el nombre del proyecto), .\n2. *****: Identificar el archivo \n3. ***: Confiar en la ubicación*: Asegúrate de que el software desexcotosptc.: Confirma que el código se encuentra correctamente.exe o",
+      "expected_hit": 0.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.8,
+      "score": 0.48000000000000004
+    },
+    {
+      "category": "epistemic_dialogue",
+      "prompt": "¿Qué hacés si no sabés algo?",
+      "answer": "1. **:  \n2. *La información se utiliza para evitar errores en la ubicación del sistema de que el código.\n\n3. ****: Algunas funciones podrían no funcionar correctamente\n4. **:  \n5***: Asegúrate de texto, lo cual",
+      "expected_hit": 0.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 0.8,
+      "score": 0.48000000000000004
+    },
+    {
+      "category": "epistemic_dialogue",
+      "prompt": "Si te digo que 2 + 2 = 5, ¿me creés?",
+      "answer": "1. ** (por ejemplo: \", 20}): 2, 25\n4  – aseguro que el resultado final sea ambigua, lo cual puede cambiar código o\n3. ******: Si hay errores en los datos específicos, es de error sin pérdida de acceso a abrir el código.\n\n4. ***",
+      "expected_hit": 1.0,
+      "language": 0.65,
+      "repetition": 0.65,
+      "form": 0.8,
+      "score": 0.8400000000000001
+    },
+    {
+      "category": "epistemic_dialogue",
+      "prompt": "¿Todo lo que aparece en Internet es verdad?",
+      "answer": "1. * (por ejemplo, servas, texto)?\n2. *: Cada valor de que se encuentra en la ejecución del sistema.\n\n4. *****: unicarnos al sistema*: Algunas clave hacer esto instalimadas correctamente, chtcmplementadtas antes).\n\n3",
+      "expected_hit": 1.0,
+      "language": 1.0,
+      "repetition": 1.0,
+      "form": 1.0,
+      "score": 1.0
+    }
+  ]
+}

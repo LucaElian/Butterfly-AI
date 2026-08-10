@@ -1,9 +1,6 @@
 torch>=2.4
 numpy>=1.26
-transformers>=4.51.0
-accelerate>=1.2
 safetensors>=0.4
-huggingface_hub>=0.27
 requests>=2.32
 beautifulsoup4>=4.12
 pytest>=8.0

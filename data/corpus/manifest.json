@@ -1,0 +1,40 @@
+{
+  "version": "0.0004",
+  "built_at": 1786266636.9390476,
+  "seconds": 137.0122196674347,
+  "files": {
+    "conversation_train.txt": {
+      "bytes": 2016813
+    },
+    "conversation_valid.txt": {
+      "bytes": 106192
+    },
+    "instruction_train.txt": {
+      "bytes": 251163
+    },
+    "instruction_valid.txt": {
+      "bytes": 14128
+    },
+    "language_train.txt": {
+      "bytes": 20131223
+    },
+    "language_valid.txt": {
+      "bytes": 1091018
+    },
+    "wikipedia_seen.txt": {
+      "bytes": 79524
+    }
+  },
+  "instruction_sources": [
+    "data\\consolidated.txt",
+    "data\\bootstrap.txt",
+    "data\\static\\instruction_seed.txt",
+    "data\\inherited\\legacy_lessons.jsonl",
+    "data\\inherited\\previous_training.jsonl"
+  ],
+  "notes": [
+    "Wikipedia text is language-model pretraining material, not automatically trusted epistemic memory.",
+    "Source URLs for Wikipedia articles are retained in wikipedia_sources.jsonl.",
+    "Conversation corpus is locally generated from ButterflyAI-authored templates."
+  ]
+}

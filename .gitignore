@@ -1,26 +1,36 @@
-# Python bytecode/cache
+# Python / local environment
+.venv/
 __pycache__/
 *.py[cod]
-*$py.class
-
-# Test/type/tool caches
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
 
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
+# Butterfly runtime state: personal/local, not source code
+.butterfly/butterfly.db
+.butterfly/butterfly.db-*
+.butterfly/*.sqlite
+.butterfly/*.sqlite-*
 
-# Build/package outputs
-build/
-dist/
-*.egg-info/
+# Physical brains are release artifacts, not Git history
+models/*.pt
+models/*.pth
+models/*.bin
+models/*.safetensors
+models/*.safetensors.json
+models/registry.json
 
-# Local environment files
-.env
-.env.*
+# Temporary training state may be ~3x the weight size because Adam has moments
+training_state/
+
+# Generated large corpora. Keep corpus builder + small manifest in Git, not the books themselves.
+data/corpus/*.txt
+data/corpus/*.part
+data/corpus/wikipedia_seen.txt
+data/corpus/wikipedia_sources.jsonl
+
+# Generated/optional release bundles
+release/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vs/

@@ -1,0 +1,27 @@
+{
+  "format": 1,
+  "versions": [
+    {
+      "version": "0.0003",
+      "status": "baseline",
+      "score": 0.7190422149122808,
+      "recorded_at": 1786265108.105448,
+      "metadata": {
+        "language_component": 0.8889802631578947,
+        "benchmark": "benchmarks\\baseline-v0.0003-v0004-suite.json"
+      }
+    },
+    {
+      "version": "0.0004",
+      "status": "promoted",
+      "score": 0.8691770833333334,
+      "recorded_at": 1786320619.2202048,
+      "metadata": {
+        "parameters": 17477376,
+        "tokenizer_vocab": 8192,
+        "benchmark": "benchmarks\\comparison-v0.0003-vs-v0.0004.json",
+        "brain_format": "safetensors-weights-only"
+      }
+    }
+  ]
+}

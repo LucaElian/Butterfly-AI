@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 from .types import Evidence
 
-USER_AGENT = "ButterflyAI/0.0001 educational local research agent"
+USER_AGENT = "ButterflyAI/0.0004 educational local research agent"
 
 
 def source_trust(url: str):
@@ -37,7 +37,7 @@ class WebResearch:
         return text[:max_chars]
 
     def wikipedia_search(self, query: str, limit=3):
-        endpoint = "https://en.wikipedia.org/w/api.php"
+        endpoint = "https://es.wikipedia.org/w/api.php"
         params = {"action": "query", "list": "search", "srsearch": query, "format": "json", "utf8": 1}
         r = self.session.get(endpoint, params=params, timeout=self.timeout)
         r.raise_for_status()
@@ -46,6 +46,6 @@ class WebResearch:
         for item in results:
             title = item.get("title", "")
             snippet = re.sub("<.*?>", "", html.unescape(item.get("snippet", "")))
-            url = "https://en.wikipedia.org/wiki/" + title.replace(" ", "_")
+            url = "https://es.wikipedia.org/wiki/" + title.replace(" ", "_")
             evidence.append(Evidence(url, snippet, source_trust(url), None))
         return evidence
