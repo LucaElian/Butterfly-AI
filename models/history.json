@@ -22,6 +22,27 @@
         "benchmark": "benchmarks\\comparison-v0.0003-vs-v0.0004.json",
         "brain_format": "safetensors-weights-only"
       }
+    },
+    {
+      "version": "0.0004",
+      "status": "benchmark-suite-v0.00041",
+      "score": 0.47994892708292686,
+      "recorded_at": 1786321814.9881868,
+      "metadata": {
+        "benchmark": "benchmarks\\baseline-v0.0004-suite-v0.00041.json",
+        "promotion_eligible": false,
+        "critical_failures": [
+          "hello",
+          "hello_buenas",
+          "thanks",
+          "identity",
+          "how_are_you",
+          "exact_blue",
+          "math_2_plus_2",
+          "reject_false_math",
+          "unknown_fictional_fact"
+        ]
+      }
     }
   ]
 }

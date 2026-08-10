@@ -1,14 +1,21 @@
 @echo off
 cd /d "%~dp0"
 echo ========================================
-echo  ButterflyAI - v0.0003 VS v0.0004
+echo  ButterflyAI - ACTIVE VS CANDIDATE
+echo  Strict promotion suite v0.00041
 echo ========================================
-echo Solo si v0.0004 gana se vuelve activa y se quema el checkpoint/tokenizer viejo.
-echo La memoria, corpus y benchmarks nunca se queman.
+echo A candidate can only be promoted if it:
+echo   1. beats the active brain by the required score margin,
+echo   2. passes semantic/basic-dialogue hard gates,
+echo   3. has no major capability regression.
+echo.
+echo SAFETY: the active brain can never be deleted as a rejected candidate.
+echo If no candidate exists, this BAT only reports that fact.
 echo.
 ".venv\Scripts\python.exe" -m butterfly compare-promote
 if errorlevel 1 goto fail
 pause & exit /b 0
 :fail
-echo ERROR durante comparacion. No se borra el modelo activo por un fallo del script.
+echo.
+echo ERROR during comparison. The active brain is protected and is not deleted.
 pause & exit /b 1

@@ -2,7 +2,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 import json
 
-APP_VERSION = "0.0004"
+APP_VERSION = "0.00041"
 
 @dataclass
 class ModelConfig:
