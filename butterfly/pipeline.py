@@ -88,7 +88,7 @@ def _require_target(recipe):
         raise RuntimeError(
             "No target brain is configured yet.\n"
             "The permanent pipeline infrastructure is installed correctly, but it is intentionally idle.\n"
-            "The v0.00052 update will configure the SAME 01-04 files; no new version-numbered BATs are needed."
+            "Install/configure a deliberate target in config/pipeline.json; the SAME 01-04 files are reused for every generation."
         )
     return str(target)
 
@@ -115,6 +115,41 @@ def _write_summary(recipe, state, run_log):
     ]
     for name, label in STAGES:
         lines.append(f"- {label}: {state['stages'].get(name, 'pending').upper()}")
+
+    training_path = REPORTS_DIR / "latest-training.json"
+    if training_path.exists():
+        try:
+            training = json.loads(training_path.read_text(encoding="utf-8"))
+            if str(training.get("target_version")) == str(recipe.get("target_brain")):
+                lines += ["", "Training best validation:"]
+                for stage in training.get("stages", []):
+                    lines.append(
+                        f"- {stage.get('stage')}: {float(stage.get('best_validation_loss', 0.0)):.4f} "
+                        f"({int(stage.get('epochs_completed', 0))} epoch(s))"
+                    )
+        except Exception:
+            pass
+
+    evaluation_path = REPORTS_DIR / "latest-evaluation.json"
+    if evaluation_path.exists():
+        try:
+            evaluation = json.loads(evaluation_path.read_text(encoding="utf-8"))
+            if str(evaluation.get("target_version")) == str(recipe.get("target_brain")):
+                lines += [
+                    "",
+                    "Evaluation:",
+                    f"- result: {evaluation.get('result')}",
+                    f"- baseline: {float(evaluation.get('baseline_score', 0.0)):.4f}",
+                    f"- candidate: {float(evaluation.get('candidate_score', 0.0)):.4f}",
+                    f"- improvement: {float(evaluation.get('improvement', 0.0)):+.4f}",
+                    f"- critical pass rate: {float(evaluation.get('critical_pass_rate', 0.0)):.4f}",
+                ]
+                failures = evaluation.get("critical_failures") or []
+                if failures:
+                    lines.append("- critical failures: " + ", ".join(failures))
+        except Exception:
+            pass
+
     if state.get("last_error"):
         lines += ["", "Last error:", str(state["last_error"])]
     text = "\n".join(lines) + "\n"
@@ -143,9 +178,16 @@ def _run_stage(recipe, state, stage, tee):
     env["BUTTERFLY_PIPELINE_TARGET"] = target
     env["BUTTERFLY_PIPELINE_STAGE"] = stage
     env["BUTTERFLY_PIPELINE_PRESET"] = str(recipe.get("preset", "auto"))
+    # Force one encoding end-to-end so Windows pipes/logs preserve Spanish accents.
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
+    # Child Python is piped through this runner, so force immediate stdout/stderr.
+    # Without this, long training jobs can be working normally while the console/log
+    # appears frozen because the child process block-buffers its print() output.
+    env["PYTHONUNBUFFERED"] = "1"
 
     proc = subprocess.Popen(
-        [sys.executable, *command],
+        [sys.executable, "-u", *command],
         cwd=ROOT,
         env=env,
         stdout=subprocess.PIPE,

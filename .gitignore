@@ -44,3 +44,9 @@ release/
 .DS_Store
 Thumbs.db
 .vs/
+
+# Deliberate-learning working corpus is generated locally and archived locally.
+data/corpus/deliberate/*.jsonl
+data/corpus/deliberate/manifest.json
+data/corpus/deliberate/history.json
+data/corpus/deliberate/archive/

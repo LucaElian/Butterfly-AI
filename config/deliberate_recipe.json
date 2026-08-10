@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "target_brain": "0.00053",
+  "expected_active": "0.0004",
+  "benchmark_suite": "0.00043",
+  "preset": "ryzen3600",
+  "objective": "assistant-only-loss-boundary-safe-with-replay",
+  "training_stages": [
+    {
+      "name": "robust_comprehension",
+      "max_epochs": 3,
+      "lr": 0.000035,
+      "batch_size": 4,
+      "seq_len": 160,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.06,
+      "frozen_first_blocks": 3
+    },
+    {
+      "name": "copy_binding",
+      "max_epochs": 3,
+      "lr": 0.00003,
+      "batch_size": 4,
+      "seq_len": 160,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.05,
+      "frozen_first_blocks": 2
+    },
+    {
+      "name": "basic_arithmetic",
+      "max_epochs": 4,
+      "lr": 0.000025,
+      "batch_size": 4,
+      "seq_len": 160,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.05,
+      "frozen_first_blocks": 2
+    },
+    {
+      "name": "epistemic_contrast",
+      "max_epochs": 3,
+      "lr": 0.000025,
+      "batch_size": 4,
+      "seq_len": 176,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.05,
+      "frozen_first_blocks": 3
+    },
+    {
+      "name": "balanced_replay",
+      "max_epochs": 2,
+      "lr": 0.000008,
+      "batch_size": 4,
+      "seq_len": 176,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.04,
+      "frozen_first_blocks": 0
+    }
+  ]
+}

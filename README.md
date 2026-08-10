@@ -9,11 +9,12 @@ scripts del pipeline ya no cambian con cada generación.
 - cerebro aceptado: **v0.0004**;
 - arquitectura: **17,477,376 parámetros**;
 - tokenizer aceptado: **v3 / 8,192 tokens**;
-- benchmark estricto actual: **v0.00042**;
+- benchmark estricto anterior: **v0.00042**;
 - v0.0005: candidata rechazada;
 - v0.00051: candidata rechazada;
-- próxima generación deliberada: **v0.00052**;
-- `config/pipeline.json` queda sin target hasta instalar la receta v0.00052.
+- target deliberado actual: **v0.00053**;
+- benchmark estricto nuevo: **v0.00043**;
+- `config/pipeline.json` apunta a v0.00053 usando el mismo pipeline permanente.
 
 Las candidatas rechazadas no se conservan físicamente. Corpus, memoria, conocimiento
 verificado, manifests, benchmarks e historial sí se conservan.
@@ -86,8 +87,7 @@ SLEEP_AND_LEARN.bat
 EXPORT_ACTIVE_MODEL_FOR_RELEASE.bat
 ```
 
-Sleep learning queda pausado por `config/pipeline.json` durante la transición deliberada
-a v0.00052, para que no cree una candidata paralela accidentalmente.
+Sleep learning queda pausado por `config/pipeline.json` mientras v0.00053 sea el target deliberado, para que no cree una candidata paralela accidentalmente.
 
 ## Versiones
 
@@ -99,3 +99,13 @@ No existe un archivo raíz `VERSION` que haya que renombrar en cada experimento.
 - el historial de experimentos vive en benchmarks + `models/history.json` + `CHANGELOG.md`.
 
 Así evitamos tener cuatro fuentes distintas diciendo versiones diferentes.
+
+## v0.00053 — generalización y replay
+
+v0.00053 continúa desde el cerebro aceptado v0.0004 y mantiene el mismo tokenizer. No reutiliza pesos de v0.0005 ni v0.00051 porque ambas candidatas fueron rechazadas.
+
+El curriculum separa cinco capacidades: `ROBUST_COMPREHENSION`, `COPY_BINDING`, `BASIC_ARITHMETIC`, `EPISTEMIC_CONTRAST` y `BALANCED_REPLAY`. Las etapas posteriores incluyen rehearsal de capacidades anteriores para reducir interferencia catastrófica.
+
+El benchmark v0.00043 conserva fallos antiguos como regresión y agrega nuevas frases, nuevos targets exactos, nuevas operaciones aritméticas y nuevos hechos ficticios held-out. Los valores del benchmark no entran ni en train ni en validación.
+
+El corpus deliberado usa nombres permanentes bajo `data/corpus/deliberate/`. Cuando una futura generación lo reemplace, el corpus anterior se archiva localmente antes de sobrescribir los archivos de trabajo.

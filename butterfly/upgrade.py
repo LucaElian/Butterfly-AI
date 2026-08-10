@@ -141,7 +141,7 @@ def prepare_target(target_version: str, expected_active: str | None = None):
     print(f"Strict baseline score  : {float(baseline.get('score', 0.0)):.4f}")
     print(f"Critical pass rate     : {float(baseline.get('critical_pass_rate', 0.0)):.4f}")
     print(f"Baseline file          : {baseline_path}")
-    print("No weights, tokenizer, memory, corpus or benchmark were modified.")
+    print("No weights, tokenizer, memory or corpus were modified. A new strict baseline file may be created for this suite.")
     return result
 
 def compare_and_promote(candidate_version: str | None = None):
@@ -200,12 +200,18 @@ def compare_and_promote(candidate_version: str | None = None):
     )
 
     improvement = cand["score"] - baseline["score"]
-    no_major_regression = (
-        cand["conversation_component"] >= baseline.get("conversation_component", 0.0) - 0.02
-        and cand["comprehension_component"] >= baseline.get("comprehension_component", 0.0) - 0.02
-        and cand["instruction_component"] >= baseline.get("instruction_component", 0.0) - 0.02
-        and cand["epistemic_dialogue_component"]
-        >= baseline.get("epistemic_dialogue_component", 0.0) - 0.02
+    protected_components = (
+        "semantic_component",
+        "language_component",
+        "conversation_component",
+        "comprehension_component",
+        "instruction_component",
+        "epistemic_dialogue_component",
+        "coherence_component",
+    )
+    no_major_regression = all(
+        float(cand.get(key, 0.0)) >= float(baseline.get(key, 0.0)) - 0.02
+        for key in protected_components
     )
     passes = (
         improvement >= 0.03

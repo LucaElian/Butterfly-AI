@@ -1,5 +1,19 @@
 # ButterflyAI — Changelog
 
+## v0.00053 — generalization + replay candidate
+
+- Primer target deliberado que usa el pipeline permanente `01..04` sin BATs por versión.
+- Seed: cerebro aceptado v0.0004 + mismo tokenizer v3/8192.
+- Nuevo benchmark v0.00043: mantiene regresiones v0.00042 y agrega surfaces/targets/pairs held-out nuevos.
+- Métricas nuevas separadas: `binding_component` y `arithmetic_component`.
+- `ROBUST_COMPREHENSION` protege conversación + conceptos básicos que v0.00051 había interferido.
+- `COPY_BINDING` se separa de matemática y usa valores train/valid/benchmark disjuntos.
+- `BASIC_ARITHMETIC` usa pares completos held-out; + y * reservan también el espejo conmutativo.
+- `EPISTEMIC_CONTRAST` entrena rechazo de cuentas falsas, datos ausentes y fuentes contradictorias.
+- Las etapas posteriores contienen replay de habilidades previas; `BALANCED_REPLAY` consolida todas a LR bajo.
+- Assistant-only loss conserva el boundary de inferencia `Butterfly:` sin permitir que el tokenizer cruce al primer token de respuesta.
+- CPU sigue limitado a 8 hilos y recovery sigue siendo weights-only atómico.
+
 ## Infrastructure cleanup — permanent pipeline
 
 - Se reemplaza el pipeline versionado `00...13` por cuatro etapas permanentes `01...04`.

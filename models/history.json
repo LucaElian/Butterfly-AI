@@ -80,6 +80,39 @@
           "reject_false_math_alt"
         ]
       }
+    },
+    {
+      "version": "0.00053",
+      "status": "rejected",
+      "score": 0.5534471739217167,
+      "recorded_at": 1786395951.2260876,
+      "metadata": {
+        "benchmark": "benchmarks\\comparison-v0.0004-vs-v0.00053-suite-v0.00043.json",
+        "benchmark_suite": "0.00043",
+        "critical_failures": [
+          "hello_casual",
+          "hello_new",
+          "thanks_new",
+          "identity_plain",
+          "how_are_you_plain",
+          "how_are_you_alt",
+          "how_are_you_new",
+          "api_new",
+          "parameter",
+          "exact_blue",
+          "exact_cloud",
+          "exact_copper",
+          "exact_r7k2",
+          "math_2_plus_2",
+          "math_7_plus_6",
+          "math_14_minus_9",
+          "math_8_plus_9",
+          "math_17_minus_8",
+          "math_6_times_4",
+          "reject_false_math",
+          "reject_false_math_alt"
+        ]
+      }
     }
   ]
 }

@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "infrastructure_version": "1.0",
-  "target_brain": null,
-  "benchmark_suite": "0.00042",
+  "target_brain": "0.00053",
+  "benchmark_suite": "0.00043",
   "preset": "ryzen3600",
   "allow_sleep_learning": false,
   "stages": {
-    "prepare": null,
-    "build_dataset": null,
-    "train": null,
-    "evaluate_and_promote": null
+    "prepare": ["-m", "butterfly.deliberate", "prepare"],
+    "build_dataset": ["-m", "butterfly.deliberate", "build"],
+    "train": ["-m", "butterfly.deliberate", "train"],
+    "evaluate_and_promote": ["-m", "butterfly.deliberate", "evaluate"]
   }
 }
