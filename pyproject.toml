@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "butterfly-ai-local"
-version = "0.0.41"
+version = "0.0.51"
 description = "ButterflyAI experimental local Transformer, epistemic engine and continual-learning system"
 requires-python = ">=3.11"
 dependencies = [

@@ -34,3 +34,6 @@ release/
 .DS_Store
 Thumbs.db
 .vs/
+
+# v0.0005 generated assistant-alignment books (manifest stays small/trackable)
+data/corpus/v0005/*.jsonl

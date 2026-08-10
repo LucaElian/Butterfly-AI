@@ -1,0 +1,159 @@
+{
+  "version": "0.00051",
+  "format": "assistant-only-supervised-jsonl-v2",
+  "benchmark_suite_held_out": "0.00042",
+  "benchmark_surface_leaks": 0,
+  "validation_surface_family_overlap": 0,
+  "seed_brain": "0.0004",
+  "strategy": [
+    "Continue from accepted v0.0004 weights; v0.0005 rejected weights are not reused.",
+    "Teach robust Spanish input: missing accents/punctuation, casual q/que, elongated greetings and colloquial wording.",
+    "Use contrastive intent pairs so identity and state cannot be solved by the word 'como' alone.",
+    "Teach variable binding/copy with many values while reserving benchmark targets entirely.",
+    "Split arithmetic by operand combinations, not by random prompt rows.",
+    "Use held-out validation wording families that never occur in training.",
+    "Mask USER targets; loss is paid only on Butterfly response tokens."
+  ],
+  "stages": {
+    "robust_dialogue": {
+      "train": {
+        "rows": 4000,
+        "unique_prompts": 218,
+        "normalized_intents": 144,
+        "surface_families": 25,
+        "categories": {
+          "clarify": 548,
+          "definition": 693,
+          "greeting": 556,
+          "identity": 550,
+          "short_qa": 553,
+          "state": 550,
+          "thanks": 550
+        },
+        "bytes": 608012
+      },
+      "valid": {
+        "rows": 70,
+        "unique_prompts": 70,
+        "normalized_intents": 70,
+        "surface_families": 9,
+        "categories": {
+          "clarify": 3,
+          "definition": 42,
+          "greeting": 5,
+          "identity": 4,
+          "short_qa": 8,
+          "state": 4,
+          "thanks": 4
+        },
+        "bytes": 13430
+      }
+    },
+    "binding_math": {
+      "train": {
+        "rows": 13266,
+        "unique_prompts": 4422,
+        "normalized_intents": 4357,
+        "surface_families": 14,
+        "categories": {
+          "arithmetic": 8194,
+          "exact_copy": 5072
+        },
+        "bytes": 1672263
+      },
+      "valid": {
+        "rows": 376,
+        "unique_prompts": 376,
+        "normalized_intents": 376,
+        "surface_families": 6,
+        "categories": {
+          "arithmetic": 316,
+          "exact_copy": 60
+        },
+        "bytes": 47260
+      }
+    },
+    "epistemic_contrast": {
+      "train": {
+        "rows": 8900,
+        "unique_prompts": 2225,
+        "normalized_intents": 1503,
+        "surface_families": 14,
+        "categories": {
+          "contrast_identity": 1116,
+          "contrast_state": 1116,
+          "missing_information": 1121,
+          "reject_false_math": 2907,
+          "source_verification": 1117,
+          "unknown_fact": 1523
+        },
+        "bytes": 1634334
+      },
+      "valid": {
+        "rows": 144,
+        "unique_prompts": 144,
+        "normalized_intents": 144,
+        "surface_families": 7,
+        "categories": {
+          "contrast_identity": 2,
+          "contrast_state": 2,
+          "missing_information": 2,
+          "reject_false_math": 90,
+          "source_verification": 2,
+          "unknown_fact": 46
+        },
+        "bytes": 24968
+      }
+    },
+    "mixed_generalization": {
+      "train": {
+        "rows": 13724,
+        "unique_prompts": 6862,
+        "normalized_intents": 6001,
+        "surface_families": 53,
+        "categories": {
+          "arithmetic": 4230,
+          "clarify": 465,
+          "contrast_identity": 459,
+          "contrast_state": 460,
+          "definition": 610,
+          "exact_copy": 1108,
+          "greeting": 474,
+          "identity": 467,
+          "missing_information": 465,
+          "reject_false_math": 2252,
+          "short_qa": 470,
+          "source_verification": 462,
+          "state": 467,
+          "thanks": 467,
+          "unknown_fact": 868
+        },
+        "bytes": 2081373
+      },
+      "valid": {
+        "rows": 590,
+        "unique_prompts": 590,
+        "normalized_intents": 590,
+        "surface_families": 22,
+        "categories": {
+          "arithmetic": 316,
+          "clarify": 3,
+          "contrast_identity": 2,
+          "contrast_state": 2,
+          "definition": 42,
+          "exact_copy": 60,
+          "greeting": 5,
+          "identity": 4,
+          "missing_information": 2,
+          "reject_false_math": 90,
+          "short_qa": 8,
+          "source_verification": 2,
+          "state": 4,
+          "thanks": 4,
+          "unknown_fact": 46
+        },
+        "bytes": 85658
+      }
+    }
+  }
+}

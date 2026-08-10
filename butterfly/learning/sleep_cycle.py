@@ -58,6 +58,13 @@ def run_sleep_cycle(steps=120):
     model, payload, tokenizer = load_active(device=best_device())
     active_entry = get_active_entry()
     active = active_entry["version"]
+    # During the v0.0004 -> v0.00051 corrective alignment migration, the numeric next version
+    # is reserved for the deliberate v0.00051 curriculum. A sleep-cycle candidate
+    # must not silently occupy that version or bypass its pipeline.
+    if active == "0.0004":
+        print("Sleep learning is temporarily paused while v0.00051 is the reserved corrective generation.")
+        print("Verified experiences remain stored and unused; nothing was deleted or marked as learned.")
+        return False
     baseline = behavior_benchmark(model, tokenizer)
     candidate = deepcopy(model)
     new_text, ids = experiences_to_text(rows)
@@ -75,7 +82,17 @@ def run_sleep_cycle(steps=120):
         "candidate": metrics,
         "train_loss": loss,
     })
-    improved = metrics["score"] > baseline["score"] and metrics["language_component"] >= baseline["language_component"] - .01
+    no_major_regression = (
+        metrics["conversation_component"] >= baseline.get("conversation_component", 0.0) - 0.02
+        and metrics["comprehension_component"] >= baseline.get("comprehension_component", 0.0) - 0.02
+        and metrics["instruction_component"] >= baseline.get("instruction_component", 0.0) - 0.02
+        and metrics["epistemic_dialogue_component"] >= baseline.get("epistemic_dialogue_component", 0.0) - 0.02
+    )
+    improved = (
+        metrics["score"] >= baseline["score"] + 0.03
+        and bool(metrics.get("promotion_eligible"))
+        and no_major_regression
+    )
     register_model(path, version, score=metrics["score"], active=False, metadata={
         "baseline": baseline,
         "candidate": metrics,

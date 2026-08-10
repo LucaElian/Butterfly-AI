@@ -198,6 +198,20 @@ def compare_and_promote(candidate_version: str | None = None):
         return False
 
     candidate_version = candidate["version"]
+    meta = candidate.get("metadata") or {}
+    seed_brain = meta.get("seed_brain")
+    if seed_brain is not None and seed_brain != active["version"]:
+        raise RuntimeError(
+            f"Safety stop: v{candidate_version} lineage says seed={seed_brain!r}, "
+            f"but active baseline is v{active['version']}. Nothing was promoted or deleted."
+        )
+    candidate_tokenizer = meta.get("tokenizer_path")
+    active_tokenizer = (active.get("metadata") or {}).get("tokenizer_path")
+    if candidate_tokenizer is not None and candidate_tokenizer != active_tokenizer:
+        raise RuntimeError(
+            f"Safety stop: v{candidate_version} must inherit the exact accepted tokenizer. "
+            "Tokenizer lineage differs; nothing was promoted or deleted."
+        )
     if candidate_version == active["version"]:
         # Defensive duplicate guard even though _resolve_candidate already checks.
         raise RuntimeError("Safety stop: candidate and active versions are identical.")
@@ -296,7 +310,7 @@ def compare_and_promote(candidate_version: str | None = None):
         print("Corpus, memory, verified knowledge, lessons and benchmarks remain.")
         return True
 
-    print("\nREJECTED: candidate failed the v0.00041 promotion policy.")
+    print("\nREJECTED: candidate failed the current strict promotion policy.")
     if improvement < 0.03:
         print("  - Overall improvement is below +0.0300.")
     if not cand.get("promotion_eligible"):
@@ -319,3 +333,113 @@ def compare_and_promote(candidate_version: str | None = None):
     _remove_registry_version(candidate_version)
     print("Candidate brain deleted; corpus, tokenizer assets, memory and report were kept.")
     return False
+
+
+def prepare_v0005():
+    """Safety/preflight for the v0.0005 continued-learning generation."""
+    ensure_dirs()
+    active = get_active_entry()
+    if not active:
+        raise RuntimeError("No active Butterfly brain.")
+
+    if active["version"] == "0.0005":
+        print("Butterfly v0.0005 is already active. Preparation is already complete.")
+        return True
+    if active["version"] != "0.0004":
+        raise RuntimeError(
+            f"Expected accepted brain v0.0004 before v0.0005 training, but active is v{active['version']}. "
+            "Nothing was changed."
+        )
+
+    model, payload, tokenizer = load_entry(active, device="cpu")
+    tokenizer_rel = (active.get("metadata") or {}).get("tokenizer_path")
+    if not tokenizer_rel:
+        raise RuntimeError("Active v0.0004 has no tokenizer path in registry metadata.")
+    tokenizer_path = ROOT / tokenizer_rel
+    if not tokenizer_path.exists():
+        raise FileNotFoundError(tokenizer_path)
+    if model.cfg.vocab_size != tokenizer.vocab_size:
+        raise RuntimeError("Active model/tokenizer vocabulary mismatch. Nothing was changed.")
+
+    baseline, baseline_path = _strict_baseline(active)
+    print("ButterflyAI v0.0005 preflight OK.")
+    print(f"Active seed brain      : v{active['version']} (READ ONLY until promotion)")
+    print(f"Parameters             : {model.parameter_count():,}")
+    print(f"Tokenizer              : {tokenizer_path}")
+    print(f"Tokenizer vocab        : {tokenizer.vocab_size:,}")
+    print(f"Strict baseline suite  : v{BENCHMARK_SUITE_VERSION}")
+    print(f"Strict baseline score  : {baseline.get('score', 0.0):.4f}")
+    print(f"Critical pass rate     : {baseline.get('critical_pass_rate', 0.0):.4f}")
+    print(f"Baseline file          : {baseline_path}")
+    print("v0.0005 will inherit these exact weights and tokenizer; it does NOT restart from random weights.")
+    print("Memory, corpus, verified knowledge, history and benchmarks are preserved.")
+    return True
+
+
+
+def prepare_v00051():
+    """Preflight for v0.00051 + benchmark-suite v0.00042.
+
+    v0.0005 was a rejected experiment, so the accepted seed remains v0.0004.
+    This step does not train or modify weights. It freezes a new, harder baseline
+    using punctuationless/casual/contrastive benchmark cases.
+    """
+    ensure_dirs()
+    active = get_active_entry()
+    if not active:
+        raise RuntimeError("No active Butterfly brain.")
+
+    if active["version"] == "0.00051":
+        print("Butterfly v0.00051 is already active. Preparation is already complete.")
+        return True
+    if active["version"] != "0.0004":
+        raise RuntimeError(
+            f"v0.00051 expects accepted seed v0.0004 after rejected v0.0005, but active is v{active['version']}. "
+            "Nothing was changed. Inspect STATUS before continuing."
+        )
+
+    stale_v5 = next(
+        (x for x in load_registry().get("versions", []) if x.get("version") == "0.0005" and x.get("status") == "candidate"),
+        None,
+    )
+    if stale_v5:
+        raise RuntimeError(
+            "A v0.0005 candidate is still registered. Do not stack experiments. "
+            "Run the normal v0.0005 compare/reject flow first."
+        )
+
+    model, _, tokenizer = load_entry(active, device="cpu")
+    tokenizer_rel = (active.get("metadata") or {}).get("tokenizer_path")
+    if not tokenizer_rel:
+        raise RuntimeError("Active v0.0004 has no tokenizer lineage.")
+    tokenizer_path = ROOT / tokenizer_rel
+    if not tokenizer_path.exists():
+        raise FileNotFoundError(tokenizer_path)
+    if model.cfg.vocab_size != tokenizer.vocab_size:
+        raise RuntimeError("Active model/tokenizer vocabulary mismatch. Nothing was changed.")
+
+    baseline, baseline_path = _strict_baseline(active)
+    old_path = BENCHMARKS_DIR / "baseline-v0.0004-suite-v0.00041.json"
+    old_score = None
+    if old_path.exists():
+        try:
+            old_score = json.loads(old_path.read_text(encoding="utf-8")).get("score")
+        except Exception:
+            old_score = None
+
+    print("ButterflyAI v0.00051 preflight OK.")
+    print(f"Active seed brain      : v{active['version']} (READ ONLY until promotion)")
+    print(f"Parameters             : {model.parameter_count():,}")
+    print(f"Tokenizer              : {tokenizer_path}")
+    print(f"Tokenizer vocab        : {tokenizer.vocab_size:,}")
+    print(f"New strict suite       : v{BENCHMARK_SUITE_VERSION}")
+    print(f"v0.00042 baseline score: {baseline.get('score', 0.0):.4f}")
+    print(f"Critical pass rate     : {baseline.get('critical_pass_rate', 0.0):.4f}")
+    print(f"Robustness component   : {baseline.get('robustness_component', 0.0):.4f}")
+    print(f"Contrastive component  : {baseline.get('contrastive_component', 0.0):.4f}")
+    if old_score is not None:
+        print(f"Previous v0.00041 score: {float(old_score):.4f} (kept for history; not directly comparable)")
+    print(f"Baseline file          : {baseline_path}")
+    print("No weights, tokenizer, memory or old benchmark were modified.")
+    print("v0.00051 will continue from v0.0004 and must beat THIS harder baseline plus all hard gates.")
+    return True

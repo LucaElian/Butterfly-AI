@@ -1,195 +1,110 @@
-# ButterflyAI v0.0004 — actualización definitiva
+# ButterflyAI v0.0005 — alignment sobre el cerebro v0.0004
 
-ButterflyAI v0.0004 actualiza **la instalación permanente** de ButterflyAI. No crea una vida nueva y no requiere borrar v0.0003 antes de empezar.
+ButterflyAI usa una **instalación permanente**. v0.0005 no crea otra carpeta y no reinicia el modelo desde cero.
 
-## Objetivo de v0.0004
+## Estado heredado
 
-v0.0003 demostró que el Transformer funciona, pero tenía ~15.9M parámetros y solo ~53k tokens de educación. El resultado fue overfitting: aprendía estructuras del pequeño dataset pero hablaba mal fuera de él.
+Antes de esta actualización:
 
-v0.0004 mantiene una escala parecida de modelo y cambia el cuello de botella:
+- software/sistema: v0.00041;
+- cerebro activo: v0.0004;
+- arquitectura: 17,477,376 parámetros;
+- tokenizer v3: 8,192 tokens;
+- benchmark estricto v0.00041 de v0.0004: `0.4799` overall;
+- semantic: `0.2778`;
+- conversation: `0.0936`;
+- critical pass rate: `0.0000`.
 
-- corpus lingüístico de varios millones de tokens;
-- español general antes de conversación;
-- conversación antes de instrucciones/tareas;
-- tokenizer subword v3 de 8,192 tokens con fallback UTF-8;
-- validación por etapa + early stopping;
-- candidata obligatoriamente comparada contra v0.0003;
-- promoción solo si mejora de forma medible;
-- memoria/datos útiles heredados;
-- respuestas defectuosas de v0.0003 NO se usan como lenguaje maestro;
-- modelo estable guardado como **safetensors weights-only**, sin estado de Adam.
+v0.0005 conserva el cerebro v0.0004 como baseline físico hasta que la candidata apruebe el examen.
 
-## INSTALACIÓN SOBRE TU BUTTERFLY ACTUAL
+## Qué cambia en v0.0005
 
-Tu carpeta permanente debería ser algo como:
+El problema de v0.0004 no era principalmente falta de vocabulario: podía producir texto con apariencia de español, pero respondía mal a la intención del usuario.
 
-    D:\Downloads\ButterflyAI\
+v0.0005 mantiene **el mismo Transformer y el mismo tokenizer** y hace continued learning sobre los pesos aceptados de v0.0004.
 
-1. Hacé un commit/tag de v0.0003 si querés conservar el snapshot histórico en GitHub.
-2. Extraé este ZIP **dentro de esa misma carpeta ButterflyAI**.
-3. Permití reemplazar archivos con el mismo nombre.
-4. NO borres manualmente `.butterfly`, `models`, `data` ni el modelo v0.0003.
-5. Ejecutá `SETUP_WINDOWS.bat`.
+El cambio principal es el objetivo de entrenamiento:
 
-El updater no incluye tu DB, tu checkpoint ni tu corpus local, por lo que no los pisa al extraerlo.
+```text
+User: mensaje     -> CONTEXTO, no paga loss
+Butterfly: salida -> SOLO estos tokens pagan loss
+```
 
-## ORDEN DE EJECUCIÓN
+Así el modelo deja de gastar parte del entrenamiento en aprender a predecir el texto del usuario y se concentra en **qué debe responder** dado ese contexto.
 
-### 1. SETUP_WINDOWS.bat
-Actualiza dependencias y elimina scripts/código obsoleto de la pipeline v0.0003, pero no borra la vida de Butterfly.
+También corrige una diferencia sutil de v0.0004: el límite `Butterfly:` se tokeniza durante v0.0005 exactamente como se usa en chat/evaluación, y el espacio inicial de la respuesta se aprende como salida. Esto reduce el desajuste entre formato de entrenamiento e inferencia.
 
-### 2. 00_PREPARE_V0004.bat
-- confirma que existe una Butterfly activa;
-- conserva una copia identificable del tokenizer v0.0003;
-- evalúa v0.0003 con el examen nuevo;
-- guarda ese benchmark como baseline;
-- si el cerebro activo todavía es el `.pt` grande de v0.0003, lo convierte a un `.safetensors` weights-only, recarga y compara TODOS los pesos; solo si son idénticos elimina el `.pt` local con el estado de Adam. Esto no cambia la inteligencia ni la versión, solo compacta almacenamiento.
+## Curriculum v0.0005
 
-### 3. 01_BUILD_LANGUAGE_CORPUS.bat
-Construye el nuevo libro de estudio:
+1. `BASIC_DIALOGUE`: saludos, agradecimientos, identidad, aclaraciones, definiciones y respuestas directas.
+2. `INSTRUCTION_FOLLOWING`: una palabra/número exacto, aritmética, formato y restricciones.
+3. `EPISTEMIC_DIALOGUE`: rechazar cuentas falsas, no inventar datos ausentes y comparar evidencia.
+4. `MIXED_CONSOLIDATION`: mezcla balanceada a learning rate bajo para consolidar sin olvidar las etapas anteriores.
 
-- ~20 MB de español general desde Wikipedia ES;
-- ~2 MB de conversación;
-- instrucciones/epistemología/datos heredados útiles.
+En las primeras tres etapas se congelan los 3 bloques inferiores del Transformer. En la consolidación se habilita todo el modelo con learning rate más bajo.
 
-La descarga de Wikipedia es reanudable. Si se corta, ejecutá el BAT otra vez.
+## Benchmark held-out
 
-Archivos grandes generados quedan fuera de Git mediante `.gitignore`.
+Los prompts exactos del benchmark estricto v0.00041 **no pueden aparecer** en el corpus v0.0005. El builder lo comprueba automáticamente y también verifica que train y validation no compartan prompts.
 
-### 4. 02_TRAIN_TOKENIZER_V3.bat
-Entrena el tokenizer propio de Butterfly:
+Esto evita entrenar a Butterfly memorizando directamente las preguntas del examen.
 
-- vocabulario objetivo: 8,192;
-- whole words + subwords;
-- fallback UTF-8 para texto nunca visto;
-- trie para encoding rápido.
+## Orden de ejecución
 
-### 5. 03_TRAIN_BUTTERFLY_V0004.bat
-Crea una candidata con pesos nuevos, porque cambió el significado del vocabulario/embeddings.
+```text
+06_PREPARE_V0005.bat
+07_BUILD_ALIGNMENT_CORPUS_V0005.bat
+08_TRAIN_BUTTERFLY_V0005.bat
+09_COMPARE_AND_PROMOTE_V0005.bat
+```
 
-Curriculum:
+No vuelvas a ejecutar `00/01/02/03` para crear v0.0005. Wikipedia y el tokenizer v3 ya existen y se heredan.
 
-    LANGUAGE
-      -> CONVERSATION
-      -> INSTRUCTION
+### 06_PREPARE_V0005
 
-Cada etapa usa validación. Conversation e instruction usan early stopping y restauran el mejor epoch en vez de guardar ciegamente el último.
+Comprueba que:
 
-La candidata todavía NO reemplaza a v0.0003.
+- v0.0004 sigue activa;
+- modelo y tokenizer coinciden;
+- existe/puede recrearse el baseline estricto v0.00041;
+- los pesos activos permanecen read-only.
 
-### 6. 04_COMPARE_AND_PROMOTE.bat
-Ejecuta el mismo examen sobre v0.0003 y v0.0004.
+### 07_BUILD_ALIGNMENT_CORPUS_V0005
 
-Si v0.0004 gana por el margen exigido:
+Genera localmente datasets JSONL limpios y balanceados. No usa Qwen ni descarga Internet.
 
-- pasa a activa;
-- se renombra como cerebro estable;
-- queda guardada como `.safetensors` **solo con pesos de inferencia**;
-- se registra en `models/history.json`;
-- recién entonces se borra el checkpoint físico v0.0003 y su tokenizer obsoleto;
-- se conservan memoria, experiencias, corpus, fuentes, reglas y benchmarks.
+### 08_TRAIN_BUTTERFLY_V0005
 
-Si v0.0004 pierde:
+Carga los pesos **aceptados de v0.0004** y continúa el aprendizaje. Usa:
 
-- se borra solo la candidata;
-- v0.0003 sigue activa;
-- corpus/tokenizer nuevo se conservan para reintentar sin repetir el trabajo caro.
+- assistant-only supervised loss;
+- CPU cap de 8 hilos en Windows;
+- autosaves weights-only atómicos aproximadamente cada 10 minutos;
+- resume por stage/epoch/batch;
+- validación y best checkpoint por etapa.
 
-### 7. START_CHAT.bat
-Habla con la Butterfly que haya quedado activa.
+v0.0004 sigue siendo el cerebro activo durante todo el entrenamiento.
 
----
+### 09_COMPARE_AND_PROMOTE_V0005
 
-# Nuevo sistema de almacenamiento
+v0.0005 solo se vuelve activa si:
 
-## Por qué v0.0003 pesaba ~190 MB
+- mejora por al menos `+0.03` el overall de v0.0004;
+- pasa **todos** los critical hard gates;
+- alcanza los umbrales semánticos, conversacionales, de comprensión, instrucciones y epistemología;
+- no produce una regresión importante en capacidades principales;
+- su metadata confirma que realmente desciende de la v0.0004 activa y usa su mismo tokenizer.
 
-El checkpoint v0.0003 guardaba:
+Si pierde, se borra únicamente la candidata. Si gana, recién después de la promoción se elimina el cerebro físico anterior. Memoria, corpus, conocimientos verificados, fuentes, benchmarks e historial permanecen.
 
-- pesos del modelo (~64 MB en float32);
-- primer momento de Adam (~64 MB);
-- segundo momento de Adam (~64 MB);
-- metadata.
+## Sleep cycle
 
-Por eso un modelo de ~15.9M parámetros terminaba cerca de 190 MB.
+Mientras v0.0004 sea activa, `SLEEP_AND_LEARN.bat` queda pausado para que un sleep candidate no ocupe accidentalmente la versión `0.0005`. Una vez superada esa migración, el sleep cycle también usa los hard gates estrictos antes de poder promover un cerebro.
 
-## Desde v0.0004
+## Almacenamiento
 
-El cerebro aceptado se guarda como:
+Los modelos estables siguen siendo `.safetensors` weights-only. El estado de Adam no forma parte del cerebro aceptado. Los checkpoints de recuperación son temporales y se eliminan cuando la candidata final se guarda correctamente.
 
-    models/butterfly-v0.0004.safetensors
-    models/butterfly-v0.0004.safetensors.json
+## v0.00051 — robust corrective alignment
 
-Solo contiene los pesos necesarios para inferencia + metadata pequeña. No contiene optimizer.
-
-Con un modelo de tamaño parecido a v0.0003 debería estar mucho más cerca de ~60-70 MB que de ~190 MB.
-
-## GitHub
-
-Los cerebros físicos, DB local, training state, release bundles y corpus masivos están ignorados por `.gitignore`.
-
-El repo debería guardar principalmente:
-
-- código;
-- scripts;
-- configuraciones;
-- seeds pequeños;
-- benchmarks;
-- `models/history.json`;
-- manifests compactos;
-- tokenizer activo (es pequeño y necesario para reproducibilidad).
-
-El cerebro se distribuye como **GitHub Release asset**, no como archivo normal del repo.
-
-Después de promocionar v0.0004 ejecutá:
-
-    EXPORT_ACTIVE_MODEL_FOR_RELEASE.bat
-
-Genera en `release\`:
-
-    ButterflyAI-brain-v0.0004.zip
-
-que incluye:
-
-- `.safetensors` weights-only;
-- metadata/config;
-- tokenizer;
-- SHA256 manifest.
-
-Subí ese ZIP como asset de un Release de GitHub.
-
-### Si el repo ya rastrea runtime/modelos viejos
-
-Podés ejecutar opcionalmente:
-
-    GITHUB_STOP_TRACKING_RUNTIME.bat
-
-Pide confirmación explícita. Usa `git rm --cached`: **deja de rastrear archivos en Git sin borrarlos de tu disco**. Revisá `git status` antes de commit/push.
-
-El tag/commit v0.0003 seguirá conservando históricamente el snapshot viejo.
-
----
-
-# Archivos útiles extra
-
-- `STATUS.bat`: estado lógico de Butterfly.
-- `STORAGE_STATUS.bat`: historial y ubicación del cerebro activo.
-- `EVALUATE_ACTIVE.bat`: examen de la Butterfly activa.
-- `VERIFY_EXAMPLE.bat`: prueba del EpistemicEngine.
-- `SLEEP_AND_LEARN.bat`: aprendizaje con experiencias verificadas + memory replay.
-- `EXPORT_ACTIVE_MODEL_FOR_RELEASE.bat`: paquete del cerebro para GitHub Release.
-- `OPTIONAL_DELETE_QWEN_TEACHER_CACHE.bat`: elimina el viejo cache de Qwen solo si ya no lo necesitás.
-
-# Regla permanente de evolución
-
-Una nueva Butterfly **no se vuelve estable porque terminó de entrenar**.
-
-Se vuelve estable únicamente si:
-
-1. termina el entrenamiento;
-2. pasa la evaluación;
-3. supera a la Butterfly activa;
-4. no regresa en criterios críticos;
-5. recién entonces reemplaza el cerebro anterior.
-
-Los checkpoints viejos/rechazados se queman para ahorrar espacio; el conocimiento útil consolidado, memoria, experiencias verificadas y métricas históricas continúan.
+The active seed remains v0.0004 after the rejected v0.0005 experiment. v0.00051 adds benchmark suite v0.00042, family-held-out validation, casual/punctuationless Spanish, contrastive intent training, variable binding/copy training and held-out arithmetic combinations. Promotion still requires score improvement **and** every strict hard gate.

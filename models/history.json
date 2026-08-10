@@ -43,6 +43,43 @@
           "unknown_fictional_fact"
         ]
       }
+    },
+    {
+      "version": "0.0005",
+      "status": "rejected",
+      "score": 0.7360801984,
+      "recorded_at": 1786328373.6366503,
+      "metadata": {
+        "benchmark": "benchmarks\\comparison-v0.0004-vs-v0.0005-suite-v0.00041.json",
+        "benchmark_suite": "0.00041",
+        "critical_failures": [
+          "hello_buenas",
+          "identity",
+          "how_are_you",
+          "exact_blue",
+          "math_2_plus_2",
+          "reject_false_math"
+        ]
+      }
+    },
+    {
+      "version": "0.00051",
+      "status": "rejected",
+      "score": 0.6378059931526807,
+      "recorded_at": 1786340913.9195683,
+      "metadata": {
+        "benchmark": "benchmarks\\comparison-v0.0004-vs-v0.00051-suite-v0.00042.json",
+        "benchmark_suite": "0.00042",
+        "critical_failures": [
+          "how_are_you_alt",
+          "exact_blue",
+          "exact_cloud",
+          "math_2_plus_2",
+          "math_7_plus_6",
+          "math_14_minus_9",
+          "reject_false_math_alt"
+        ]
+      }
     }
   ]
 }

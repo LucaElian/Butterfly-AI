@@ -61,8 +61,37 @@ def command_tokenizer(args):
 
 
 def command_train(args):
-    # v0.00041 is an evaluator/system patch. The current brain architecture remains v0.0004.
+    # v0.00042 is the current evaluator/system policy. The current brain architecture remains v0.0004.
     train_curriculum(version="0.0004", preset=args.preset)
+
+
+def command_prepare_v0005(_args):
+    from .upgrade import prepare_v0005
+    prepare_v0005()
+
+
+def command_build_alignment_v0005(_args):
+    from .corpus.alignment_v0005 import build_alignment_corpus_v0005
+    build_alignment_corpus_v0005()
+
+
+def command_train_v0005(args):
+    from .trainer_v0005 import train_v0005
+    train_v0005(preset=args.preset)
+
+def command_prepare_v00051(_args):
+    from .upgrade import prepare_v00051
+    prepare_v00051()
+
+
+def command_build_alignment_v00051(_args):
+    from .corpus.alignment_v00051 import build_alignment_corpus_v00051
+    build_alignment_corpus_v00051()
+
+
+def command_train_v00051(args):
+    from .trainer_v00051 import train_v00051
+    train_v00051(preset=args.preset)
 
 
 def command_compare(args):
@@ -121,7 +150,7 @@ def command_evaluate(_args):
         f"benchmark-suite-v{BENCHMARK_SUITE_VERSION}",
         score=metrics.get("score"),
         metadata={
-            "benchmark": str(path.relative_to(BENCHMARKS_DIR.parent)),
+            "benchmark": str(path),
             "promotion_eligible": metrics.get("promotion_eligible", False),
             "critical_failures": metrics.get("critical_failures", []),
         },
@@ -218,6 +247,26 @@ def build_parser():
     sp = sub.add_parser("train-v0004")
     sp.add_argument("--preset", choices=["auto", "ryzen3600", "light"], default="auto")
     sp.set_defaults(func=command_train)
+
+    sp = sub.add_parser("prepare-v0005")
+    sp.set_defaults(func=command_prepare_v0005)
+
+    sp = sub.add_parser("build-alignment-v0005")
+    sp.set_defaults(func=command_build_alignment_v0005)
+
+    sp = sub.add_parser("train-v0005")
+    sp.add_argument("--preset", choices=["auto", "ryzen3600", "light"], default="auto")
+    sp.set_defaults(func=command_train_v0005)
+
+    sp = sub.add_parser("prepare-v00051")
+    sp.set_defaults(func=command_prepare_v00051)
+
+    sp = sub.add_parser("build-alignment-v00051")
+    sp.set_defaults(func=command_build_alignment_v00051)
+
+    sp = sub.add_parser("train-v00051")
+    sp.add_argument("--preset", choices=["auto", "ryzen3600", "light"], default="auto")
+    sp.set_defaults(func=command_train_v00051)
 
     sp = sub.add_parser("compare-promote")
     sp.add_argument(
