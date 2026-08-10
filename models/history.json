@@ -113,6 +113,94 @@
           "reject_false_math_alt"
         ]
       }
+    },
+    {
+      "version": "0.0004",
+      "status": "benchmark-suite-v0.00044",
+      "score": 0.301569482422618,
+      "recorded_at": 1786399065.1465292,
+      "metadata": {
+        "benchmark": "D:\\Downloads\\ButterflyAI\\benchmarks\\baseline-v0.0004-suite-v0.00044.json",
+        "promotion_eligible": false,
+        "critical_failures": [
+          "hello_casual",
+          "hello_new",
+          "thanks_new",
+          "identity_plain",
+          "identity_new",
+          "how_are_you_plain",
+          "how_are_you_alt",
+          "how_are_you_new",
+          "route_identity_2",
+          "route_state_2",
+          "folder_new",
+          "api_new",
+          "parameter",
+          "token_new",
+          "route_file_2",
+          "exact_blue",
+          "exact_cloud",
+          "exact_copper",
+          "exact_lz4",
+          "exact_r7k2",
+          "math_2_plus_2",
+          "math_7_plus_6",
+          "math_14_minus_9",
+          "math_8_plus_9",
+          "math_17_minus_8",
+          "math_6_times_4",
+          "reject_false_math",
+          "reject_false_math_alt",
+          "reject_false_math_new",
+          "unknown_fictional_fact_alt",
+          "unknown_veloria"
+        ]
+      }
+    },
+    {
+      "version": "0.0004",
+      "status": "benchmark-suite-v0.00045",
+      "score": 0.24900212993013274,
+      "recorded_at": 1786399796.8604503,
+      "metadata": {
+        "benchmark": "D:\\Downloads\\ButterflyAI\\benchmarks\\baseline-v0.0004-suite-v0.00045.json",
+        "promotion_eligible": false,
+        "critical_failures": [
+          "hello_casual",
+          "hello_new",
+          "thanks_new",
+          "identity_plain",
+          "identity_new",
+          "how_are_you_plain",
+          "how_are_you_alt",
+          "how_are_you_new",
+          "route_identity_2",
+          "route_state_2",
+          "file_new",
+          "folder_new",
+          "api_new",
+          "parameter",
+          "token_new",
+          "route_file_2",
+          "route_folder_2",
+          "exact_blue",
+          "exact_cloud",
+          "exact_copper",
+          "exact_lz4",
+          "exact_r7k2",
+          "math_2_plus_2",
+          "math_7_plus_6",
+          "math_14_minus_9",
+          "math_8_plus_9",
+          "math_17_minus_8",
+          "math_6_times_4",
+          "reject_false_math",
+          "reject_false_math_alt",
+          "reject_false_math_new",
+          "unknown_fictional_fact_alt",
+          "unknown_veloria"
+        ]
+      }
     }
   ]
 }

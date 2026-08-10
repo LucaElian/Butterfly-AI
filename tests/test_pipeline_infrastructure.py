@@ -1,16 +1,36 @@
 import json
 from pathlib import Path
 
+from butterfly.learning.evaluator import BENCHMARK_SUITE_VERSION
 
-def test_permanent_pipeline_reuses_same_stage_names_for_v00053():
+
+def test_permanent_pipeline_is_idle_between_deliberate_candidates():
     root = Path(__file__).resolve().parents[1]
-    cfg = json.loads((root / "config" / "pipeline.json").read_text(encoding="utf-8"))
+    cfg = json.loads(
+        (root / "config" / "pipeline.json").read_text(encoding="utf-8")
+    )
+
     assert cfg["schema_version"] == 1
     assert cfg["infrastructure_version"] == "1.0"
-    assert cfg["target_brain"] == "0.00053"
-    assert cfg["benchmark_suite"] == "0.00043"
-    assert set(cfg["stages"]) == {"prepare", "build_dataset", "train", "evaluate_and_promote"}
-    assert all(isinstance(value, list) and value for value in cfg["stages"].values())
+
+    # Between rejected/accepted deliberate candidates, pipeline must be idle.
+    # A future candidate intentionally sets a target again.
+    assert cfg["target_brain"] is None
+
+    # Permanent invariant: pipeline and evaluator must agree.
+    # Do NOT hardcode a suite number in this test.
+    assert cfg["benchmark_suite"] == BENCHMARK_SUITE_VERSION
+
+    assert set(cfg["stages"]) == {
+        "prepare",
+        "build_dataset",
+        "train",
+        "evaluate_and_promote",
+    }
+    assert all(
+        isinstance(value, list) and value
+        for value in cfg["stages"].values()
+    )
 
 
 def test_pipeline_names_are_version_agnostic():

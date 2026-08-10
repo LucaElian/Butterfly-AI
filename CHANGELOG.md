@@ -1,18 +1,31 @@
 # ButterflyAI — Changelog
 
-## v0.00053 — generalization + replay candidate
+## v0.00044 — evaluator fairness + intent routing
 
-- Primer target deliberado que usa el pipeline permanente `01..04` sin BATs por versión.
-- Seed: cerebro aceptado v0.0004 + mismo tokenizer v3/8192.
-- Nuevo benchmark v0.00043: mantiene regresiones v0.00042 y agrega surfaces/targets/pairs held-out nuevos.
-- Métricas nuevas separadas: `binding_component` y `arithmetic_component`.
-- `ROBUST_COMPREHENSION` protege conversación + conceptos básicos que v0.00051 había interferido.
-- `COPY_BINDING` se separa de matemática y usa valores train/valid/benchmark disjuntos.
-- `BASIC_ARITHMETIC` usa pares completos held-out; + y * reservan también el espejo conmutativo.
-- `EPISTEMIC_CONTRAST` entrena rechazo de cuentas falsas, datos ausentes y fuentes contradictorias.
-- Las etapas posteriores contienen replay de habilidades previas; `BALANCED_REPLAY` consolida todas a LR bajo.
-- Assistant-only loss conserva el boundary de inferencia `Butterfly:` sin permitir que el tokenizer cruce al primer token de respuesta.
-- CPU sigue limitado a 8 hilos y recovery sigue siendo weights-only atómico.
+- No crea ni entrena un cerebro nuevo.
+- Suite estricta actual: `v0.00044`.
+- Corrige falsos negativos semánticos observados en v0.00053:
+  - una definición correcta de API ya no depende del stem literal `comunic`;
+  - una definición correcta de parámetro puede aprovechar el contexto del prompt y no
+    tiene que repetir mecánicamente la palabra `parámetro`.
+- File/folder/API/parameter/token usan validadores conceptuales más claros.
+- Se agrega `intent_routing_component` como hard gate separado (`>= 0.75`).
+- Exact-output, arithmetic, epistemic, robustness y contrastive de v0.00043 se conservan.
+- El pipeline deliberado queda sin target hasta instalar intencionalmente la próxima candidata.
+- Los tests operativos del evaluador pasan a nombres permanentes, no versionados.
+
+## v0.00053 — rejected (resultado real)
+
+- Baseline v0.0004 / suite v0.00043: `0.3114`.
+- Candidate overall: `0.5534` (`+0.2421`), pero hard gates `FAIL`.
+- `comprehension_component`: `0.9364`.
+- `epistemic_dialogue_component`: `0.7810`.
+- `binding_component`: `0.2857`.
+- `arithmetic_component`: `0.0000`.
+- `conversation_component`: `0.4738`.
+- La candidata física fue eliminada; corpus, benchmark, tokenizer, memoria e historial se conservaron.
+- Lección principal: comprensión conceptual sí mejoró, pero intent routing, exact copy y
+  aritmética no generalizaron lo suficiente.
 
 ## Infrastructure cleanup — permanent pipeline
 

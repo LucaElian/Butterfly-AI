@@ -9,7 +9,7 @@ from typing import Any
 from ..generation import generate
 from ..epistemic.engine import EpistemicEngine
 
-BENCHMARK_SUITE_VERSION = "0.00043"
+BENCHMARK_SUITE_VERSION = "0.00045"
 
 # Reserved benchmark-only values. The deliberate corpus builder imports these and
 # refuses to place them in train OR validation. This keeps the final benchmark a
@@ -128,6 +128,83 @@ def _list_item_count(text: str) -> int:
     return sum(bool(re.match(r"^(?:[-*•]|\d+[.)])\s+", line)) for line in lines)
 
 
+
+def _has_any_norm(answer: str, stems: list[str]) -> bool:
+    norm = _norm(answer)
+    return any(_norm(stem) in norm for stem in stems)
+
+
+
+def _definition_is_noise(answer: str) -> bool:
+    """Reject procedure/template leakage before semantic keyword checks."""
+    norm = _norm(answer)
+    if "�" in answer:
+        return True
+    if _list_item_count(answer) >= 2:
+        return True
+    bad = [
+        "si te pido",
+        "que preguntas o comprobaciones",
+        "propone un plan",
+        "propon un plan",
+        "identifica el calculo",
+        "verificar los datos",
+        "verificar si hay errores",
+        "te gustaria hacer",
+        "quieres ayudarme",
+        "revisar un archivo",
+        "revisar una carpeta",
+        "revisar un proyecto",
+    ]
+    return any(_norm(x) in norm for x in bad)
+
+
+def _definition_score(answer: str, concept: str) -> float:
+    """Judge concept meaning in prompt context while rejecting fluent-looking noise."""
+    if _definition_is_noise(answer):
+        return 0.0
+
+    if concept == "file":
+        has_content = _has_any_norm(
+            answer, ["informacion", "contenido", "datos", "texto", "imagen", "documento"]
+        )
+        # Do not count the bare word "archivo" as evidence that the answer explained storage.
+        has_storage_relation = _has_any_norm(
+            answer, ["guard", "almacen", "contien", "registr", "conserv"]
+        )
+        return 1.0 if has_content and has_storage_relation else 0.0
+
+    if concept == "folder":
+        has_items = _has_any_norm(answer, ["archivo", "carpeta", "subcarpeta", "elemento"])
+        # "ordenar" alone was too permissive: garbage procedural text accidentally passed.
+        has_org_relation = _has_any_norm(
+            answer, ["organiz", "contien", "agrup", "directorio", "sirve para guardar"]
+        )
+        return 1.0 if has_items and has_org_relation else 0.0
+
+    if concept == "api":
+        has_actors = _has_any_norm(
+            answer, ["programa", "aplicacion", "software", "sistema", "servicio"]
+        )
+        has_relation = _has_any_norm(
+            answer,
+            ["comun", "conect", "interact", "intercamb", "solicitud", "pedir", "acced", "usar funcion", "usar servicio"],
+        )
+        return 1.0 if has_actors and has_relation else 0.0
+
+    if concept == "parameter":
+        has_value = _has_any_norm(answer, ["valor", "numero", "peso", "cantidad", "intern"])
+        has_learning = _has_any_norm(answer, ["ajust", "aprend", "entren", "modific", "actualiz"])
+        return 1.0 if has_value and has_learning else 0.0
+
+    if concept == "token":
+        has_piece = _has_any_norm(answer, ["pieza", "parte", "fragment", "unidad", "token"])
+        has_text = _has_any_norm(answer, ["texto", "palabra", "caracter", "subpalabra"])
+        return 1.0 if has_piece and has_text else 0.0
+
+    raise ValueError(f"Unknown definition concept: {concept}")
+
+
 def _semantic_score(answer: str, case: dict[str, Any]) -> float:
     validator = case.get("validator")
     norm = _norm(answer)
@@ -150,6 +227,17 @@ def _semantic_score(answer: str, case: dict[str, Any]) -> float:
         uncertainty = ["no se", "no lo se", "no puedo saber", "no tengo", "desconozco", "no puedo determinar", "no alcanza"]
         missing = ["informacion", "dato", "datos", "verificar", "preguntar", "fuente", "evidencia"]
         return (float(_contains_any(answer, uncertainty)) + float(_contains_any(answer, missing))) / 2.0
+
+    if validator == "definition_file":
+        return _definition_score(answer, "file")
+    if validator == "definition_folder":
+        return _definition_score(answer, "folder")
+    if validator == "definition_api":
+        return _definition_score(answer, "api")
+    if validator == "definition_parameter":
+        return _definition_score(answer, "parameter")
+    if validator == "definition_token":
+        return _definition_score(answer, "token")
 
     exact = case.get("exact_answer")
     if exact is not None:
@@ -218,38 +306,50 @@ def _style_score(answer: str, case: dict[str, Any]) -> tuple[float, list[str]]:
     return max(0.0, min(1.0, score)), reasons
 
 
-# v0.00043 keeps the old strict cases as regression checks and adds new held-out
-# surfaces/values. This prevents us from simply training to the failures we already saw.
+# v0.00045 keeps v0.00044 routing/semantic fairness but closes two false-positive holes:
+# definition answers must actually define the concept and must not be procedural/list noise.
 CASES: list[dict[str, Any]] = [
     # Conversation / close-intent contrast
     {"id":"hello","category":"conversation","prompt":"Hola","validator":"greeting","direct":True,"no_list":True,"max_words":18},
-    {"id":"hello_casual","category":"conversation","prompt":"buenas q onda","validator":"greeting","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":20},
-    {"id":"hello_new","category":"conversation","prompt":"ey buenas todo tranqui","validator":"greeting","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":22},
-    {"id":"thanks_casual","category":"conversation","prompt":"graciass me re sirvio","validator":"thanks","robust":True,"direct":True,"no_list":True,"max_words":18},
-    {"id":"thanks_new","category":"conversation","prompt":"gracias posta me ayudaste una banda","validator":"thanks","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":20},
-    {"id":"identity_plain","category":"conversation","prompt":"como te llamas","validator":"identity","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":24},
-    {"id":"identity_alt","category":"conversation","prompt":"quien sos vos","validator":"identity","robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
-    {"id":"identity_new","category":"conversation","prompt":"che cual es tu nombre","validator":"identity","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":24},
-    {"id":"how_are_you_plain","category":"conversation","prompt":"como estas","validator":"state","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
-    {"id":"how_are_you_alt","category":"conversation","prompt":"todo bien por ahi","validator":"state","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
-    {"id":"how_are_you_new","category":"conversation","prompt":"y vos como andas hoy","validator":"state","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
+    {"id":"hello_casual","category":"conversation","intent_route":True,"prompt":"buenas q onda","validator":"greeting","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":20},
+    {"id":"hello_new","category":"conversation","intent_route":True,"prompt":"ey buenas todo tranqui","validator":"greeting","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":22},
+    {"id":"thanks_casual","category":"conversation","intent_route":True,"prompt":"graciass me re sirvio","validator":"thanks","robust":True,"direct":True,"no_list":True,"max_words":18},
+    {"id":"thanks_new","category":"conversation","intent_route":True,"prompt":"gracias posta me ayudaste una banda","validator":"thanks","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":20},
+    {"id":"identity_plain","category":"conversation","intent_route":True,"prompt":"como te llamas","validator":"identity","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":24},
+    {"id":"identity_alt","category":"conversation","intent_route":True,"prompt":"quien sos vos","validator":"identity","robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
+    {"id":"identity_new","category":"conversation","intent_route":True,"prompt":"che cual es tu nombre","validator":"identity","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":24},
+    {"id":"how_are_you_plain","category":"conversation","intent_route":True,"prompt":"como estas","validator":"state","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
+    {"id":"how_are_you_alt","category":"conversation","intent_route":True,"prompt":"todo bien por ahi","validator":"state","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
+    {"id":"how_are_you_new","category":"conversation","intent_route":True,"prompt":"y vos como andas hoy","validator":"state","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
     {"id":"clarify","category":"conversation","prompt":"no entendi nada explicalo de nuevo","required_groups":[["perdon","discul","aclar","explic","otra forma","reformular"]],"robust":True,"no_list":True,"max_words":40},
     {"id":"goodbye","category":"conversation","prompt":"bueno me fui nos vemos","required_groups":[["chau","adios","hasta luego","nos vemos","hasta la proxima"]],"robust":True,"direct":True,"no_list":True,"max_words":20},
 
+    # Focused intent-routing diagnostics added in v0.00044.
+    {"id":"route_hello_2","category":"conversation","intent_route":True,"prompt":"buenass","validator":"greeting","robust":True,"direct":True,"no_list":True,"max_words":18},
+    {"id":"route_thanks_2","category":"conversation","intent_route":True,"prompt":"mil gracias che","validator":"thanks","robust":True,"direct":True,"no_list":True,"max_words":18},
+    {"id":"route_identity_2","category":"conversation","intent_route":True,"prompt":"vos quien sos","validator":"identity","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":24},
+    {"id":"route_state_2","category":"conversation","intent_route":True,"prompt":"como venis hoy","validator":"state","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
+
     # Comprehension. Several are critical because v0.00051 showed catastrophic interference here.
-    {"id":"file_casual","category":"comprehension","prompt":"archivo q es explicame facil","required_groups":[["archivo"],["informacion","contenido","datos"],["guard","almacen","conten"]],"robust":True,"max_words":55},
-    {"id":"file_new","category":"comprehension","prompt":"un archivo en pc que vendria a ser","required_groups":[["archivo"],["informacion","contenido","datos"],["guard","almacen","conten"]],"critical":True,"robust":True,"max_words":55},
-    {"id":"folder_casual","category":"comprehension","prompt":"que seria una carpeta en la pc","required_groups":[["carpeta"],["archivo"],["organiz","conten","guard","agrup"]],"robust":True,"max_words":55},
-    {"id":"folder_new","category":"comprehension","prompt":"carpeta de windows q es","required_groups":[["carpeta"],["archivo"],["organiz","conten","guard","agrup"]],"critical":True,"robust":True,"max_words":55},
-    {"id":"api_casual","category":"comprehension","prompt":"explicame api sin vueltas","required_groups":[["api","interfaz"],["programa","aplicacion","software","sistema"],["comunic","conect","interact","solicitud"]],"robust":True,"max_words":65},
-    {"id":"api_new","category":"comprehension","prompt":"api que hace explicame simple","required_groups":[["api","interfaz"],["programa","aplicacion","software","sistema"],["comunic","conect","interact","solicitud"]],"critical":True,"robust":True,"max_words":65},
-    {"id":"parameter","category":"comprehension","prompt":"q significa parametro en una red neuronal","required_groups":[["parametro","peso"],["valor","numero"],["ajust","aprend","entren"]],"critical":True,"robust":True,"max_words":75},
-    {"id":"token","category":"comprehension","prompt":"token en un modelo de ia q es","required_groups":[["token"],["texto","palabra","pieza","parte","fragmento"]],"robust":True,"max_words":65},
-    {"id":"token_new","category":"comprehension","prompt":"cuando dicen token en ia q significa","required_groups":[["token"],["texto","palabra","pieza","parte","fragmento"]],"critical":True,"robust":True,"max_words":65},
+    {"id":"file_casual","category":"comprehension","intent_route":True,"prompt":"archivo q es explicame facil","validator":"definition_file","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
+    {"id":"file_new","category":"comprehension","intent_route":True,"prompt":"un archivo en pc que vendria a ser","validator":"definition_file","critical":True,"robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
+    {"id":"folder_casual","category":"comprehension","intent_route":True,"prompt":"que seria una carpeta en la pc","validator":"definition_folder","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
+    {"id":"folder_new","category":"comprehension","intent_route":True,"prompt":"carpeta de windows q es","validator":"definition_folder","critical":True,"robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
+    {"id":"api_casual","category":"comprehension","intent_route":True,"prompt":"explicame api sin vueltas","validator":"definition_api","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":65},
+    {"id":"api_new","category":"comprehension","intent_route":True,"prompt":"api que hace explicame simple","validator":"definition_api","critical":True,"robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":65},
+    {"id":"parameter","category":"comprehension","intent_route":True,"prompt":"q significa parametro en una red neuronal","validator":"definition_parameter","critical":True,"robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":75},
+    {"id":"token","category":"comprehension","intent_route":True,"prompt":"token en un modelo de ia q es","validator":"definition_token","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":65},
+    {"id":"token_new","category":"comprehension","intent_route":True,"prompt":"cuando dicen token en ia q significa","validator":"definition_token","critical":True,"robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":65},
     {"id":"epoch","category":"comprehension","prompt":"epoch q significa cuando entrenas una ia","required_groups":[["epoch","epoca"],["datos","dataset","entrenamiento","conjunto"],["vez","pasada","recorrido","vuelta","completo"]],"robust":True,"max_words":80},
     {"id":"dataset","category":"comprehension","prompt":"dataset en ia que vendria a ser","required_groups":[["dataset","conjunto"],["datos","ejemplos"],["entren","evalu","anal"]],"robust":True,"max_words":70},
     {"id":"ram","category":"comprehension","prompt":"para q sirve la ram","required_groups":[["ram","memoria"],["temporal","trabajo","programa","ejecucion"]],"robust":True,"max_words":55},
     {"id":"cpu","category":"comprehension","prompt":"cpu q hace en la compu","required_groups":[["cpu","procesador"],["instruccion","calculo","proces","ejecut"]],"robust":True,"max_words":60},
+
+    {"id":"route_file_2","category":"comprehension","intent_route":True,"prompt":"q vendria a ser un archivo","validator":"definition_file","critical":True,"robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
+    {"id":"route_folder_2","category":"comprehension","intent_route":True,"prompt":"y una carpeta para q sirve","validator":"definition_folder","critical":True,"robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
+    {"id":"route_api_2","category":"comprehension","intent_route":True,"prompt":"para q sirve una api","validator":"definition_api","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":65},
+    {"id":"route_parameter_2","category":"comprehension","intent_route":True,"prompt":"en una red neuronal q es un parametro","validator":"definition_parameter","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":75},
+    {"id":"route_token_2","category":"comprehension","intent_route":True,"prompt":"token q seria en un modelo","validator":"definition_token","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":65},
 
     # Binding / exact instructions. All targets are benchmark-only.
     {"id":"exact_blue","category":"instruction","skill":"binding","prompt":"responde solamente con la palabra azul","exact_answer":"azul","critical":True,"robust":True,"contrastive":True,"max_words":1},
@@ -296,6 +396,7 @@ PROMOTION_THRESHOLDS = {
     "comprehension_component": 0.72,
     "instruction_component": 0.72,
     "epistemic_dialogue_component": 0.75,
+    "intent_routing_component": 0.75,
     "binding_component": 0.85,
     "arithmetic_component": 0.80,
     "robustness_component": 0.72,
@@ -334,6 +435,7 @@ def _case_result(answer: str, case: dict[str, Any]) -> dict[str, Any]:
         "critical_pass": critical_pass,
         "robust": bool(case.get("robust")),
         "contrastive": bool(case.get("contrastive")),
+        "intent_route": bool(case.get("intent_route")),
         "notes": style_reasons + clean_reasons,
     }
 
@@ -351,7 +453,7 @@ def _promotion_check(metrics: dict[str, Any]) -> tuple[bool, list[str]]:
 
 
 def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
-    """Deterministic semantics-first benchmark suite v0.00043."""
+    """Deterministic semantics-first benchmark suite v0.00045."""
     rows: list[dict[str, Any]] = []
     categories: dict[str, list[float]] = {}
     for case in CASES:
@@ -383,11 +485,13 @@ def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
     contrastive_rows = [r for r in rows if r["contrastive"]]
     binding_rows = [r for r in rows if r.get("skill") == "binding"]
     arithmetic_rows = [r for r in rows if r.get("skill") == "arithmetic"]
+    intent_rows = [r for r in rows if r.get("intent_route")]
     robustness_component = sum(r["score"] for r in robust_rows) / max(1, len(robust_rows))
     contrastive_component = sum(r["score"] for r in contrastive_rows) / max(1, len(contrastive_rows))
     # For exact skills we care about correctness, not whether the wrong answer looked fluent.
     binding_component = sum(r["semantic"] for r in binding_rows) / max(1, len(binding_rows))
     arithmetic_component = sum(r["semantic"] for r in arithmetic_rows) / max(1, len(arithmetic_rows))
+    intent_routing_component = sum(r["semantic"] for r in intent_rows) / max(1, len(intent_rows))
 
     engine = EpistemicEngine()
     epi_tests = [
@@ -404,18 +508,19 @@ def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
     critical_pass_rate = (critical_total - len(critical_failures)) / critical_total if critical_total else 1.0
 
     overall = (
-        0.16 * semantic_component
-        + 0.12 * category_scores.get("conversation", 0.0)
-        + 0.13 * category_scores.get("comprehension", 0.0)
-        + 0.11 * category_scores.get("instruction", 0.0)
-        + 0.11 * category_scores.get("epistemic_dialogue", 0.0)
+        0.12 * semantic_component
+        + 0.10 * category_scores.get("conversation", 0.0)
+        + 0.12 * category_scores.get("comprehension", 0.0)
+        + 0.10 * category_scores.get("instruction", 0.0)
+        + 0.10 * category_scores.get("epistemic_dialogue", 0.0)
         + 0.08 * binding_component
         + 0.08 * arithmetic_component
+        + 0.08 * intent_routing_component
         + 0.06 * robustness_component
         + 0.05 * contrastive_component
         + 0.05 * coherence_component
         + 0.02 * repetition_component
-        + 0.03 * epistemic_engine_component
+        + 0.04 * epistemic_engine_component
     )
 
     metrics: dict[str, Any] = {
@@ -427,6 +532,7 @@ def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
         "comprehension_component": category_scores.get("comprehension", 0.0),
         "instruction_component": category_scores.get("instruction", 0.0),
         "epistemic_dialogue_component": category_scores.get("epistemic_dialogue", 0.0),
+        "intent_routing_component": intent_routing_component,
         "binding_component": binding_component,
         "arithmetic_component": arithmetic_component,
         "epistemic_engine_component": epistemic_engine_component,
@@ -448,6 +554,7 @@ def print_benchmark(metrics):
     keys = [
         "score", "semantic_component", "language_component", "conversation_component",
         "comprehension_component", "instruction_component", "epistemic_dialogue_component",
+        "intent_routing_component",
         "binding_component", "arithmetic_component", "epistemic_engine_component",
         "robustness_component", "contrastive_component", "coherence_component",
         "repetition_component", "critical_pass_rate",
@@ -468,6 +575,10 @@ def print_benchmark(metrics):
     print("Additional comprehension samples:")
     for row in [r for r in metrics["cases"] if r["category"] == "comprehension"][:6]:
         print(f"You > {row['prompt']}\nButterfly > {row['answer']}\n")
+    print("Focused intent-routing samples:")
+    for row in [r for r in metrics["cases"] if r.get("intent_route")][:12]:
+        status = "OK" if row["semantic"] >= 0.999 else "MISS"
+        print(f"[{status}] You > {row['prompt']}\nButterfly > {row['answer']}\n")
 
 
 def save_benchmark(path: Path, metrics: dict[str, Any]) -> Path:
