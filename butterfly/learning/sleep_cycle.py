@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from copy import deepcopy
 import json
+from pathlib import Path
+
 from ..memory import MemoryStore
 from ..checkpoint import load_active, save_stable_model, delete_model_artifacts, move_model_artifacts
 from ..config import MODELS_DIR, CORPUS_DIR, ROOT
@@ -10,7 +13,6 @@ from ..registry import (
 )
 from ..trainer import continue_training, best_device
 from .evaluator import behavior_benchmark
-
 
 def experiences_to_text(rows):
     chunks = []
@@ -25,13 +27,13 @@ def experiences_to_text(rows):
         )
     return "\n".join(chunks), ids
 
-
 def next_version(active):
     if not active:
         return "0.0004"
     parts = active.split(".")
-    return ".".join(parts[:-1] + [f"{int(parts[-1]) + 1:04d}"])
-
+    width = max(4, len(parts[-1]))
+    parts[-1] = f"{int(parts[-1]) + 1:0{width}d}"
+    return ".".join(parts)
 
 def _replay_text(limit_chars=250_000):
     chunks = []
@@ -41,14 +43,25 @@ def _replay_text(limit_chars=250_000):
             chunks.append(p.read_text(encoding="utf-8", errors="ignore")[: limit_chars // 2])
     return "\n".join(chunks)
 
-
 def _remove_registry_version(version: str):
     reg = load_registry()
     reg["versions"] = [x for x in reg.get("versions", []) if x["version"] != version]
     save_registry(reg)
 
+def _sleep_allowed():
+    path = ROOT / "config" / "pipeline.json"
+    try:
+        cfg = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    return bool(cfg.get("allow_sleep_learning", False))
 
 def run_sleep_cycle(steps=120):
+    if not _sleep_allowed():
+        print("Sleep learning is paused by the permanent pipeline configuration.")
+        print("Verified experiences remain stored and unused; nothing was deleted or marked as learned.")
+        return False
+
     memory = MemoryStore()
     rows = memory.approved_experiences()
     if not rows:
@@ -58,20 +71,12 @@ def run_sleep_cycle(steps=120):
     model, payload, tokenizer = load_active(device=best_device())
     active_entry = get_active_entry()
     active = active_entry["version"]
-    # During the v0.0004 -> v0.00051 corrective alignment migration, the numeric next version
-    # is reserved for the deliberate v0.00051 curriculum. A sleep-cycle candidate
-    # must not silently occupy that version or bypass its pipeline.
-    if active == "0.0004":
-        print("Sleep learning is temporarily paused while v0.00051 is the reserved corrective generation.")
-        print("Verified experiences remain stored and unused; nothing was deleted or marked as learned.")
-        return False
     baseline = behavior_benchmark(model, tokenizer)
     candidate = deepcopy(model)
     new_text, ids = experiences_to_text(rows)
     training_text = _replay_text() + "\n" + new_text
     candidate, loss = continue_training(candidate, training_text, tokenizer, steps=steps)
     metrics = behavior_benchmark(candidate, tokenizer)
-
     version = next_version(active)
     path = MODELS_DIR / f"butterfly-v{version}-candidate.safetensors"
     tp = (active_entry.get("metadata") or {}).get("tokenizer_path")
@@ -102,7 +107,6 @@ def run_sleep_cycle(steps=120):
         "optimizer_included": False,
     })
     print("Baseline:", baseline["score"], "Candidate:", metrics["score"])
-
     if improved:
         canonical = MODELS_DIR / f"butterfly-v{version}.safetensors"
         move_model_artifacts(path, canonical)

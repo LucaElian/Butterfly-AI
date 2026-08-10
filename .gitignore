@@ -4,28 +4,38 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
-# Butterfly runtime state: personal/local, not source code
+# Butterfly personal/runtime state
 .butterfly/butterfly.db
 .butterfly/butterfly.db-*
 .butterfly/*.sqlite
 .butterfly/*.sqlite-*
+.butterfly/pipeline_state.json
 
-# Physical brains are release artifacts, not Git history
+# Physical brains are local/release artifacts, not normal Git history
 models/*.pt
 models/*.pth
 models/*.bin
 models/*.safetensors
 models/*.safetensors.json
 models/registry.json
+!models/.gitkeep
+!models/history.json
 
-# Temporary training state may be ~3x the weight size because Adam has moments
+# Temporary training state
 training_state/
 
-# Generated large corpora. Keep corpus builder + small manifest in Git, not the books themselves.
+# Pipeline runtime output
+logs/
+reports/
+
+# Generated large corpora. Keep manifests/source metadata, not generated books.
 data/corpus/*.txt
 data/corpus/*.part
 data/corpus/wikipedia_seen.txt
 data/corpus/wikipedia_sources.jsonl
+data/corpus/v*/*.jsonl
+!data/corpus/manifest.json
+!data/corpus/v*/manifest.json
 
 # Generated/optional release bundles
 release/
@@ -34,6 +44,3 @@ release/
 .DS_Store
 Thumbs.db
 .vs/
-
-# v0.0005 generated assistant-alignment books (manifest stays small/trackable)
-data/corpus/v0005/*.jsonl

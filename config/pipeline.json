@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "infrastructure_version": "1.0",
+  "target_brain": null,
+  "benchmark_suite": "0.00042",
+  "preset": "ryzen3600",
+  "allow_sleep_learning": false,
+  "stages": {
+    "prepare": null,
+    "build_dataset": null,
+    "train": null,
+    "evaluate_and_promote": null
+  }
+}

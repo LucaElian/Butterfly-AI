@@ -1,20 +1,13 @@
 from __future__ import annotations
-import argparse, json
 
-from .config import (
-    ensure_dirs,
-    APP_VERSION,
-    LANG_TRAIN,
-    CONV_TRAIN,
-    INST_TRAIN,
-    V4_TOKENIZER_PATH,
-    BENCHMARKS_DIR,
-)
+import argparse
+import json
+
+from .config import ensure_dirs, BENCHMARKS_DIR
 from .memory import MemoryStore
-from .trainer import train_curriculum, best_device
+from .trainer import best_device
 from .checkpoint import load_active
 from .generation import generate
-from .tokenizer import ButterflyTokenizer
 from .epistemic.engine import EpistemicEngine
 from .agent.preflight import PreflightEvaluator
 from .learning.sleep_cycle import run_sleep_cycle
@@ -25,79 +18,18 @@ from .learning.evaluator import (
     save_benchmark,
 )
 
-
 def command_init(_args):
     ensure_dirs()
     MemoryStore()
-    print(f"ButterflyAI system v{APP_VERSION} initialized.")
-
-
-def command_prepare(_args):
-    from .upgrade import prepare_v0004
-    prepare_v0004()
-
-
-def command_corpus(args):
-    from .corpus.builder import build_all
-    build_all(target_wiki_mb=args.wiki_mb, conversation_mb=args.conversation_mb)
-
-
-def command_tokenizer(args):
-    files = [LANG_TRAIN, CONV_TRAIN, INST_TRAIN]
-    tok = ButterflyTokenizer.train_bpe(files, vocab_size=args.vocab, min_frequency=2)
-    tok.save(V4_TOKENIZER_PATH)
-    total_bytes = sum(p.stat().st_size for p in files if p.exists())
-    total_tokens = sum(
-        len(tok.encode(p.read_text(encoding="utf-8", errors="ignore")))
-        for p in files
-        if p.exists()
-    )
-    print(
-        f"Tokenizer saved: {V4_TOKENIZER_PATH}\n"
-        f"Vocab: {tok.vocab_size:,}\n"
-        f"Training bytes: {total_bytes:,} -> tokens: {total_tokens:,} "
-        f"({total_tokens/max(1,total_bytes):.2%})"
-    )
-
-
-def command_train(args):
-    # v0.00042 is the current evaluator/system policy. The current brain architecture remains v0.0004.
-    train_curriculum(version="0.0004", preset=args.preset)
-
-
-def command_prepare_v0005(_args):
-    from .upgrade import prepare_v0005
-    prepare_v0005()
-
-
-def command_build_alignment_v0005(_args):
-    from .corpus.alignment_v0005 import build_alignment_corpus_v0005
-    build_alignment_corpus_v0005()
-
-
-def command_train_v0005(args):
-    from .trainer_v0005 import train_v0005
-    train_v0005(preset=args.preset)
-
-def command_prepare_v00051(_args):
-    from .upgrade import prepare_v00051
-    prepare_v00051()
-
-
-def command_build_alignment_v00051(_args):
-    from .corpus.alignment_v00051 import build_alignment_corpus_v00051
-    build_alignment_corpus_v00051()
-
-
-def command_train_v00051(args):
-    from .trainer_v00051 import train_v00051
-    train_v00051(preset=args.preset)
-
+    print("ButterflyAI permanent installation initialized.")
 
 def command_compare(args):
     from .upgrade import compare_and_promote
     compare_and_promote(args.candidate)
 
+def command_prepare_target(args):
+    from .upgrade import prepare_target
+    prepare_target(args.target, expected_active=args.expected_active)
 
 def command_chat(args):
     model, _, tokenizer = load_active(device=best_device())
@@ -123,7 +55,7 @@ def command_chat(args):
             temperature=args.temperature,
             repetition_penalty=args.repetition_penalty,
         )
-        answer = output[len(shaped) :]
+        answer = output[len(shaped):]
         for marker in ("<END>", "\nUser:"):
             if marker in answer:
                 answer = answer.split(marker, 1)[0]
@@ -131,10 +63,8 @@ def command_chat(args):
         print("Butterfly >", answer)
         history.append((prompt, answer))
 
-
 def command_evaluate(_args):
     from .registry import get_active_entry, append_history
-
     entry = get_active_entry()
     if not entry:
         raise RuntimeError("No active Butterfly model.")
@@ -158,28 +88,23 @@ def command_evaluate(_args):
     print(f"\nStrict baseline saved: {path}")
     print("No model weights, tokenizer, corpus or memory were changed.")
 
-
 def command_verify(args):
     r = EpistemicEngine().verify(args.claim, allow_web=args.web)
-    print(
-        json.dumps(
-            {
-                "claim": r.claim,
-                "status": r.status.value,
-                "confidence": r.confidence,
-                "method": r.method,
-                "explanation": r.explanation,
-                "evidence": [e.__dict__ for e in r.evidence],
-            },
-            indent=2,
-            ensure_ascii=False,
-        )
-    )
-
+    print(json.dumps({
+        "claim": r.claim,
+        "status": r.status.value,
+        "confidence": r.confidence,
+        "method": r.method,
+        "explanation": r.explanation,
+        "evidence": [e.__dict__ for e in r.evidence],
+    }, indent=2, ensure_ascii=False))
 
 def command_preflight(args):
-    print(json.dumps(PreflightEvaluator().evaluate(args.task).to_dict(), indent=2, ensure_ascii=False))
-
+    print(json.dumps(
+        PreflightEvaluator().evaluate(args.task).to_dict(),
+        indent=2,
+        ensure_ascii=False,
+    ))
 
 def command_experience(args):
     MemoryStore().add_experience(
@@ -192,38 +117,40 @@ def command_experience(args):
     )
     print("Experience stored.")
 
-
 def command_sleep(args):
     run_sleep_cycle(steps=args.steps)
 
-
 def command_status(_args):
     from .registry import load_registry, load_history
-
+    from .pipeline import load_recipe, load_state
     reg = load_registry()
-    print(
-        json.dumps(
-            {
-                "system_version": APP_VERSION,
-                "active_brain": reg.get("active"),
-                "models": reg.get("versions", []),
-                "history": load_history().get("versions", [])[-10:],
-            },
-            indent=2,
-            ensure_ascii=False,
-        )
-    )
-
+    try:
+        recipe = load_recipe()
+        pstate = load_state(recipe)
+        pipeline = {
+            "target_brain": recipe.get("target_brain"),
+            "benchmark_suite": recipe.get("benchmark_suite"),
+            "stages": pstate.get("stages"),
+            "last_error": pstate.get("last_error"),
+        }
+    except Exception as exc:
+        pipeline = {"error": str(exc)}
+    print(json.dumps({
+        "pipeline_infrastructure": "1.0",
+        "evaluator_suite": BENCHMARK_SUITE_VERSION,
+        "active_brain": reg.get("active"),
+        "models": reg.get("versions", []),
+        "pipeline": pipeline,
+        "history": load_history().get("versions", [])[-10:],
+    }, indent=2, ensure_ascii=False))
 
 def command_export_release(_args):
     from .storage import export_active_release
     export_active_release()
 
-
 def command_storage(_args):
     from .storage import storage_status
     print(json.dumps(storage_status(), indent=2, ensure_ascii=False))
-
 
 def build_parser():
     p = argparse.ArgumentParser(prog="butterfly")
@@ -232,41 +159,10 @@ def build_parser():
     sp = sub.add_parser("init")
     sp.set_defaults(func=command_init)
 
-    sp = sub.add_parser("prepare-v0004")
-    sp.set_defaults(func=command_prepare)
-
-    sp = sub.add_parser("build-corpus")
-    sp.add_argument("--wiki-mb", type=float, default=20.0)
-    sp.add_argument("--conversation-mb", type=float, default=2.0)
-    sp.set_defaults(func=command_corpus)
-
-    sp = sub.add_parser("train-tokenizer")
-    sp.add_argument("--vocab", type=int, default=8192)
-    sp.set_defaults(func=command_tokenizer)
-
-    sp = sub.add_parser("train-v0004")
-    sp.add_argument("--preset", choices=["auto", "ryzen3600", "light"], default="auto")
-    sp.set_defaults(func=command_train)
-
-    sp = sub.add_parser("prepare-v0005")
-    sp.set_defaults(func=command_prepare_v0005)
-
-    sp = sub.add_parser("build-alignment-v0005")
-    sp.set_defaults(func=command_build_alignment_v0005)
-
-    sp = sub.add_parser("train-v0005")
-    sp.add_argument("--preset", choices=["auto", "ryzen3600", "light"], default="auto")
-    sp.set_defaults(func=command_train_v0005)
-
-    sp = sub.add_parser("prepare-v00051")
-    sp.set_defaults(func=command_prepare_v00051)
-
-    sp = sub.add_parser("build-alignment-v00051")
-    sp.set_defaults(func=command_build_alignment_v00051)
-
-    sp = sub.add_parser("train-v00051")
-    sp.add_argument("--preset", choices=["auto", "ryzen3600", "light"], default="auto")
-    sp.set_defaults(func=command_train_v00051)
+    sp = sub.add_parser("prepare-target")
+    sp.add_argument("--target", required=True)
+    sp.add_argument("--expected-active", default=None)
+    sp.set_defaults(func=command_prepare_target)
 
     sp = sub.add_parser("compare-promote")
     sp.add_argument(
@@ -316,7 +212,6 @@ def build_parser():
     sp.add_argument("--steps", type=int, default=120)
     sp.set_defaults(func=command_sleep)
     return p
-
 
 def main():
     args = build_parser().parse_args()
