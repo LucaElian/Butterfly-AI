@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from .config import ROOT
+from .config import ROOT, project_relpath
 from .experiments import ensure_experiment, load_recipe, mark_experiment_status
 
 
@@ -59,7 +59,7 @@ def command_evaluate():
     }[result]
     mark_experiment_status(
         status,
-        evaluation_report=str(report_path.relative_to(ROOT)),
+        evaluation_report=project_relpath(report_path),
         final_score=metrics.get("score"),
     )
 

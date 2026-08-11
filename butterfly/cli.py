@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from .config import ensure_dirs
+from .config import ensure_dirs, project_relpath
 from .memory import MemoryStore
 from .training.runtime import best_device
 from .checkpoint import load_active
@@ -69,7 +69,7 @@ def command_evaluate(_args):
         f"benchmark-suite-{BENCHMARK_SUITE_ID}",
         score=metrics.get("score"),
         metadata={
-            "benchmark": str(path.relative_to(ROOT)),
+            "benchmark": project_relpath(path),
             "promotion_eligible": metrics.get("promotion_eligible", False),
             "critical_failures": metrics.get("critical_failures", []),
             "suite_id": BENCHMARK_SUITE_ID,

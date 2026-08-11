@@ -201,6 +201,21 @@
           "unknown_veloria"
         ]
       }
+    },
+    {
+      "version": "0.00054",
+      "status": "lab_accepted",
+      "score": 0.6069496057312569,
+      "recorded_at": 1786412770.134996,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.0004-candidate-0.00054-suite-5a871c79d0df.json",
+        "suite_id": "suite-5a871c79d0df",
+        "seed_brain": "0.0004",
+        "focus_metrics": [
+          "intent_routing_component",
+          "conversation_component"
+        ]
+      }
     }
   ]
 }

@@ -4,7 +4,7 @@ import json
 import time
 
 from .checkpoint import load_entry, move_model_artifacts, delete_model_artifacts
-from .config import ROOT, MODELS_DIR, BENCHMARKS_DIR, load_promotion_policy
+from .config import ROOT, MODELS_DIR, BENCHMARKS_DIR, load_promotion_policy, project_relpath
 from .learning.evaluator import BENCHMARK_SUITE_ID, behavior_benchmark, print_benchmark, save_benchmark
 from .registry import (
     append_history,
@@ -205,14 +205,14 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
             move_model_artifacts(candidate_path, canonical)
             update_entry(target, path=canonical.name)
         update_entry(target, score=metrics["score"], metadata={
-            "benchmark": str(report_path.relative_to(ROOT)),
+            "benchmark": project_relpath(report_path),
             "suite_id": BENCHMARK_SUITE_ID,
             "storage_format": "safetensors-weights-only",
             "optimizer_included": False,
         })
         promote_to_active(target)
         append_history(target, "promoted", score=metrics["score"], metadata={
-            "benchmark": str(report_path.relative_to(ROOT)),
+            "benchmark": project_relpath(report_path),
             "suite_id": BENCHMARK_SUITE_ID,
             "seed_brain": seed["version"],
         })
@@ -226,14 +226,14 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
             move_model_artifacts(candidate_path, canonical)
             update_entry(target, path=canonical.name)
         update_entry(target, score=metrics["score"], metadata={
-            "benchmark": str(report_path.relative_to(ROOT)),
+            "benchmark": project_relpath(report_path),
             "suite_id": BENCHMARK_SUITE_ID,
             "storage_format": "safetensors-weights-only",
             "optimizer_included": False,
         })
         promote_to_lab(target)
         append_history(target, "lab_accepted", score=metrics["score"], metadata={
-            "benchmark": str(report_path.relative_to(ROOT)),
+            "benchmark": project_relpath(report_path),
             "suite_id": BENCHMARK_SUITE_ID,
             "seed_brain": seed["version"],
             "focus_metrics": recipe.get("focus_metrics", []),
@@ -244,7 +244,7 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
         return "LAB_ACCEPTED", report_path, metrics
 
     append_history(target, "rejected", score=metrics.get("score"), metadata={
-        "benchmark": str(report_path.relative_to(ROOT)),
+        "benchmark": project_relpath(report_path),
         "suite_id": BENCHMARK_SUITE_ID,
         "seed_brain": seed["version"],
         "lab_failures": lab_failures,

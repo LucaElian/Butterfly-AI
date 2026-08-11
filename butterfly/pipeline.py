@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from .config import ROOT, PIPELINE_CONFIG_PATH, load_json
+from .config import ROOT, PIPELINE_CONFIG_PATH, load_json, project_relpath
 from .experiments import ensure_experiment, load_current_experiment, load_recipe
 
 STATE_PATH = ROOT / ".butterfly" / "pipeline_state.json"
@@ -26,6 +26,7 @@ STAGES = (
 )
 STAGE_NAMES = tuple(name for name, _ in STAGES)
 STATE_SCHEMA = 2
+TERMINAL_EXPERIMENT_STATUSES = {"promoted", "lab_accepted", "rejected", "cancelled"}
 
 
 class Tee:
@@ -110,10 +111,10 @@ def _source_tree_fingerprint(paths: list[Path]) -> str:
     rows = []
     for base in paths:
         if base.is_file():
-            rows.append((str(base.relative_to(ROOT)), _sha256_file(base)))
+            rows.append((base.relative_to(ROOT).as_posix(), _sha256_file(base)))
         elif base.is_dir():
             for path in sorted(base.rglob("*.py")):
-                rows.append((str(path.relative_to(ROOT)), _sha256_file(path)))
+                rows.append((path.relative_to(ROOT).as_posix(), _sha256_file(path)))
     return _sha256_json(rows)
 
 
@@ -181,13 +182,41 @@ def _reset_from(state, stage):
     save_state(state)
 
 
+def _is_terminal_experiment(exp: dict) -> bool:
+    return exp.get("status") in TERMINAL_EXPERIMENT_STATUSES
+
+
+def _lock_terminal_state(state, exp):
+    changed = False
+    completed_at = exp.get("updated_at") or time.time()
+    for name in STAGE_NAMES:
+        row = state["stages"].setdefault(
+            name,
+            {"status": "pending", "signature": None, "completed_at": None, "log": None},
+        )
+        if row.get("status") != "complete":
+            row["status"] = "complete"
+            changed = True
+        if row.get("completed_at") is None:
+            row["completed_at"] = completed_at
+            changed = True
+    if state.get("last_error") is not None:
+        state["last_error"] = None
+        changed = True
+    if changed:
+        save_state(state)
+
+
 def _refresh_validity(state, cfg, exp, recipe):
-    terminal = exp.get("status") in {"promoted", "lab_accepted", "rejected", "cancelled"}
+    # A terminal experiment is historical evidence. Code changes after it
+    # finishes must never rewrite its completed pipeline state.
+    if _is_terminal_experiment(exp):
+        _lock_terminal_state(state, exp)
+        return
+
     for name in STAGE_NAMES:
         row = state["stages"].get(name) or {}
         if row.get("status") != "complete":
-            continue
-        if terminal and name == "evaluate_and_promote":
             continue
         expected = _stage_signature(name, cfg, exp, recipe)
         if row.get("signature") != expected:
@@ -263,7 +292,7 @@ def _run_stage(cfg, exp, recipe, state, stage):
     tee = Tee(run_file, latest_file)
     row = state["stages"][stage]
     row["status"] = "running"
-    row["log"] = str(run_path.relative_to(ROOT))
+    row["log"] = project_relpath(run_path)
     state["last_error"] = None
     save_state(state)
 
@@ -336,6 +365,16 @@ def run(mode: str, chosen_stage: str | None = None):
     recipe = load_recipe(exp["recipe_name"])
     state = load_state(exp)
     _refresh_validity(state, cfg, exp, recipe)
+
+    if _is_terminal_experiment(exp):
+        if mode == "stage":
+            raise RuntimeError(
+                "Current experiment is terminal. Create a new experiment before running another stage."
+            )
+        print("Current experiment is terminal and remains locked as historical evidence.")
+        print("Create a new experiment only when you intentionally choose the next recipe/objective.")
+        _write_summary(exp, state)
+        return 0
 
     if mode in {"auto", "paused"}:
         start = _first_incomplete(state)

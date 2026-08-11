@@ -69,6 +69,14 @@ WIKI_SOURCES = CORPUS_DIR / "wikipedia_sources.jsonl"
 CORPUS_MANIFEST = CORPUS_DIR / "manifest.json"
 
 
+def project_relpath(path: Path | str) -> str:
+    # Project-relative path with POSIX separators for persisted metadata.
+    value = Path(path)
+    if not value.is_absolute():
+        value = ROOT / value
+    return value.resolve().relative_to(ROOT.resolve()).as_posix()
+
+
 def ensure_dirs():
     for p in (
         DATA_DIR, STATIC_DIR, CORPUS_DIR, MODELS_DIR, STATE_DIR,
