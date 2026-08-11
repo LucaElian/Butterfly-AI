@@ -21,8 +21,18 @@ from .registry import (
 from .training.runtime import best_device
 
 
+def _suite_artifact_path(prefix: str):
+    return BENCHMARKS_DIR / f"{prefix}-{BENCHMARK_SUITE_ID}.json"
+
+
 def _baseline_path(entry):
-    return BENCHMARKS_DIR / f"baseline-brain-{entry['version']}-suite-{BENCHMARK_SUITE_ID}.json"
+    return _suite_artifact_path(f"baseline-brain-{entry['version']}")
+
+
+def _comparison_path(active, seed, candidate):
+    return _suite_artifact_path(
+        f"comparison-active-{active['version']}-seed-{seed['version']}-candidate-{candidate['version']}"
+    )
 
 
 def strict_baseline(entry, force: bool = False):
@@ -183,10 +193,7 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
         "lab_acceptance": {"eligible": lab_ok, "failures": lab_failures},
         "created_at": time.time(),
     }
-    report_path = BENCHMARKS_DIR / (
-        f"comparison-active-{active['version']}-seed-{seed['version']}-"
-        f"candidate-{candidate['version']}-suite-{BENCHMARK_SUITE_ID}.json"
-    )
+    report_path = _comparison_path(active, seed, candidate)
     report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 
     candidate_path = MODELS_DIR / candidate["path"]

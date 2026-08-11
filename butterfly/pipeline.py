@@ -144,7 +144,13 @@ def _stage_signature(stage: str, cfg: dict, exp: dict, recipe: dict) -> str:
         "suite_id": BENCHMARK_SUITE_ID,
         "seed_model": _sha256_file(seed_path) if seed_path else None,
     }
-    if stage == "build_dataset":
+    if stage == "prepare":
+        base["preflight_code"] = _source_tree_fingerprint([
+            ROOT / "butterfly" / "deliberate.py",
+            ROOT / "butterfly" / "upgrade.py",
+            ROOT / "butterfly" / "experiments.py",
+        ])
+    elif stage == "build_dataset":
         base["corpus_code"] = _source_tree_fingerprint([
             ROOT / "butterfly" / "corpus" / "deliberate.py",
             ROOT / "butterfly" / "corpus" / "skills",
@@ -194,6 +200,15 @@ def _first_incomplete(state):
         if (state["stages"].get(name) or {}).get("status") != "complete":
             return name
     return None
+
+
+def _missing_prerequisites(state, stage: str):
+    index = STAGE_NAMES.index(stage)
+    return tuple(
+        name
+        for name in STAGE_NAMES[:index]
+        if (state["stages"].get(name) or {}).get("status") != "complete"
+    )
 
 
 def _safe_fragment(value: str) -> str:
@@ -333,6 +348,13 @@ def run(mode: str, chosen_stage: str | None = None):
     elif mode == "stage":
         if chosen_stage not in STAGE_NAMES:
             raise RuntimeError(f"Unknown stage: {chosen_stage}")
+        missing = _missing_prerequisites(state, chosen_stage)
+        if missing:
+            labels = ", ".join(dict(STAGES)[name] for name in missing)
+            raise RuntimeError(
+                f"Cannot run {dict(STAGES)[chosen_stage]} manually; "
+                f"complete prerequisite stages first: {labels}"
+            )
         _reset_from(state, chosen_stage)
         to_run = (chosen_stage,)
     else:

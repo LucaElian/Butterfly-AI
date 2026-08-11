@@ -4,6 +4,13 @@ import hashlib
 import random
 
 
+MOJIBAKE_MARKERS = ("\u00c3", "\u00c2", "\ufffd")
+
+
+def contains_mojibake(text: str) -> bool:
+    return any(marker in str(text) for marker in MOJIBAKE_MARKERS)
+
+
 def row(user: str, assistant: str, family: str, skill: str) -> dict:
     return {
         "user": user.strip(),

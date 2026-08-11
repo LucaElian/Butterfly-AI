@@ -14,7 +14,7 @@ from ..learning.evaluator import (
     normalize_surface,
 )
 from .skills import BUILDERS
-from .skills.common import dedupe, sample
+from .skills.common import contains_mojibake, dedupe, sample
 
 DATA_ROOT = ROOT / "data" / "corpus" / "deliberate"
 MANIFEST_PATH = DATA_ROOT / "manifest.json"
@@ -48,6 +48,11 @@ def _validate_rows(stage: str, train: list[dict], valid: list[dict]):
     benchmark_prompts = benchmark_surface_prompts()
     benchmark_values = {x.casefold() for x in BENCHMARK_RESERVED_EXACT_TARGETS}
     for item in train + valid:
+        if contains_mojibake(item.get("user", "")) or contains_mojibake(item.get("assistant", "")):
+            raise RuntimeError(
+                f"Mojibake detected in generated corpus row for {stage}: "
+                f"user={item.get('user')!r} assistant={item.get('assistant')!r}"
+            )
         if normalize_surface(item["user"]) in benchmark_prompts:
             raise RuntimeError(f"Benchmark prompt leaked into {stage}: {item['user']}")
         if item.get("skill") == "binding" and item["assistant"].casefold() in benchmark_values:
