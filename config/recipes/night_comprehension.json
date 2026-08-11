@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "name": "night_comprehension",
+  "objective": "Repair critical comprehension misses while preserving conversation, instruction and epistemic behavior.",
+  "focus_metrics": [
+    "comprehension_component"
+  ],
+  "protected_metrics": [
+    "instruction_format_component",
+    "epistemic_dialogue_component",
+    "intent_routing_component",
+    "conversation_component",
+    "semantic_component",
+    "language_component",
+    "robustness_component",
+    "contrastive_component",
+    "coherence_component",
+    "repetition_component",
+    "binding_component",
+    "arithmetic_component"
+  ],
+  "lab_acceptance": {
+    "allow_critical_repair": true,
+    "critical_categories": [
+      "comprehension"
+    ],
+    "max_focus_regression": 0.01
+  },
+  "training_stages": [
+    {
+      "name": "comprehension_repair_v2",
+      "skills": [
+        {
+          "name": "comprehension",
+          "train_limit": 108,
+          "valid_limit": 27
+        },
+        {
+          "name": "intent_routing",
+          "train_limit": 650,
+          "valid_limit": 180
+        },
+        {
+          "name": "instruction_following",
+          "train_limit": 320,
+          "valid_limit": 90
+        },
+        {
+          "name": "epistemic",
+          "train_limit": 280,
+          "valid_limit": 90
+        }
+      ],
+      "max_epochs": 3,
+      "lr": 4e-06,
+      "batch_size": 4,
+      "seq_len": 176,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.05,
+      "frozen_first_blocks": 3,
+      "study_focus_metrics": [
+        "retention_comprehension_component"
+      ],
+      "study_protected_metrics": [
+        "retention_file_component",
+        "retention_folder_component",
+        "retention_api_component",
+        "retention_parameter_component",
+        "retention_token_component",
+        "retention_conversation_component",
+        "instruction_format_component",
+        "retention_epistemic_component",
+        "retention_quality_component"
+      ],
+      "study_protected_regression_budgets": {
+        "retention_file_component": 0.0,
+        "retention_folder_component": 0.0,
+        "retention_api_component": 0.0,
+        "retention_parameter_component": 0.0,
+        "retention_token_component": 0.0
+      },
+      "max_study_protected_regression": 0.05,
+      "min_each_study_focus_delta": 0.0,
+      "min_study_delta": 0.003,
+      "study_patience": 2
+    },
+    {
+      "name": "comprehension_consolidation_v2",
+      "skills": [
+        {
+          "name": "comprehension",
+          "train_limit": 108,
+          "valid_limit": 27
+        },
+        {
+          "name": "intent_routing",
+          "train_limit": 700,
+          "valid_limit": 200
+        },
+        {
+          "name": "instruction_following",
+          "train_limit": 360,
+          "valid_limit": 100
+        },
+        {
+          "name": "epistemic",
+          "train_limit": 320,
+          "valid_limit": 100
+        }
+      ],
+      "max_epochs": 2,
+      "lr": 1.5e-06,
+      "batch_size": 4,
+      "seq_len": 176,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.04,
+      "frozen_first_blocks": 3,
+      "study_focus_metrics": [
+        "retention_comprehension_component"
+      ],
+      "study_protected_metrics": [
+        "retention_file_component",
+        "retention_folder_component",
+        "retention_api_component",
+        "retention_parameter_component",
+        "retention_token_component",
+        "retention_conversation_component",
+        "instruction_format_component",
+        "retention_epistemic_component",
+        "retention_quality_component"
+      ],
+      "study_protected_regression_budgets": {
+        "retention_file_component": 0.0,
+        "retention_folder_component": 0.0,
+        "retention_api_component": 0.0,
+        "retention_parameter_component": 0.0,
+        "retention_token_component": 0.0
+      },
+      "max_study_protected_regression": 0.04,
+      "min_each_study_focus_delta": 0.0,
+      "min_study_delta": 0.002,
+      "study_patience": 2
+    }
+  ]
+}

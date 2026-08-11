@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "max_blocks_per_session": 3,
+  "max_minutes_per_session": 180,
+  "min_free_disk_gb": 2.0,
+  "stop_file": ".butterfly/STOP_NIGHT_STUDY",
+  "stop_after_active_promotion": true,
+  "retry_same_capability_in_session": false,
+  "verified_experiences": {
+    "minimum_quality": 0.7,
+    "automatic_training_enabled": false,
+    "reason": "V2 tracks verified experiences but still does not train factual material until provenance-aware lesson building is integrated."
+  },
+  "curriculum": {
+    "conversation": {
+      "metric": "conversation_component",
+      "recipe": "night_conversation",
+      "priority_weight": 1.0,
+      "critical_category": "conversation",
+      "critical_weight": 0.12
+    },
+    "comprehension": {
+      "metric": "comprehension_component",
+      "recipe": "night_comprehension",
+      "priority_weight": 1.0,
+      "critical_category": "comprehension",
+      "critical_weight": 0.11
+    },
+    "instruction_format": {
+      "metric": "instruction_format_component",
+      "recipe": "night_instruction",
+      "priority_weight": 1.0,
+      "critical_category": "instruction",
+      "critical_weight": 0.1
+    },
+    "epistemic_dialogue": {
+      "metric": "epistemic_dialogue_component",
+      "recipe": "night_epistemic",
+      "priority_weight": 1.25,
+      "critical_category": "epistemic_dialogue",
+      "critical_weight": 0.1
+    }
+  }
+}

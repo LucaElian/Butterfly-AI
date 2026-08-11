@@ -23,9 +23,10 @@ def test_pipeline_config_contains_behavior_not_runtime_target():
     assert cfg["default_recipe"]
 
 
-def test_recipe_contains_no_brain_or_suite_identity():
+def test_recipes_contain_no_brain_or_suite_identity():
     root = Path(__file__).resolve().parents[1]
-    recipe = json.loads((root / "config" / "recipes" / "intent_routing.json").read_text(encoding="utf-8"))
-    assert "target_brain" not in recipe
-    assert "expected_active" not in recipe
-    assert "benchmark_suite" not in recipe
+    for path in sorted((root / "config" / "recipes").glob("*.json")):
+        recipe = json.loads(path.read_text(encoding="utf-8"))
+        assert "target_brain" not in recipe, path
+        assert "expected_active" not in recipe, path
+        assert "benchmark_suite" not in recipe, path

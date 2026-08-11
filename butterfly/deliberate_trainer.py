@@ -15,6 +15,7 @@ from .alignment_data import AssistantOnlyDialogueDataset, load_jsonl
 from .checkpoint import load_checkpoint, load_entry, metadata_path, save_stable_model
 from .config import MODELS_DIR, ROOT
 from .corpus.deliberate import load_manifest
+from .learning.study_exam import study_microbenchmark
 from .registry import get_entry, get_candidate_entry, register_model
 from .training.runtime import best_device, configure_cpu
 
@@ -109,6 +110,104 @@ def _stable_stage_seed(experiment_seed: int, stage: str, epoch: int) -> int:
     return int(hashlib.sha256(raw).hexdigest()[:8], 16)
 
 
+def _study_avg(exam: dict, names: list[str]) -> float:
+    if not names:
+        return float(exam.get("study_score", 0.0))
+    return sum(float(exam.get(name, 0.0)) for name in names) / len(names)
+
+
+def _study_protected_ok(candidate: dict, entry: dict, stage_cfg: dict) -> tuple[bool, list[str]]:
+    default_budget = float(stage_cfg.get("max_study_protected_regression", 0.08))
+    per_metric = dict(stage_cfg.get("study_protected_regression_budgets", {}))
+    blockers = []
+    for name in stage_cfg.get("study_protected_metrics", []):
+        cur = float(candidate.get(name, 0.0))
+        base = float(entry.get(name, 0.0))
+        budget = float(per_metric.get(name, default_budget))
+        if cur < base - budget:
+            blockers.append(f"{name} {cur:.4f} < entry {base:.4f} - {budget:.4f}")
+    return not blockers, blockers
+
+
+def _study_focus_ok(candidate: dict, entry: dict, stage_cfg: dict) -> tuple[bool, list[str]]:
+    required = float(stage_cfg.get("min_each_study_focus_delta", 0.0))
+    blockers = []
+    for name in stage_cfg.get("study_focus_metrics", []):
+        cur = float(candidate.get(name, 0.0))
+        base = float(entry.get(name, 0.0))
+        if cur < base + required:
+            blockers.append(f"{name} {cur:.4f} < entry {base:.4f} + {required:.4f}")
+    return not blockers, blockers
+
+
+def _study_focus_floor(exam: dict, entry: dict, names: list[str]) -> float:
+    if not names:
+        return float(exam.get("study_score", 0.0)) - float(entry.get("study_score", 0.0))
+    return min(float(exam.get(name, 0.0)) - float(entry.get(name, 0.0)) for name in names)
+
+
+def _study_is_better(candidate: dict, best: dict, entry: dict, candidate_val: float, best_val: float, stage_cfg: dict) -> bool:
+    focus = list(stage_cfg.get("study_focus_metrics", []))
+    protected = list(stage_cfg.get("study_protected_metrics", []))
+    delta = float(stage_cfg.get("min_study_delta", 0.01))
+
+    candidate_floor = _study_focus_floor(candidate, entry, focus)
+    best_floor = _study_focus_floor(best, entry, focus)
+    if candidate_floor > best_floor + delta:
+        return True
+    if candidate_floor < best_floor - delta:
+        return False
+
+    candidate_focus = _study_avg(candidate, focus)
+    best_focus = _study_avg(best, focus)
+    if candidate_focus > best_focus + delta:
+        return True
+    if candidate_focus < best_focus - delta:
+        return False
+
+    candidate_protected = _study_avg(candidate, protected) if protected else 0.0
+    best_protected = _study_avg(best, protected) if protected else 0.0
+    if candidate_protected > best_protected + 1e-9:
+        return True
+    return abs(candidate_protected - best_protected) <= 1e-9 and candidate_val < best_val
+
+
+def _print_study(label: str, exam: dict):
+    print(
+        f"{label}: study={float(exam.get('study_score',0)):.4f} | "
+        f"binding-exact={float(exam.get('binding_exact_component',0)):.4f} | "
+        f"instruction-format={float(exam.get('instruction_format_component',0)):.4f} | "
+        f"ret-conv={float(exam.get('retention_conversation_component',0)):.4f} | "
+        f"ret-comp={float(exam.get('retention_comprehension_component',0)):.4f} | "
+        f"ret-epi={float(exam.get('retention_epistemic_component',0)):.4f} | "
+        f"ret-intent={float(exam.get('retention_intent_component',0)):.4f} | "
+        f"ret-quality={float(exam.get('retention_quality_component',0)):.4f}"
+    )
+    if "instruction_sentence_component" in exam:
+        print(
+            "    fmt families: "
+            f"sentence={float(exam.get('instruction_sentence_component',0)):.4f} | "
+            f"two-steps={float(exam.get('instruction_two_steps_component',0)):.4f} | "
+            f"missing={float(exam.get('instruction_missing_component',0)):.4f} | "
+            f"short={float(exam.get('instruction_short_component',0)):.4f} | "
+            f"weakest={float(exam.get('instruction_weakest_family_component',0)):.4f}"
+        )
+        print(
+            "    conv families: "
+            f"greeting={float(exam.get('retention_greeting_component',0)):.4f} | "
+            f"thanks={float(exam.get('retention_thanks_component',0)):.4f} | "
+            f"identity={float(exam.get('retention_identity_component',0)):.4f} | "
+            f"state={float(exam.get('retention_state_component',0)):.4f}"
+        )
+        print(
+            "    comp families: "
+            f"file={float(exam.get('retention_file_component',0)):.4f} | "
+            f"folder={float(exam.get('retention_folder_component',0)):.4f} | "
+            f"api={float(exam.get('retention_api_component',0)):.4f} | "
+            f"parameter={float(exam.get('retention_parameter_component',0)):.4f} | "
+            f"token={float(exam.get('retention_token_component',0)):.4f}"
+        )
+
 def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume_progress, completed):
     name = stage_cfg["name"]
     train_path = ROOT / manifest_stage["train_file"]
@@ -123,15 +222,13 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
     min_delta = float(stage_cfg.get("min_delta", 1e-3))
     weight_decay = float(stage_cfg.get("weight_decay", 0.05))
     frozen = int(stage_cfg.get("frozen_first_blocks", 0))
+    study_enabled = bool(stage_cfg.get("study_focus_metrics"))
+    effective_patience = int(stage_cfg.get("study_patience", patience)) if study_enabled else patience
 
     train_ds = AssistantOnlyDialogueDataset(train_rows, tokenizer, seq_len=seq_len)
     valid_ds = AssistantOnlyDialogueDataset(valid_rows, tokenizer, seq_len=seq_len)
     trainable, total_params, frozen = _set_frozen_blocks(model, frozen)
-    opt = torch.optim.AdamW(
-        [p for p in model.parameters() if p.requires_grad],
-        lr=lr,
-        weight_decay=weight_decay,
-    )
+    opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=lr, weight_decay=weight_decay)
 
     best_loss = float("inf")
     bad_epochs = 0
@@ -139,16 +236,35 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
     resume_step = 0
     epochs_completed = 0
     completed = list(completed or [])
+    entry_study = None
+    best_study = None
+    selected_epoch = None
 
     if resume_progress and resume_progress.get("stage") == name and not resume_progress.get("stage_complete"):
         start_epoch = max(1, int(resume_progress.get("epoch", 1)))
         resume_step = max(0, int(resume_progress.get("step", 0)))
-        best_loss = float(resume_progress.get("best_validation_loss", float("inf")))
+        raw = resume_progress.get("best_validation_loss")
+        best_loss = float(raw) if raw is not None else float("inf")
         bad_epochs = int(resume_progress.get("bad_epochs", 0))
         epochs_completed = max(0, start_epoch - 1)
+        if study_enabled:
+            entry_study = resume_progress.get("stage_entry_study")
+            best_study = resume_progress.get("best_study_exam")
+            selected_epoch = resume_progress.get("selected_study_epoch", 0)
+            if not entry_study or not best_study:
+                raise RuntimeError(f"Recovery for study-enabled stage {name} lacks study state")
+            if not BEST_STAGE_MODEL.exists():
+                _save_best(model, {"experiment_id":experiment["experiment_id"],"stage":name,"reconstructed_from_resume":True,"study_exam":best_study})
         print(f"\nRESUME {name}: epoch {start_epoch}, after batch {resume_step:,}. Optimizer momentum restarts; weights do not.")
     else:
         _clean_best()
+        if study_enabled:
+            print(f"\n=== STUDY ENTRY EXAM: {name} ===")
+            entry_study = study_microbenchmark(model, tokenizer)
+            best_study = entry_study
+            selected_epoch = 0
+            _print_study("entry", entry_study)
+            _save_best(model, {"experiment_id":experiment["experiment_id"],"stage":name,"epoch":0,"stage_entry":True,"study_exam":entry_study})
 
     print(f"\n=== STAGE {name.upper()} ===")
     print(f"train rows: {len(train_rows):,} | valid rows: {len(valid_rows):,}")
@@ -156,20 +272,24 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
     print(f"batch: {batch_size} | max epochs: {max_epochs} | lr: {lr:g}")
     print(f"trainable parameters: {trainable:,}/{total_params:,} | frozen first blocks: {frozen}")
     print("Objective: USER tokens are context-only; loss is computed ONLY on Butterfly answer tokens.")
+    if study_enabled:
+        print("Checkpoint policy: held-out STUDY EXAM is primary; token validation loss is only a tiebreaker.")
     print("Recovery: weights-only autosave about every 10 minutes + every epoch/stage.")
 
     device = next(model.parameters()).device
     stage_start = time.time()
     last_autosave = time.time()
 
+    def extra_state():
+        if not study_enabled:
+            return {}
+        return {"stage_entry_study":entry_study,"best_study_exam":best_study,"selected_study_epoch":selected_epoch}
+
     for epoch in range(start_epoch, max_epochs + 1):
         generator = torch.Generator()
         generator.manual_seed(_stable_stage_seed(int(experiment["random_seed"]), name, epoch))
         loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=0, generator=generator)
-        model.train()
-        running = []
-        started = time.time()
-        total = len(loader)
+        model.train(); running=[]; started=time.time(); total=len(loader)
         skip_through = resume_step if epoch == start_epoch else 0
         if skip_through:
             print(f"Skipping first {skip_through:,}/{total:,} batches already represented in resumed weights.")
@@ -179,107 +299,92 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
                 continue
             x, y = x.to(device), y.to(device)
             _, loss = model(x, y)
-            opt.zero_grad(set_to_none=True)
-            loss.backward()
+            opt.zero_grad(set_to_none=True); loss.backward()
             torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.0)
-            opt.step()
-            running.append(float(loss.item()))
-
-            if step == skip_through + 1 or step % max(1, total // 12) == 0 or step == total:
-                elapsed = time.time() - started
-                done = max(1, step - skip_through)
-                rate = done / max(elapsed, 1e-6)
-                eta = (total - step) / max(rate, 1e-6)
-                avg = sum(running[-50:]) / max(1, len(running[-50:]))
+            opt.step(); running.append(float(loss.item()))
+            if step == skip_through + 1 or step % max(1,total//12) == 0 or step == total:
+                elapsed=time.time()-started; done=max(1,step-skip_through); rate=done/max(elapsed,1e-6)
+                eta=(total-step)/max(rate,1e-6); avg=sum(running[-50:])/max(1,len(running[-50:]))
                 print(f"{name} epoch {epoch}/{max_epochs} | {step:>5}/{total} | answer-loss {avg:.4f} | ETA {eta/60:.1f}m")
-
-            if time.time() - last_autosave >= AUTOSAVE_SECONDS:
-                progress = {
-                    "experiment_id": experiment["experiment_id"],
-                    "target_version": experiment["target_version"],
-                    "recipe_hash": experiment["recipe_hash"],
-                    "stage": name,
-                    "stage_complete": False,
-                    "epoch": epoch,
-                    "step": step,
-                    "total_steps": total,
-                    "best_validation_loss": best_loss,
-                    "bad_epochs": bad_epochs,
-                    "completed_stages": completed,
-                    "updated_at": time.time(),
-                }
-                _save_resume(model, progress, f"{name} epoch {epoch} batch {step}/{total}")
-                last_autosave = time.time()
+            if time.time()-last_autosave >= AUTOSAVE_SECONDS:
+                progress={"experiment_id":experiment["experiment_id"],"target_version":experiment["target_version"],"recipe_hash":experiment["recipe_hash"],
+                          "stage":name,"stage_complete":False,"epoch":epoch,"step":step,"total_steps":total,
+                          "best_validation_loss":None if best_loss == float("inf") else best_loss,"bad_epochs":bad_epochs,
+                          "completed_stages":completed,"updated_at":time.time(),**extra_state()}
+                _save_resume(model, progress, f"{name} epoch {epoch} batch {step}/{total}"); last_autosave=time.time()
 
         val = _validation_loss(model, valid_ds, batch_size=batch_size)
-        train_avg = sum(running) / max(1, len(running)) if running else float("nan")
+        train_avg = sum(running)/max(1,len(running)) if running else float("nan")
         print(f"{name} epoch {epoch}: answer-train={train_avg:.4f} answer-valid={val:.4f}")
         epochs_completed = epoch
 
-        if val < best_loss - min_delta:
-            best_loss = val
-            bad_epochs = 0
-            _save_best(model, {
-                "experiment_id": experiment["experiment_id"],
-                "stage": name,
-                "epoch": epoch,
-                "validation_loss": best_loss,
-            })
-            print("  -> new best checkpoint for this stage (saved to disk)")
+        if study_enabled:
+            exam = study_microbenchmark(model, tokenizer)
+            _print_study(f"{name} epoch {epoch} exam", exam)
+            protected_ok, protected_blockers = _study_protected_ok(exam, entry_study, stage_cfg)
+            focus_ok, focus_blockers = _study_focus_ok(exam, entry_study, stage_cfg)
+            selected = (
+                protected_ok
+                and focus_ok
+                and _study_is_better(exam, best_study, entry_study, val, best_loss, stage_cfg)
+            )
+            if selected:
+                best_study=exam; best_loss=val; selected_epoch=epoch; bad_epochs=0
+                _save_best(model,{"experiment_id":experiment["experiment_id"],"stage":name,"epoch":epoch,"validation_loss":val,"study_exam":exam})
+                print("  -> new BEST STUDY checkpoint")
+            else:
+                bad_epochs += 1
+                if not protected_ok:
+                    print("  -> protected capability gate blocked epoch:")
+                    for blocker in protected_blockers:
+                        print(f"     - {blocker}")
+                if not focus_ok:
+                    print("  -> focus gate blocked epoch:")
+                    for blocker in focus_blockers:
+                        print(f"     - {blocker}")
+                if protected_ok and focus_ok:
+                    print(f"  -> no balanced held-out study improvement ({bad_epochs}/{effective_patience})")
+                if BEST_STAGE_MODEL.exists():
+                    _load_weights_into(model, BEST_STAGE_MODEL, device)
+                    print("  -> rollback to previous best study checkpoint")
         else:
-            bad_epochs += 1
-            print(f"  -> no validation improvement ({bad_epochs}/{patience})")
+            if val < best_loss - min_delta:
+                best_loss=val; bad_epochs=0
+                _save_best(model,{"experiment_id":experiment["experiment_id"],"stage":name,"epoch":epoch,"validation_loss":best_loss})
+                print("  -> new best checkpoint for this stage (saved to disk)")
+            else:
+                bad_epochs += 1
+                print(f"  -> no validation improvement ({bad_epochs}/{effective_patience})")
 
-        progress = {
-            "experiment_id": experiment["experiment_id"],
-            "target_version": experiment["target_version"],
-            "recipe_hash": experiment["recipe_hash"],
-            "stage": name,
-            "stage_complete": False,
-            "epoch": epoch + 1,
-            "step": 0,
-            "total_steps": total,
-            "best_validation_loss": best_loss,
-            "bad_epochs": bad_epochs,
-            "completed_stages": completed,
-            "updated_at": time.time(),
-        }
-        _save_resume(model, progress, f"{name} epoch {epoch} complete")
-        last_autosave = time.time()
-        resume_step = 0
-        if bad_epochs >= patience:
-            print("  -> early stopping")
-            break
+        progress={"experiment_id":experiment["experiment_id"],"target_version":experiment["target_version"],"recipe_hash":experiment["recipe_hash"],
+                  "stage":name,"stage_complete":False,"epoch":epoch+1,"step":0,"total_steps":total,
+                  "best_validation_loss":None if best_loss == float("inf") else best_loss,"bad_epochs":bad_epochs,
+                  "completed_stages":completed,"updated_at":time.time(),**extra_state()}
+        _save_resume(model, progress, f"{name} epoch {epoch} complete"); last_autosave=time.time(); resume_step=0
+        if bad_epochs >= effective_patience:
+            print("  -> early stopping"); break
 
     if BEST_STAGE_MODEL.exists():
         _load_weights_into(model, BEST_STAGE_MODEL, device)
+    if study_enabled:
+        _print_study(f"{name} selected checkpoint", best_study)
+        if selected_epoch == 0:
+            print("  -> STAGE ROLLBACK: no epoch beat the stage-entry study checkpoint")
 
-    result = {
-        "stage": name,
-        "best_validation_loss": best_loss,
-        "seconds": time.time() - stage_start,
-        "epochs_completed": epochs_completed,
-        "train_rows": len(train_rows),
-        "valid_rows": len(valid_rows),
-    }
+    result={"stage":name,"best_validation_loss":None if best_loss == float("inf") else best_loss,
+            "seconds":time.time()-stage_start,"epochs_completed":epochs_completed,
+            "train_rows":len(train_rows),"valid_rows":len(valid_rows)}
+    if study_enabled:
+        result.update({"stage_entry_study":entry_study,"best_study_exam":best_study,
+                       "selected_study_epoch":selected_epoch,"stage_rolled_back":selected_epoch == 0})
     completed = completed + [result]
-    progress = {
-        "experiment_id": experiment["experiment_id"],
-        "target_version": experiment["target_version"],
-        "recipe_hash": experiment["recipe_hash"],
-        "stage": name,
-        "stage_complete": True,
-        "epoch": epochs_completed,
-        "step": 0,
-        "best_validation_loss": best_loss,
-        "bad_epochs": bad_epochs,
-        "completed_stages": completed,
-        "updated_at": time.time(),
-    }
+    progress={"experiment_id":experiment["experiment_id"],"target_version":experiment["target_version"],"recipe_hash":experiment["recipe_hash"],
+              "stage":name,"stage_complete":True,"epoch":epochs_completed,"step":0,
+              "best_validation_loss":None if best_loss == float("inf") else best_loss,"bad_epochs":bad_epochs,
+              "completed_stages":completed,"updated_at":time.time(),**extra_state()}
     _save_resume(model, progress, f"STAGE {name.upper()} COMPLETE")
     _clean_best()
     return result, completed
-
 
 def train_candidate(experiment: dict, recipe: dict):
     manifest = load_manifest()

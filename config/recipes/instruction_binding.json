@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "name": "instruction_binding",
+  "objective": "Improve exact instruction following and value binding while preserving routing, conversation, comprehension, epistemic behavior, and response quality.",
+  "focus_metrics": [
+    "binding_component",
+    "instruction_format_component"
+  ],
+  "protected_metrics": [
+    "intent_routing_component",
+    "conversation_component",
+    "comprehension_component",
+    "epistemic_dialogue_component",
+    "epistemic_engine_component",
+    "semantic_component",
+    "language_component",
+    "robustness_component",
+    "contrastive_component",
+    "coherence_component",
+    "repetition_component"
+  ],
+  "training_stages": [
+    {
+      "name": "binding_instruction",
+      "skills": [
+        {
+          "name": "binding",
+          "train_limit": 1400,
+          "valid_limit": 360
+        },
+        {
+          "name": "instruction_following",
+          "train_limit": 700,
+          "valid_limit": 260
+        },
+        {
+          "name": "intent_routing",
+          "train_limit": 550,
+          "valid_limit": 140
+        },
+        {
+          "name": "comprehension",
+          "train_limit": 450,
+          "valid_limit": 110
+        },
+        {
+          "name": "epistemic",
+          "train_limit": 450,
+          "valid_limit": 120
+        }
+      ],
+      "max_epochs": 3,
+      "lr": 1e-05,
+      "batch_size": 4,
+      "seq_len": 192,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.05,
+      "frozen_first_blocks": 3,
+      "study_focus_metrics": [
+        "binding_exact_component",
+        "instruction_format_component"
+      ],
+      "study_protected_metrics": [
+        "retention_conversation_component",
+        "retention_comprehension_component",
+        "retention_epistemic_component",
+        "retention_intent_component",
+        "retention_quality_component"
+      ],
+      "max_study_protected_regression": 0.08,
+      "min_each_study_focus_delta": 0.03,
+      "min_study_delta": 0.01,
+      "study_patience": 2
+    },
+    {
+      "name": "behavior_consolidation",
+      "skills": [
+        {
+          "name": "binding",
+          "train_limit": 700,
+          "valid_limit": 220
+        },
+        {
+          "name": "instruction_following",
+          "train_limit": 500,
+          "valid_limit": 220
+        },
+        {
+          "name": "epistemic",
+          "train_limit": 650,
+          "valid_limit": 170
+        },
+        {
+          "name": "intent_routing",
+          "train_limit": 750,
+          "valid_limit": 190
+        },
+        {
+          "name": "comprehension",
+          "train_limit": 550,
+          "valid_limit": 140
+        }
+      ],
+      "max_epochs": 2,
+      "lr": 3e-06,
+      "batch_size": 4,
+      "seq_len": 192,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.04,
+      "frozen_first_blocks": 2,
+      "study_focus_metrics": [
+        "binding_exact_component",
+        "instruction_format_component"
+      ],
+      "study_protected_metrics": [
+        "retention_conversation_component",
+        "retention_comprehension_component",
+        "retention_epistemic_component",
+        "retention_intent_component",
+        "retention_quality_component"
+      ],
+      "max_study_protected_regression": 0.06,
+      "min_each_study_focus_delta": 0.0,
+      "min_study_delta": 0.005,
+      "study_patience": 2
+    }
+  ]
+}

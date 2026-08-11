@@ -7,7 +7,7 @@ from .config import ensure_dirs, project_relpath
 from .memory import MemoryStore
 from .training.runtime import best_device
 from .checkpoint import load_active
-from .generation import generate
+from .runtime import ButterflyRuntime, load_capabilities, route_deterministic
 from .epistemic.engine import EpistemicEngine
 from .agent.preflight import PreflightEvaluator
 from .learning.sleep_cycle import run_sleep_cycle
@@ -23,7 +23,8 @@ def command_init(_args):
 
 def command_chat(args):
     model, _, tokenizer = load_active(device=best_device())
-    print("ButterflyAI local chat. Ctrl+C to exit.")
+    runtime = ButterflyRuntime(model, tokenizer)
+    print("ButterflyAI unified local chat. Ctrl+C to exit.")
     history = []
     while True:
         try:
@@ -33,26 +34,15 @@ def command_chat(args):
             return
         if not prompt:
             continue
-        context = "".join(
-            f"User: {u}\nButterfly: {a}\n<END>\n" for u, a in history[-4:]
-        )
-        shaped = context + f"User: {prompt}\nButterfly:"
-        output = generate(
-            model,
-            shaped,
-            tokenizer,
+        response = runtime.respond(
+            prompt,
+            history,
             max_new_tokens=args.max_tokens,
             temperature=args.temperature,
             repetition_penalty=args.repetition_penalty,
         )
-        answer = output[len(shaped):]
-        for marker in ("<END>", "\nUser:"):
-            if marker in answer:
-                answer = answer.split(marker, 1)[0]
-        answer = answer.strip()
-        print("Butterfly >", answer)
-        history.append((prompt, answer))
-
+        print("Butterfly >", response.answer)
+        history.append((prompt, response.answer))
 
 def command_evaluate(_args):
     from .registry import get_active_entry, append_history
@@ -144,6 +134,42 @@ def command_audit(_args):
     raise SystemExit(print_audit())
 
 
+def command_night_study(args):
+    from .learning.night_study import run_night_study
+    report = run_night_study(
+        max_blocks=args.max_blocks,
+        max_minutes=args.max_minutes,
+        dry_run=args.dry_run,
+    )
+    if not args.dry_run:
+        print(json.dumps({
+            "session_id": report.get("session_id"),
+            "stop_reason": report.get("stop_reason"),
+            "blocks": len(report.get("blocks", [])),
+            "log_path": report.get("log_path"),
+        }, indent=2, ensure_ascii=False))
+
+
+def command_night_plan(_args):
+    from .learning.night_study import capability_snapshot, print_plan
+    print_plan(capability_snapshot(force_baseline=False))
+
+
+def command_route(args):
+    result = route_deterministic(args.prompt)
+    payload = {
+        "prompt": args.prompt,
+        "route": result.route if result else "neural",
+        "deterministic": bool(result),
+        "answer": result.answer if result else None,
+    }
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def command_capabilities(_args):
+    print(json.dumps(load_capabilities(), indent=2, ensure_ascii=False))
+
+
 def command_health(_args):
     from .learning.evaluator import BENCHMARK_SUITE_ID
     from .registry import load_registry
@@ -212,6 +238,22 @@ def build_parser():
 
     sp = sub.add_parser("health")
     sp.set_defaults(func=command_health)
+
+    sp = sub.add_parser("route")
+    sp.add_argument("prompt")
+    sp.set_defaults(func=command_route)
+
+    sp = sub.add_parser("capabilities")
+    sp.set_defaults(func=command_capabilities)
+
+    sp = sub.add_parser("night-plan")
+    sp.set_defaults(func=command_night_plan)
+
+    sp = sub.add_parser("night-study")
+    sp.add_argument("--max-blocks", type=int, default=None)
+    sp.add_argument("--max-minutes", type=float, default=None)
+    sp.add_argument("--dry-run", action="store_true")
+    sp.set_defaults(func=command_night_study)
     return parser
 
 

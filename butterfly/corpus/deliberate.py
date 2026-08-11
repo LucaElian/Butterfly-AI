@@ -6,13 +6,14 @@ import hashlib
 import json
 import re
 
-from ..config import ROOT
+from ..config import ROOT, project_relpath
 from ..learning.evaluator import (
     BENCHMARK_RESERVED_EXACT_TARGETS,
     BENCHMARK_RESERVED_FICTIONAL,
     benchmark_surface_prompts,
     normalize_surface,
 )
+from ..learning.study_exam import study_surface_prompts
 from .skills import BUILDERS
 from .skills.common import contains_mojibake, dedupe, sample
 
@@ -37,6 +38,7 @@ def _write_jsonl(path: Path, rows: list[dict]):
 
 def _filter_benchmark_surfaces(rows: list[dict]) -> list[dict]:
     held_out = benchmark_surface_prompts()
+    held_out |= {normalize_surface(prompt) for prompt in study_surface_prompts()}
     return [row for row in rows if normalize_surface(row["user"]) not in held_out]
 
 
@@ -46,6 +48,7 @@ def _validate_rows(stage: str, train: list[dict], valid: list[dict]):
         raise RuntimeError(f"Train/valid family overlap in {stage}: {sorted(overlap)[:10]}")
 
     benchmark_prompts = benchmark_surface_prompts()
+    benchmark_prompts |= {normalize_surface(prompt) for prompt in study_surface_prompts()}
     benchmark_values = {x.casefold() for x in BENCHMARK_RESERVED_EXACT_TARGETS}
     for item in train + valid:
         if contains_mojibake(item.get("user", "")) or contains_mojibake(item.get("assistant", "")):
@@ -132,8 +135,8 @@ def build_corpus(experiment: dict, recipe: dict) -> dict:
             "train_families": len({x["family"] for x in train}),
             "valid_families": len({x["family"] for x in valid}),
             "train_skills": dict(Counter(x["skill"] for x in train)),
-            "train_file": str(train_path.relative_to(ROOT)),
-            "valid_file": str(valid_path.relative_to(ROOT)),
+            "train_file": project_relpath(train_path),
+            "valid_file": project_relpath(valid_path),
             "train_sha256": hashlib.sha256(train_path.read_bytes()).hexdigest(),
             "valid_sha256": hashlib.sha256(valid_path.read_bytes()).hexdigest(),
         }

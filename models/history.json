@@ -216,6 +216,191 @@
           "conversation_component"
         ]
       }
+    },
+    {
+      "version": "0.00055",
+      "status": "rejected",
+      "score": 0.5846046184977853,
+      "recorded_at": 1786422375.6005166,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00055-suite-5a871c79d0df.json",
+        "suite_id": "suite-5a871c79d0df",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: binding_component=+0.0000, instruction_component=+0.0063 (required +0.0500)",
+          "intent_routing_component: 0.8571 < 0.9286 - 0.0300",
+          "conversation_component: 0.9271 < 0.9635 - 0.0300",
+          "comprehension_component: 0.8278 < 0.8737 - 0.0300",
+          "semantic_component: 0.4848 < 0.5429 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: hello_new, how_are_you_alt, folder_new, route_file_2, exact_blue, exact_cloud, exact_copper, exact_lz4, exact_r7k2, math_2_plus_2, math_7_plus_6, math_14_minus_9, math_8_plus_9, math_17_minus_8, math_6_times_4, reject_false_math, reject_false_math_alt, reject_false_math_new, unknown_fictional_fact_alt",
+          "semantic_component 0.4848 < 0.7200",
+          "instruction_component 0.3636 < 0.7200",
+          "epistemic_dialogue_component 0.5620 < 0.7500",
+          "binding_component 0.0000 < 0.8500",
+          "arithmetic_component 0.0000 < 0.8000",
+          "robustness_component 0.6602 < 0.7200",
+          "contrastive_component 0.4950 < 0.7500"
+        ]
+      }
+    },
+    {
+      "version": "0.00056",
+      "status": "rejected",
+      "score": 0.5257538091949037,
+      "recorded_at": 1786427050.4641573,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00056-suite-60c487969598.json",
+        "suite_id": "suite-60c487969598",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: binding_component=+0.1429, instruction_format_component=-0.2098 (required +0.0500)",
+          "intent_routing_component: 0.5714 < 0.9286 - 0.0300",
+          "conversation_component: 0.5988 < 0.9635 - 0.0300",
+          "comprehension_component: 0.7578 < 0.8737 - 0.0300",
+          "semantic_component: 0.3409 < 0.5429 - 0.0300",
+          "language_component: 0.9636 < 1.0000 - 0.0300",
+          "robustness_component: 0.5786 < 0.6811 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: hello_casual, hello_new, thanks_new, how_are_you_alt, how_are_you_new, route_state_2, folder_new, exact_blue, exact_copper, exact_lz4, exact_r7k2, math_2_plus_2, math_7_plus_6, math_14_minus_9, math_8_plus_9, math_17_minus_8, math_6_times_4, reject_false_math, reject_false_math_alt, reject_false_math_new, unknown_fictional_fact_alt",
+          "semantic_component 0.3409 < 0.7200",
+          "conversation_component 0.5988 < 0.7500",
+          "instruction_format_component 0.4854 < 0.7200",
+          "epistemic_dialogue_component 0.5930 < 0.7500",
+          "intent_routing_component 0.5714 < 0.7500",
+          "binding_component 0.1429 < 0.8500",
+          "arithmetic_component 0.0000 < 0.8000",
+          "robustness_component 0.5786 < 0.7200",
+          "contrastive_component 0.5014 < 0.7500"
+        ]
+      }
+    },
+    {
+      "version": "0.00057",
+      "status": "rejected",
+      "score": 0.6407481676360188,
+      "recorded_at": 1786430158.9201412,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00057-suite-60c487969598.json",
+        "suite_id": "suite-60c487969598",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: binding_component=+0.0000, instruction_format_component=+0.0000 (required +0.0500)"
+        ],
+        "active_failures": [
+          "critical failures: hello_new, folder_new, exact_blue, exact_cloud, exact_copper, exact_lz4, exact_r7k2, math_2_plus_2, math_7_plus_6, math_14_minus_9, math_8_plus_9, math_17_minus_8, math_6_times_4, reject_false_math, reject_false_math_alt, reject_false_math_new, unknown_fictional_fact_alt",
+          "semantic_component 0.5429 < 0.7200",
+          "instruction_format_component 0.6952 < 0.7200",
+          "epistemic_dialogue_component 0.5660 < 0.7500",
+          "binding_component 0.0000 < 0.8500",
+          "arithmetic_component 0.0000 < 0.8000",
+          "robustness_component 0.6811 < 0.7200",
+          "contrastive_component 0.4911 < 0.7500"
+        ]
+      }
+    },
+    {
+      "version": "0.00058",
+      "status": "rejected",
+      "score": 0.8576951502646463,
+      "recorded_at": 1786435529.9253035,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00058-suite-d77e4ee53157.json",
+        "suite_id": "suite-d77e4ee53157",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: epistemic_dialogue_component=+0.0000 (required +0.0500)",
+          "intent_routing_component: 0.8929 < 0.9286 - 0.0300",
+          "conversation_component: 0.9271 < 0.9635 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: hello_new, folder_new, reject_false_math, reject_false_math_alt, reject_false_math_new, unknown_fictional_fact_alt",
+          "instruction_format_component 0.6952 < 0.7200",
+          "epistemic_dialogue_component 0.5660 < 0.7500"
+        ]
+      }
+    },
+    {
+      "version": "0.00059",
+      "status": "rejected",
+      "score": 0.8576951502646463,
+      "recorded_at": 1786436661.7516654,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00059-suite-d77e4ee53157.json",
+        "suite_id": "suite-d77e4ee53157",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500)",
+          "intent_routing_component: 0.8929 < 0.9286 - 0.0300",
+          "conversation_component: 0.9271 < 0.9635 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: hello_new, folder_new, reject_false_math, reject_false_math_alt, reject_false_math_new, unknown_fictional_fact_alt",
+          "instruction_format_component 0.6952 < 0.7200",
+          "epistemic_dialogue_component 0.5660 < 0.7500"
+        ]
+      }
+    },
+    {
+      "version": "0.00060",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786479202.7200587,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00060-suite-de7487fd920d.json",
+        "suite_id": "suite-de7487fd920d",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: conversation_component=-0.0365 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 0.9286 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: hello_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ]
+      }
+    },
+    {
+      "version": "0.00061",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786480320.709693,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00061-suite-de7487fd920d.json",
+        "suite_id": "suite-de7487fd920d",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: comprehension_component=+0.0115 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 0.9286 - 0.0300",
+          "conversation_component: 0.9271 < 0.9635 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: hello_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ]
+      }
+    },
+    {
+      "version": "0.00062",
+      "status": "rejected",
+      "score": 0.8930893972437208,
+      "recorded_at": 1786481434.849633,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00062-suite-de7487fd920d.json",
+        "suite_id": "suite-de7487fd920d",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 0.9286 - 0.0300",
+          "conversation_component: 0.9271 < 0.9635 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: hello_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ]
+      }
     }
   ]
 }

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "capabilities": {
+    "exact_binding": {
+      "implementation": "deterministic_runtime",
+      "trainable": false,
+      "benchmark_metric": "binding_component"
+    },
+    "arithmetic": {
+      "implementation": "deterministic_runtime",
+      "trainable": false,
+      "benchmark_metric": "arithmetic_component"
+    },
+    "instruction_format": {
+      "implementation": "neural",
+      "trainable": true,
+      "benchmark_metric": "instruction_format_component"
+    },
+    "conversation": {
+      "implementation": "neural",
+      "trainable": true,
+      "benchmark_metric": "conversation_component"
+    },
+    "comprehension": {
+      "implementation": "neural",
+      "trainable": true,
+      "benchmark_metric": "comprehension_component"
+    },
+    "epistemic_dialogue": {
+      "implementation": "neural_plus_deterministic_runtime",
+      "trainable": true,
+      "benchmark_metric": "epistemic_dialogue_component"
+    },
+    "epistemic_verification": {
+      "implementation": "deterministic_runtime",
+      "trainable": false,
+      "description": "Verifies structured claims and explicit unknown facts before neural fallback."
+    }
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "name": "night_epistemic",
+  "objective": "Improve epistemic dialogue while retaining conversation, comprehension, routing, instruction format and language quality.",
+  "focus_metrics": [
+    "epistemic_dialogue_component"
+  ],
+  "protected_metrics": [
+    "instruction_format_component",
+    "intent_routing_component",
+    "conversation_component",
+    "comprehension_component",
+    "semantic_component",
+    "language_component",
+    "robustness_component",
+    "contrastive_component",
+    "coherence_component",
+    "repetition_component",
+    "binding_component",
+    "arithmetic_component"
+  ],
+  "training_stages": [
+    {
+      "name": "epistemic_focus",
+      "skills": [
+        {
+          "name": "epistemic",
+          "train_limit": 560,
+          "valid_limit": 120
+        },
+        {
+          "name": "intent_routing",
+          "train_limit": 420,
+          "valid_limit": 120
+        },
+        {
+          "name": "instruction_following",
+          "train_limit": 360,
+          "valid_limit": 90
+        },
+        {
+          "name": "comprehension",
+          "train_limit": 108,
+          "valid_limit": 27
+        }
+      ],
+      "max_epochs": 3,
+      "lr": 7e-06,
+      "batch_size": 4,
+      "seq_len": 192,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.05,
+      "frozen_first_blocks": 3,
+      "study_focus_metrics": [
+        "retention_epistemic_component"
+      ],
+      "study_protected_metrics": [
+        "instruction_format_component",
+        "retention_conversation_component",
+        "retention_comprehension_component",
+        "retention_intent_component",
+        "retention_quality_component"
+      ],
+      "max_study_protected_regression": 0.06,
+      "min_each_study_focus_delta": 0.03,
+      "min_study_delta": 0.01,
+      "study_patience": 2
+    },
+    {
+      "name": "epistemic_consolidation",
+      "skills": [
+        {
+          "name": "epistemic",
+          "train_limit": 420,
+          "valid_limit": 110
+        },
+        {
+          "name": "intent_routing",
+          "train_limit": 520,
+          "valid_limit": 150
+        },
+        {
+          "name": "instruction_following",
+          "train_limit": 420,
+          "valid_limit": 100
+        },
+        {
+          "name": "comprehension",
+          "train_limit": 108,
+          "valid_limit": 27
+        }
+      ],
+      "max_epochs": 2,
+      "lr": 2.5e-06,
+      "batch_size": 4,
+      "seq_len": 192,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.04,
+      "frozen_first_blocks": 3,
+      "study_focus_metrics": [
+        "retention_epistemic_component"
+      ],
+      "study_protected_metrics": [
+        "instruction_format_component",
+        "retention_conversation_component",
+        "retention_comprehension_component",
+        "retention_intent_component",
+        "retention_quality_component"
+      ],
+      "max_study_protected_regression": 0.04,
+      "min_each_study_focus_delta": 0.0,
+      "min_study_delta": 0.005,
+      "study_patience": 2
+    }
+  ],
+  "lab_acceptance": {
+    "allow_hard_gate_closure": true
+  }
+}

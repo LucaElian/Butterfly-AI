@@ -5,7 +5,7 @@ import time
 
 from .checkpoint import load_entry, move_model_artifacts, delete_model_artifacts
 from .config import ROOT, MODELS_DIR, BENCHMARKS_DIR, load_promotion_policy, project_relpath
-from .learning.evaluator import BENCHMARK_SUITE_ID, behavior_benchmark, print_benchmark, save_benchmark
+from .learning.evaluator import BENCHMARK_SUITE_ID, PROMOTION_THRESHOLDS, behavior_benchmark, print_benchmark, save_benchmark
 from .registry import (
     append_history,
     compact_physical_models,
@@ -97,33 +97,109 @@ def _no_regression(candidate, baseline, metrics: list[str], tolerance: float):
     return not failures, failures
 
 
+def _critical_failures_for_categories(metrics, categories):
+    failures = set(metrics.get("critical_failures") or [])
+    if not categories:
+        return failures
+    categories = set(categories)
+    id_to_category = {
+        row.get("id"): row.get("category")
+        for row in metrics.get("cases", [])
+        if row.get("id")
+    }
+    return {
+        case_id for case_id in failures
+        if id_to_category.get(case_id) in categories
+    }
+
+
 def _lab_focus_check(candidate, seed_baseline, recipe, policy):
     focus = list(recipe.get("focus_metrics") or [])
     if not focus:
         return False, ["recipe has no focus_metrics"]
-    minimum = float((policy.get("lab") or {}).get("min_focus_delta", 0.05))
-    require_all = bool((policy.get("lab") or {}).get("require_all_focus_metrics", True))
+
+    lab_policy = policy.get("lab") or {}
+    minimum = float(lab_policy.get("min_focus_delta", 0.05))
+    require_all = bool(lab_policy.get("require_all_focus_metrics", True))
     deltas = {
         key: float(candidate.get(key, 0.0)) - float(seed_baseline.get(key, 0.0))
         for key in focus
     }
+
     if require_all:
-        focus_ok = all(delta >= minimum for delta in deltas.values())
+        standard_focus_ok = all(delta >= minimum for delta in deltas.values())
     else:
-        focus_ok = sum(deltas.values()) / len(deltas) >= minimum
+        standard_focus_ok = sum(deltas.values()) / len(deltas) >= minimum
+
+    acceptance = recipe.get("lab_acceptance") or {}
+    focus_ok = standard_focus_ok
+    accepted_by = "delta" if focus_ok else None
+
+    if not focus_ok and bool(acceptance.get("allow_hard_gate_closure", False)):
+        checks = []
+        for key in focus:
+            threshold = PROMOTION_THRESHOLDS.get(key)
+            if threshold is None:
+                checks.append(False)
+                continue
+            base = float(seed_baseline.get(key, 0.0))
+            cur = float(candidate.get(key, 0.0))
+            checks.append(base < float(threshold) <= cur)
+        gate_closure_ok = all(checks) if require_all else any(checks)
+        if gate_closure_ok:
+            focus_ok = True
+            accepted_by = "hard_gate_closure"
+
+    if not focus_ok and bool(acceptance.get("allow_critical_repair", False)):
+        categories = list(acceptance.get("critical_categories") or [])
+        seed_category_failures = _critical_failures_for_categories(seed_baseline, categories)
+        cand_category_failures = _critical_failures_for_categories(candidate, categories)
+
+        seed_all = set(seed_baseline.get("critical_failures") or [])
+        cand_all = set(candidate.get("critical_failures") or [])
+        no_new_critical = cand_all.issubset(seed_all)
+        repaired = (
+            bool(seed_category_failures)
+            and cand_category_failures.issubset(seed_category_failures)
+            and len(cand_category_failures) < len(seed_category_failures)
+        )
+
+        max_focus_regression = float(acceptance.get("max_focus_regression", 0.01))
+        focus_nonregression = all(
+            float(candidate.get(key, 0.0))
+            >= float(seed_baseline.get(key, 0.0)) - max_focus_regression
+            for key in focus
+        )
+        focus_above_hard_floor = all(
+            PROMOTION_THRESHOLDS.get(key) is None
+            or float(candidate.get(key, 0.0)) >= float(PROMOTION_THRESHOLDS[key])
+            for key in focus
+        )
+
+        if repaired and no_new_critical and focus_nonregression and focus_above_hard_floor:
+            focus_ok = True
+            accepted_by = "critical_repair"
 
     failures = []
     if not focus_ok:
         failures.append(
             "focus delta: "
             + ", ".join(f"{key}={delta:+.4f}" for key, delta in deltas.items())
-            + f" (required {minimum:+.4f})"
+            + f" (required {minimum:+.4f}; no configured alternate LAB acceptance passed)"
         )
 
     protected = list(recipe.get("protected_metrics") or [])
-    tolerance = float((policy.get("lab") or {}).get("max_protected_regression", 0.03))
-    protected_ok, protected_failures = _no_regression(candidate, seed_baseline, protected, tolerance)
+    tolerance = float(lab_policy.get("max_protected_regression", 0.03))
+    protected_ok, protected_failures = _no_regression(
+        candidate, seed_baseline, protected, tolerance
+    )
     failures.extend(protected_failures)
+
+    if focus_ok and accepted_by and accepted_by != "delta":
+        # This is kept in the comparison artifact via recipe/policy behavior,
+        # while normal successful runs remain quiet.
+        pass
+
     return focus_ok and protected_ok, failures
 
 

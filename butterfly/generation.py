@@ -11,7 +11,7 @@ def _apply_repetition_penalty(logits, token_ids, penalty: float):
 
 
 @torch.no_grad()
-def generate(model, prompt: str, tokenizer, max_new_tokens=160, temperature=0.7, top_k=50, repetition_penalty=1.20):
+def generate(model, prompt: str, tokenizer, max_new_tokens=160, temperature=0.7, top_k=50, repetition_penalty=1.20, min_new_tokens=1):
     device = next(model.parameters()).device
     prompt_ids = tokenizer.encode(prompt, add_bos=True)
     x = torch.tensor([prompt_ids], dtype=torch.long, device=device)
@@ -23,7 +23,7 @@ def generate(model, prompt: str, tokenizer, max_new_tokens=160, temperature=0.7,
         logits, _ = model(ctx)
         logits = logits[:, -1, :] / max(temperature, 1e-5)
         logits = _apply_repetition_penalty(logits, generated[-128:], repetition_penalty)
-        if step < 4:
+        if step < max(0, int(min_new_tokens)):
             logits[:, tokenizer.EOS] = float("-inf")
         if top_k:
             values, _ = torch.topk(logits, min(top_k, logits.size(-1)))

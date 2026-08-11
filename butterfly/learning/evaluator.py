@@ -9,6 +9,7 @@ import unicodedata
 from typing import Any
 
 from ..generation import generate
+from ..runtime import ButterflyRuntime, runtime_fingerprint_payload
 from ..epistemic.engine import EpistemicEngine
 
 # Reserved benchmark-only values. The deliberate corpus builder imports these and
@@ -36,6 +37,14 @@ BENCHMARK_RESERVED_FALSE_MATH = {
     ("-", 12, 5, 8),
 }
 BENCHMARK_RESERVED_FICTIONAL = {"zarbelia", "ormavia", "veloria", "tarsenia"}
+
+BENCHMARK_MAX_NEW_TOKENS = 96
+BENCHMARK_GENERATION_CONFIG = {
+    "temperature": 1.0,
+    "top_k": 1,
+    "repetition_penalty": 1.25,
+    "min_new_tokens": 1,
+}
 
 
 def _strip_accents(text: str) -> str:
@@ -394,7 +403,7 @@ PROMOTION_THRESHOLDS = {
     "language_component": 0.90,
     "conversation_component": 0.75,
     "comprehension_component": 0.72,
-    "instruction_component": 0.72,
+    "instruction_format_component": 0.72,
     "epistemic_dialogue_component": 0.75,
     "intent_routing_component": 0.75,
     "binding_component": 0.85,
@@ -465,6 +474,10 @@ def benchmark_suite_id() -> str:
         "cleanliness_rule": inspect.getsource(_cleanliness_score),
         "style_rule": inspect.getsource(_style_score),
         "case_rule": inspect.getsource(_case_result),
+        "runtime": runtime_fingerprint_payload(),
+        "generation_rule": inspect.getsource(generate),
+        "generation_config": BENCHMARK_GENERATION_CONFIG,
+        "benchmark_max_new_tokens": BENCHMARK_MAX_NEW_TOKENS,
     }
     raw = json.dumps(rules, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return "suite-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
@@ -487,27 +500,35 @@ def _promotion_check(metrics: dict[str, Any]) -> tuple[bool, list[str]]:
     return not reasons, reasons
 
 
-def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
-    """Deterministic semantics-first benchmark suite."""
+def behavior_benchmark(model, tokenizer, max_new_tokens: int = BENCHMARK_MAX_NEW_TOKENS):
     rows: list[dict[str, Any]] = []
     categories: dict[str, list[float]] = {}
+    runtime = ButterflyRuntime(model, tokenizer)
+
     for case in CASES:
-        shaped = f"User: {case['prompt']}\nButterfly:"
-        out = generate(
-            model,
-            shaped,
-            tokenizer,
+        system_response = runtime.respond(
+            case["prompt"],
+            history=None,
             max_new_tokens=max_new_tokens,
-            temperature=1.0,
-            top_k=1,
-            repetition_penalty=1.25,
+            **BENCHMARK_GENERATION_CONFIG,
         )
-        answer = out[len(shaped):]
-        for marker in ("<END>", "\nUser:"):
-            if marker in answer:
-                answer = answer.split(marker, 1)[0]
-        answer = answer.strip()
-        row = _case_result(answer, case)
+        row = _case_result(system_response.answer, case)
+        row["route"] = system_response.route
+        row["deterministic"] = system_response.deterministic
+
+        if (
+            case.get("skill") in {"binding", "arithmetic"}
+            or case.get("category") == "epistemic_dialogue"
+        ):
+            neural_response = runtime.neural_respond(
+                case["prompt"],
+                history=None,
+                max_new_tokens=max_new_tokens,
+                **BENCHMARK_GENERATION_CONFIG,
+            )
+            row["neural_answer"] = neural_response.answer
+            row["neural_semantic"] = _semantic_score(neural_response.answer, case)
+
         rows.append(row)
         categories.setdefault(case["category"], []).append(row["score"])
 
@@ -515,18 +536,32 @@ def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
     semantic_component = sum(r["semantic"] for r in rows) / len(rows)
     language_component = sum(r["language"] for r in rows) / len(rows)
     repetition_component = sum(r["repetition"] for r in rows) / len(rows)
-    coherence_component = sum((r["language"] + r["style"] + r["cleanliness"]) / 3.0 for r in rows) / len(rows)
+    coherence_component = sum(
+        (r["language"] + r["style"] + r["cleanliness"]) / 3.0 for r in rows
+    ) / len(rows)
+
     robust_rows = [r for r in rows if r["robust"]]
     contrastive_rows = [r for r in rows if r["contrastive"]]
     binding_rows = [r for r in rows if r.get("skill") == "binding"]
     arithmetic_rows = [r for r in rows if r.get("skill") == "arithmetic"]
+    epistemic_dialogue_rows = [r for r in rows if r.get("category") == "epistemic_dialogue"]
+    instruction_format_rows = [
+        r for r in rows
+        if r.get("category") == "instruction"
+        and r.get("skill") not in {"binding", "arithmetic"}
+    ]
     intent_rows = [r for r in rows if r.get("intent_route")]
+
     robustness_component = sum(r["score"] for r in robust_rows) / max(1, len(robust_rows))
     contrastive_component = sum(r["score"] for r in contrastive_rows) / max(1, len(contrastive_rows))
-    # For exact skills we care about correctness, not whether the wrong answer looked fluent.
     binding_component = sum(r["semantic"] for r in binding_rows) / max(1, len(binding_rows))
     arithmetic_component = sum(r["semantic"] for r in arithmetic_rows) / max(1, len(arithmetic_rows))
+    neural_binding_component = sum(float(r.get("neural_semantic", 0.0)) for r in binding_rows) / max(1, len(binding_rows))
+    neural_arithmetic_component = sum(float(r.get("neural_semantic", 0.0)) for r in arithmetic_rows) / max(1, len(arithmetic_rows))
+    neural_epistemic_dialogue_component = sum(float(r.get("neural_semantic", 0.0)) for r in epistemic_dialogue_rows) / max(1, len(epistemic_dialogue_rows))
+    instruction_format_component = sum(r["score"] for r in instruction_format_rows) / max(1, len(instruction_format_rows))
     intent_routing_component = sum(r["semantic"] for r in intent_rows) / max(1, len(intent_rows))
+    deterministic_route_rate = sum(bool(r.get("deterministic")) for r in rows) / max(1, len(rows))
 
     engine = EpistemicEngine()
     epi_tests = [
@@ -536,17 +571,23 @@ def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
         ("12 / 3 = 4", "VERIFIED"), ("7 + 8 = 14", "CONTRADICTED"),
         ("18 - 7 = 11", "VERIFIED"), ("5 * 4 = 21", "CONTRADICTED"),
     ]
-    epistemic_engine_component = sum(engine.verify(claim).status.value == expected for claim, expected in epi_tests) / len(epi_tests)
+    epistemic_engine_component = sum(
+        engine.verify(claim).status.value == expected
+        for claim, expected in epi_tests
+    ) / len(epi_tests)
 
     critical_failures = [r["id"] for r in rows if r["critical"] and not r["critical_pass"]]
     critical_total = sum(r["critical"] for r in rows)
-    critical_pass_rate = (critical_total - len(critical_failures)) / critical_total if critical_total else 1.0
+    critical_pass_rate = (
+        (critical_total - len(critical_failures)) / critical_total
+        if critical_total else 1.0
+    )
 
     overall = (
         0.12 * semantic_component
         + 0.10 * category_scores.get("conversation", 0.0)
         + 0.12 * category_scores.get("comprehension", 0.0)
-        + 0.10 * category_scores.get("instruction", 0.0)
+        + 0.10 * instruction_format_component
         + 0.10 * category_scores.get("epistemic_dialogue", 0.0)
         + 0.08 * binding_component
         + 0.08 * arithmetic_component
@@ -566,11 +607,16 @@ def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
         "language_component": language_component,
         "conversation_component": category_scores.get("conversation", 0.0),
         "comprehension_component": category_scores.get("comprehension", 0.0),
-        "instruction_component": category_scores.get("instruction", 0.0),
+        "instruction_format_component": instruction_format_component,
+        "instruction_component": instruction_format_component,
         "epistemic_dialogue_component": category_scores.get("epistemic_dialogue", 0.0),
         "intent_routing_component": intent_routing_component,
         "binding_component": binding_component,
         "arithmetic_component": arithmetic_component,
+        "neural_binding_component": neural_binding_component,
+        "neural_arithmetic_component": neural_arithmetic_component,
+        "neural_epistemic_dialogue_component": neural_epistemic_dialogue_component,
+        "deterministic_route_rate": deterministic_route_rate,
         "epistemic_engine_component": epistemic_engine_component,
         "robustness_component": robustness_component,
         "contrastive_component": contrastive_component,
@@ -585,13 +631,15 @@ def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
     metrics["promotion_blockers"] = reasons
     return metrics
 
-
 def print_benchmark(metrics):
     keys = [
         "score", "semantic_component", "language_component", "conversation_component",
-        "comprehension_component", "instruction_component", "epistemic_dialogue_component",
+        "comprehension_component", "instruction_format_component", "epistemic_dialogue_component",
         "intent_routing_component",
-        "binding_component", "arithmetic_component", "epistemic_engine_component",
+        "binding_component", "arithmetic_component",
+        "neural_binding_component", "neural_arithmetic_component",
+        "neural_epistemic_dialogue_component",
+        "deterministic_route_rate", "epistemic_engine_component",
         "robustness_component", "contrastive_component", "coherence_component",
         "repetition_component", "critical_pass_rate",
     ]
