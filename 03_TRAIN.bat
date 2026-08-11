@@ -11,7 +11,7 @@ if not exist ".venv\Scripts\python.exe" (
 ".venv\Scripts\python.exe" -m butterfly.pipeline --mode stage --stage train
 set CODE=%ERRORLEVEL%
 echo.
-echo Log: logs\latest.log
-echo Summary: reports\latest-summary.txt
+echo Ultimo log: logs\latest.log
+echo Resumen: reports\latest-summary.txt
 pause
 exit /b %CODE%

@@ -1,10 +1,10 @@
 {
-  "schema_version": 1,
-  "infrastructure_version": "1.0",
-  "target_brain": null,
-  "benchmark_suite": "0.00045",
-  "preset": "ryzen3600",
+  "schema_version": 2,
+  "default_recipe": "intent_routing",
   "allow_sleep_learning": false,
+  "runtime": {
+    "cpu_thread_fraction": 0.67
+  },
   "stages": {
     "prepare": [
       "-m",

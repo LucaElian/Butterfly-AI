@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import hashlib
+import inspect
 import json
 import re
 import unicodedata
@@ -8,8 +10,6 @@ from typing import Any
 
 from ..generation import generate
 from ..epistemic.engine import EpistemicEngine
-
-BENCHMARK_SUITE_VERSION = "0.00045"
 
 # Reserved benchmark-only values. The deliberate corpus builder imports these and
 # refuses to place them in train OR validation. This keeps the final benchmark a
@@ -306,7 +306,7 @@ def _style_score(answer: str, case: dict[str, Any]) -> tuple[float, list[str]]:
     return max(0.0, min(1.0, score)), reasons
 
 
-# v0.00045 keeps v0.00044 routing/semantic fairness but closes two false-positive holes:
+# earlier-suite keeps earlier-suite routing/semantic fairness but closes two false-positive holes:
 # definition answers must actually define the concept and must not be procedural/list noise.
 CASES: list[dict[str, Any]] = [
     # Conversation / close-intent contrast
@@ -324,13 +324,13 @@ CASES: list[dict[str, Any]] = [
     {"id":"clarify","category":"conversation","prompt":"no entendi nada explicalo de nuevo","required_groups":[["perdon","discul","aclar","explic","otra forma","reformular"]],"robust":True,"no_list":True,"max_words":40},
     {"id":"goodbye","category":"conversation","prompt":"bueno me fui nos vemos","required_groups":[["chau","adios","hasta luego","nos vemos","hasta la proxima"]],"robust":True,"direct":True,"no_list":True,"max_words":20},
 
-    # Focused intent-routing diagnostics added in v0.00044.
+    # Focused intent-routing diagnostics added in earlier-suite.
     {"id":"route_hello_2","category":"conversation","intent_route":True,"prompt":"buenass","validator":"greeting","robust":True,"direct":True,"no_list":True,"max_words":18},
     {"id":"route_thanks_2","category":"conversation","intent_route":True,"prompt":"mil gracias che","validator":"thanks","robust":True,"direct":True,"no_list":True,"max_words":18},
     {"id":"route_identity_2","category":"conversation","intent_route":True,"prompt":"vos quien sos","validator":"identity","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":24},
     {"id":"route_state_2","category":"conversation","intent_route":True,"prompt":"como venis hoy","validator":"state","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":28},
 
-    # Comprehension. Several are critical because v0.00051 showed catastrophic interference here.
+    # Comprehension. Several are critical because earlier-suite showed catastrophic interference here.
     {"id":"file_casual","category":"comprehension","intent_route":True,"prompt":"archivo q es explicame facil","validator":"definition_file","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
     {"id":"file_new","category":"comprehension","intent_route":True,"prompt":"un archivo en pc que vendria a ser","validator":"definition_file","critical":True,"robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
     {"id":"folder_casual","category":"comprehension","intent_route":True,"prompt":"que seria una carpeta en la pc","validator":"definition_folder","robust":True,"direct":True,"no_list":True,"max_sentences":3,"max_words":55},
@@ -364,7 +364,7 @@ CASES: list[dict[str, Any]] = [
     {"id":"missing_data","category":"instruction","prompt":"te falta un dato clave para hacer la tarea q haces","required_groups":[["pregunt","pedir","solicitar","verific"],["no invent","no asumir","falta","desconozco","no se"]],"robust":True,"max_words":60},
     {"id":"short_summary","category":"instruction","prompt":"en menos de 10 palabras para que sirve una carpeta","required_groups":[["carpeta"],["organiz","guard","agrup","archivo"]],"robust":True,"max_words":9},
 
-    # Arithmetic. Old failures remain plus unseen pairs for v0.00043.
+    # Arithmetic. Old failures remain plus unseen pairs for earlier-suite.
     {"id":"math_2_plus_2","category":"instruction","skill":"arithmetic","prompt":"cuanto es 2+2 responde solo el numero","exact_answer":"4","critical":True,"robust":True,"contrastive":True,"max_words":1},
     {"id":"math_7_plus_6","category":"instruction","skill":"arithmetic","prompt":"7 mas 6 solo resultado","exact_answer":"13","critical":True,"robust":True,"contrastive":True,"max_words":1},
     {"id":"math_14_minus_9","category":"instruction","skill":"arithmetic","prompt":"14-9 responde nada mas el numero","exact_answer":"5","critical":True,"robust":True,"contrastive":True,"max_words":1},
@@ -440,6 +440,41 @@ def _case_result(answer: str, case: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+
+def benchmark_suite_id() -> str:
+    # Fingerprint the actual exam instead of maintaining a manual suite number.
+    rules = {
+        "cases": CASES,
+        "thresholds": PROMOTION_THRESHOLDS,
+        "reserved_exact": sorted(BENCHMARK_RESERVED_EXACT_TARGETS),
+        "reserved_math": sorted([list(x) for x in BENCHMARK_RESERVED_MATH]),
+        "reserved_false_math": sorted([list(x) for x in BENCHMARK_RESERVED_FALSE_MATH]),
+        "reserved_fictional": sorted(BENCHMARK_RESERVED_FICTIONAL),
+        "normalize_surface_rule": inspect.getsource(normalize_surface),
+        "norm_rule": inspect.getsource(_norm),
+        "contains_rule": inspect.getsource(_contains),
+        "contains_any_rule": inspect.getsource(_contains_any),
+        "words_rule": inspect.getsource(_words),
+        "sentence_rule": inspect.getsource(_sentence_count),
+        "list_rule": inspect.getsource(_list_item_count),
+        "definition_noise_rule": inspect.getsource(_definition_is_noise),
+        "semantic_rule": inspect.getsource(_semantic_score),
+        "definition_rule": inspect.getsource(_definition_score),
+        "language_rule": inspect.getsource(_language_quality),
+        "repetition_rule": inspect.getsource(_repetition_score),
+        "cleanliness_rule": inspect.getsource(_cleanliness_score),
+        "style_rule": inspect.getsource(_style_score),
+        "case_rule": inspect.getsource(_case_result),
+    }
+    raw = json.dumps(rules, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return "suite-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
+
+
+BENCHMARK_SUITE_ID = benchmark_suite_id()
+# Dynamic compatibility alias for older external imports; never a manual literal.
+BENCHMARK_SUITE_VERSION = BENCHMARK_SUITE_ID
+
+
 def _promotion_check(metrics: dict[str, Any]) -> tuple[bool, list[str]]:
     reasons: list[str] = []
     failures = metrics.get("critical_failures", [])
@@ -453,7 +488,7 @@ def _promotion_check(metrics: dict[str, Any]) -> tuple[bool, list[str]]:
 
 
 def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
-    """Deterministic semantics-first benchmark suite v0.00045."""
+    """Deterministic semantics-first benchmark suite."""
     rows: list[dict[str, Any]] = []
     categories: dict[str, list[float]] = {}
     for case in CASES:
@@ -524,7 +559,8 @@ def behavior_benchmark(model, tokenizer, max_new_tokens: int = 96):
     )
 
     metrics: dict[str, Any] = {
-        "suite_version": BENCHMARK_SUITE_VERSION,
+        "suite_id": BENCHMARK_SUITE_ID,
+        "suite_version": BENCHMARK_SUITE_ID,
         "score": overall,
         "semantic_component": semantic_component,
         "language_component": language_component,
@@ -559,7 +595,7 @@ def print_benchmark(metrics):
         "robustness_component", "contrastive_component", "coherence_component",
         "repetition_component", "critical_pass_rate",
     ]
-    print(f"Benchmark suite                 : v{metrics.get('suite_version', '?')}")
+    print(f"Benchmark suite                 : {metrics.get('suite_id', metrics.get('suite_version', '?'))}")
     for key in keys:
         print(f"{key:32s}: {metrics.get(key, 0):.4f}")
     eligible = metrics.get("promotion_eligible", False)

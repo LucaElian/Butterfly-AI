@@ -8,7 +8,7 @@
       "recorded_at": 1786265108.105448,
       "metadata": {
         "language_component": 0.8889802631578947,
-        "benchmark": "benchmarks\\baseline-v0.0003-v0004-suite.json"
+        "benchmark": "benchmarks/baseline-v0.0003-v0004-suite.json"
       }
     },
     {
@@ -19,7 +19,7 @@
       "metadata": {
         "parameters": 17477376,
         "tokenizer_vocab": 8192,
-        "benchmark": "benchmarks\\comparison-v0.0003-vs-v0.0004.json",
+        "benchmark": "benchmarks/comparison-v0.0003-vs-v0.0004.json",
         "brain_format": "safetensors-weights-only"
       }
     },
@@ -29,7 +29,7 @@
       "score": 0.47994892708292686,
       "recorded_at": 1786321814.9881868,
       "metadata": {
-        "benchmark": "benchmarks\\baseline-v0.0004-suite-v0.00041.json",
+        "benchmark": "benchmarks/baseline-v0.0004-suite-v0.00041.json",
         "promotion_eligible": false,
         "critical_failures": [
           "hello",
@@ -50,7 +50,7 @@
       "score": 0.7360801984,
       "recorded_at": 1786328373.6366503,
       "metadata": {
-        "benchmark": "benchmarks\\comparison-v0.0004-vs-v0.0005-suite-v0.00041.json",
+        "benchmark": "benchmarks/comparison-v0.0004-vs-v0.0005-suite-v0.00041.json",
         "benchmark_suite": "0.00041",
         "critical_failures": [
           "hello_buenas",
@@ -68,7 +68,7 @@
       "score": 0.6378059931526807,
       "recorded_at": 1786340913.9195683,
       "metadata": {
-        "benchmark": "benchmarks\\comparison-v0.0004-vs-v0.00051-suite-v0.00042.json",
+        "benchmark": "benchmarks/comparison-v0.0004-vs-v0.00051-suite-v0.00042.json",
         "benchmark_suite": "0.00042",
         "critical_failures": [
           "how_are_you_alt",
@@ -87,7 +87,7 @@
       "score": 0.5534471739217167,
       "recorded_at": 1786395951.2260876,
       "metadata": {
-        "benchmark": "benchmarks\\comparison-v0.0004-vs-v0.00053-suite-v0.00043.json",
+        "benchmark": "benchmarks/comparison-v0.0004-vs-v0.00053-suite-v0.00043.json",
         "benchmark_suite": "0.00043",
         "critical_failures": [
           "hello_casual",
@@ -120,7 +120,7 @@
       "score": 0.301569482422618,
       "recorded_at": 1786399065.1465292,
       "metadata": {
-        "benchmark": "D:\\Downloads\\ButterflyAI\\benchmarks\\baseline-v0.0004-suite-v0.00044.json",
+        "benchmark": "benchmarks/baseline-v0.0004-suite-v0.00044.json",
         "promotion_eligible": false,
         "critical_failures": [
           "hello_casual",
@@ -163,7 +163,7 @@
       "score": 0.24900212993013274,
       "recorded_at": 1786399796.8604503,
       "metadata": {
-        "benchmark": "D:\\Downloads\\ButterflyAI\\benchmarks\\baseline-v0.0004-suite-v0.00045.json",
+        "benchmark": "benchmarks/baseline-v0.0004-suite-v0.00045.json",
         "promotion_eligible": false,
         "critical_failures": [
           "hello_casual",

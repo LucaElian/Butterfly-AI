@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "name": "sleep_learning",
+  "objective": "Learn only from verified experiences with balanced replay.",
+  "focus_metrics": [
+    "conversation_component",
+    "comprehension_component",
+    "epistemic_dialogue_component"
+  ],
+  "protected_metrics": [
+    "language_component",
+    "coherence_component",
+    "repetition_component"
+  ],
+  "training_stages": []
+}

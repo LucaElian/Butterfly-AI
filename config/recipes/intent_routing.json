@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "name": "intent_routing",
+  "objective": "Improve intent routing and basic conversation while protecting retained comprehension and epistemic behavior.",
+  "focus_metrics": [
+    "intent_routing_component",
+    "conversation_component"
+  ],
+  "protected_metrics": [
+    "comprehension_component",
+    "epistemic_dialogue_component",
+    "language_component",
+    "coherence_component",
+    "repetition_component"
+  ],
+  "training_stages": [
+    {
+      "name": "intent_routing",
+      "skills": [
+        {
+          "name": "intent_routing",
+          "train_limit": 2600,
+          "valid_limit": 500
+        }
+      ],
+      "max_epochs": 3,
+      "lr": 3.5e-05,
+      "batch_size": 4,
+      "seq_len": 160,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.05,
+      "frozen_first_blocks": 3
+    },
+    {
+      "name": "routing_consolidation",
+      "skills": [
+        {
+          "name": "intent_routing",
+          "train_limit": 2200,
+          "valid_limit": 420
+        },
+        {
+          "name": "comprehension",
+          "train_limit": 900,
+          "valid_limit": 180
+        },
+        {
+          "name": "epistemic",
+          "train_limit": 650,
+          "valid_limit": 140
+        }
+      ],
+      "max_epochs": 2,
+      "lr": 1.2e-05,
+      "batch_size": 4,
+      "seq_len": 176,
+      "patience": 1,
+      "min_delta": 0.001,
+      "weight_decay": 0.04,
+      "frozen_first_blocks": 1
+    }
+  ]
+}

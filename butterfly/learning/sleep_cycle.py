@@ -2,21 +2,18 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
-from pathlib import Path
 
 from ..memory import MemoryStore
-from ..checkpoint import load_active, save_stable_model, delete_model_artifacts, move_model_artifacts
-from ..config import MODELS_DIR, CORPUS_DIR, ROOT
-from ..registry import (
-    register_model, promote, get_active_entry, compact_to_active,
-    update_entry, append_history, load_registry, save_registry,
-)
-from ..trainer import continue_training, best_device
-from .evaluator import behavior_benchmark
+from ..checkpoint import load_entry, save_stable_model
+from ..config import MODELS_DIR, CORPUS_DIR, ROOT, load_pipeline_config
+from ..experiments import create_experiment, load_current_experiment, load_recipe, mark_experiment_status
+from ..registry import get_entry, register_model
+from ..training.runtime import continue_training, best_device
+from ..upgrade import evaluate_candidate
+
 
 def experiences_to_text(rows):
-    chunks = []
-    ids = []
+    chunks, ids = [], []
     for row in rows:
         id_, task, context, actions_json, result, lesson, quality = row
         ids.append(id_)
@@ -27,103 +24,79 @@ def experiences_to_text(rows):
         )
     return "\n".join(chunks), ids
 
-def next_version(active):
-    if not active:
-        return "0.0004"
-    parts = active.split(".")
-    width = max(4, len(parts[-1]))
-    parts[-1] = f"{int(parts[-1]) + 1:0{width}d}"
-    return ".".join(parts)
 
 def _replay_text(limit_chars=250_000):
     chunks = []
     for name in ("conversation_train.txt", "instruction_train.txt"):
-        p = CORPUS_DIR / name
-        if p.exists():
-            chunks.append(p.read_text(encoding="utf-8", errors="ignore")[: limit_chars // 2])
+        path = CORPUS_DIR / name
+        if path.exists():
+            chunks.append(path.read_text(encoding="utf-8", errors="ignore")[: limit_chars // 2])
     return "\n".join(chunks)
 
-def _remove_registry_version(version: str):
-    reg = load_registry()
-    reg["versions"] = [x for x in reg.get("versions", []) if x["version"] != version]
-    save_registry(reg)
 
 def _sleep_allowed():
-    path = ROOT / "config" / "pipeline.json"
-    try:
-        cfg = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return False
-    return bool(cfg.get("allow_sleep_learning", False))
+    return bool(load_pipeline_config().get("allow_sleep_learning", False))
+
 
 def run_sleep_cycle(steps=120):
     if not _sleep_allowed():
-        print("Sleep learning is paused by the permanent pipeline configuration.")
-        print("Verified experiences remain stored and unused; nothing was deleted or marked as learned.")
+        print("Sleep learning is paused by pipeline configuration.")
+        print("Verified experiences remain stored and unused.")
         return False
 
     memory = MemoryStore()
     rows = memory.approved_experiences()
     if not rows:
-        print("No verified high-quality unused experiences. Nothing to learn tonight.")
+        print("No verified high-quality unused experiences.")
         return False
 
-    model, payload, tokenizer = load_active(device=best_device())
-    active_entry = get_active_entry()
-    active = active_entry["version"]
-    baseline = behavior_benchmark(model, tokenizer)
+    current = load_current_experiment()
+    if current and current.get("status") not in {"promoted", "lab_accepted", "rejected", "cancelled"}:
+        print("Sleep learning skipped: another experiment is currently in progress.")
+        return False
+
+    experiment = create_experiment("sleep_learning")
+    recipe = load_recipe(experiment["recipe_name"])
+    seed = get_entry(experiment["seed_version"])
+    if not seed:
+        raise RuntimeError("Sleep experiment seed disappeared.")
+
+    model, _, tokenizer = load_entry(seed, device=best_device())
     candidate = deepcopy(model)
     new_text, ids = experiences_to_text(rows)
-    training_text = _replay_text() + "\n" + new_text
-    candidate, loss = continue_training(candidate, training_text, tokenizer, steps=steps)
-    metrics = behavior_benchmark(candidate, tokenizer)
-    version = next_version(active)
-    path = MODELS_DIR / f"butterfly-v{version}-candidate.safetensors"
-    tp = (active_entry.get("metadata") or {}).get("tokenizer_path")
+    candidate, loss = continue_training(
+        candidate,
+        _replay_text() + "\n" + new_text,
+        tokenizer,
+        steps=steps,
+    )
+
+    target = experiment["target_version"]
+    path = MODELS_DIR / f"butterfly-v{target}-candidate.safetensors"
+    tokenizer_path = (seed.get("metadata") or {}).get("tokenizer_path")
     save_stable_model(path, candidate, extra={
         "sleep_cycle": True,
+        "experiment_id": experiment["experiment_id"],
         "source_experiences": ids,
-        "baseline": baseline,
-        "candidate": metrics,
         "train_loss": loss,
+        "seed_brain": seed["version"],
     })
-    no_major_regression = (
-        metrics["conversation_component"] >= baseline.get("conversation_component", 0.0) - 0.02
-        and metrics["comprehension_component"] >= baseline.get("comprehension_component", 0.0) - 0.02
-        and metrics["instruction_component"] >= baseline.get("instruction_component", 0.0) - 0.02
-        and metrics["epistemic_dialogue_component"] >= baseline.get("epistemic_dialogue_component", 0.0) - 0.02
-    )
-    improved = (
-        metrics["score"] >= baseline["score"] + 0.03
-        and bool(metrics.get("promotion_eligible"))
-        and no_major_regression
-    )
-    register_model(path, version, score=metrics["score"], active=False, metadata={
-        "baseline": baseline,
-        "candidate": metrics,
-        "promoted": improved,
-        "tokenizer_path": tp,
-        "storage_format": "safetensors-weights-only",
-        "optimizer_included": False,
+    register_model(path, target, active=False, status="candidate", metadata={
+        "sleep_cycle": True,
+        "experiment_id": experiment["experiment_id"],
+        "source_experiences": ids,
+        "train_loss": loss,
+        "seed_brain": seed["version"],
+        "tokenizer_path": tokenizer_path,
     })
-    print("Baseline:", baseline["score"], "Candidate:", metrics["score"])
-    if improved:
-        canonical = MODELS_DIR / f"butterfly-v{version}.safetensors"
-        move_model_artifacts(path, canonical)
-        update_entry(version, path=canonical.name)
-        promote(version)
-        append_history(version, "promoted", score=metrics["score"], metadata={
-            "source": "sleep_cycle",
-            "source_experiences": ids,
-            "brain_format": "safetensors-weights-only",
-        })
-        compact_to_active()
-        memory.mark_used(ids)
-        print(f"PROMOTED Butterfly v{version}; old physical brain burned after evaluation.")
-        return True
+    mark_experiment_status("candidate_ready")
 
-    append_history(version, "rejected", score=metrics["score"], metadata={"source": "sleep_cycle"})
-    delete_model_artifacts(path)
-    _remove_registry_version(version)
-    print(f"REJECTED Butterfly v{version}; candidate deleted, memories retained.")
-    return False
+    result, report_path, metrics = evaluate_candidate(target, recipe)
+    if result in {"PROMOTED", "LAB_ACCEPTED"}:
+        memory.mark_used(ids)
+    mark_experiment_status(
+        {"PROMOTED": "promoted", "LAB_ACCEPTED": "lab_accepted", "REJECTED": "rejected"}[result],
+        evaluation_report=str(report_path.relative_to(ROOT)),
+        final_score=metrics.get("score"),
+    )
+    return result != "REJECTED"

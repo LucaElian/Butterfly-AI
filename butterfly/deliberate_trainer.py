@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import hashlib
 import json
 import os
@@ -10,78 +9,20 @@ import time
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
+from .alignment_data import AssistantOnlyDialogueDataset, load_jsonl
 from .checkpoint import load_checkpoint, load_entry, metadata_path, save_stable_model
 from .config import MODELS_DIR, ROOT
-from .corpus.deliberate import STAGE_FILES, load_manifest
-from .registry import get_active_entry, get_entry, register_model
-from .trainer import best_device, configure_cpu
+from .corpus.deliberate import load_manifest
+from .registry import get_entry, get_candidate_entry, register_model
+from .training.runtime import best_device, configure_cpu
 
 TRAINING_ROOT = ROOT / "training_state" / "deliberate"
 PROGRESS_PATH = TRAINING_ROOT / "progress.json"
 RESUME_MODEL = TRAINING_ROOT / "resume.safetensors"
 BEST_STAGE_MODEL = TRAINING_ROOT / "best-stage.safetensors"
 AUTOSAVE_SECONDS = 600
-
-
-class AssistantOnlyDataset(Dataset):
-    """One conversation example per item with loss only on Butterfly's answer.
-
-    Critical boundary rule: the context `...\nButterfly:` is tokenized separately,
-    exactly like inference. The leading answer space is tokenized as answer output,
-    so no tokenizer piece can silently cross the context/answer boundary.
-    """
-
-    def __init__(self, rows: list[dict], tokenizer, seq_len: int = 160):
-        self.rows = rows
-        self.tokenizer = tokenizer
-        self.seq_len = seq_len
-        self.target_token_count = 0
-        for row in rows:
-            self.target_token_count += len(tokenizer.encode(" " + row["assistant"] + "\n<END>\n", add_eos=True))
-
-    def __len__(self):
-        return len(self.rows)
-
-    def __getitem__(self, idx):
-        row = self.rows[idx]
-        prefix = f"User: {row['user']}\nButterfly:"
-        prefix_ids = self.tokenizer.encode(prefix, add_bos=True)
-        answer_ids = self.tokenizer.encode(" " + row["assistant"] + "\n<END>\n", add_eos=True)
-        ids = prefix_ids + answer_ids
-        if len(ids) < 2:
-            raise RuntimeError("Encoded deliberate example is empty.")
-        if len(ids) - 1 > self.seq_len:
-            # Keep the full answer and the most recent context tokens.
-            max_ids = self.seq_len + 1
-            answer_keep = min(len(answer_ids), max_ids - 1)
-            prefix_keep = max_ids - answer_keep
-            prefix_ids = prefix_ids[-prefix_keep:]
-            answer_ids = answer_ids[-answer_keep:]
-            ids = prefix_ids + answer_ids
-
-        x = torch.full((self.seq_len,), int(self.tokenizer.PAD), dtype=torch.long)
-        y = torch.full((self.seq_len,), -100, dtype=torch.long)
-        raw_x = ids[:-1]
-        raw_y = ids[1:]
-        n = min(self.seq_len, len(raw_x))
-        x[:n] = torch.tensor(raw_x[:n], dtype=torch.long)
-        y[:n] = torch.tensor(raw_y[:n], dtype=torch.long)
-        # y[i] predicts ids[i+1]. The first answer token is predicted at
-        # i=len(prefix_ids)-1, so every earlier target must be ignored.
-        mask_before = max(0, min(n, len(prefix_ids) - 1))
-        y[:mask_before] = -100
-        return x, y
-
-
-def _load_jsonl(path: Path) -> list[dict]:
-    rows = []
-    with Path(path).open("r", encoding="utf-8") as f:
-        for line in f:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
 
 
 def _atomic_json(path: Path, value: dict):
@@ -106,7 +47,7 @@ def _save_resume(model, progress: dict, message: str | None = None):
     _atomic_weights(RESUME_MODEL, model, {"deliberate_resume": progress, "created_at": time.time()})
     _atomic_json(PROGRESS_PATH, progress)
     if message:
-        print(f"  -> autosave: {message} | {RESUME_MODEL.stat().st_size / (1024*1024):.1f} MB weights-only")
+        print(f"  -> autosave: {message} | {RESUME_MODEL.stat().st_size / (1024 * 1024):.1f} MB weights-only")
 
 
 def _save_best(model, progress: dict):
@@ -141,57 +82,65 @@ def _load_weights_into(model, path: Path, device: str):
 def _set_frozen_blocks(model, frozen_first_blocks: int):
     for p in model.parameters():
         p.requires_grad = True
-    n = max(0, min(int(frozen_first_blocks), len(model.blocks)))
-    for block in model.blocks[:n]:
+    count = max(0, min(int(frozen_first_blocks), len(model.blocks)))
+    for block in model.blocks[:count]:
         for p in block.parameters():
             p.requires_grad = False
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total = sum(p.numel() for p in model.parameters())
-    return trainable, total, n
+    return trainable, total, count
 
 
 @torch.no_grad()
-def _validation_loss(model, ds: AssistantOnlyDataset, batch_size: int):
-    loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=0)
+def _validation_loss(model, dataset, batch_size: int):
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
     model.eval()
     device = next(model.parameters()).device
-    vals = []
+    values = []
     for x, y in loader:
         x, y = x.to(device), y.to(device)
         _, loss = model(x, y)
-        vals.append(float(loss.item()))
-    return sum(vals) / max(1, len(vals))
+        values.append(float(loss.item()))
+    return sum(values) / max(1, len(values))
 
 
-def _recipe_hash(recipe: dict) -> str:
-    return hashlib.sha256(json.dumps(recipe, sort_keys=True).encode("utf-8")).hexdigest()
+def _stable_stage_seed(experiment_seed: int, stage: str, epoch: int) -> int:
+    raw = f"{experiment_seed}:{stage}:{epoch}".encode("utf-8")
+    return int(hashlib.sha256(raw).hexdigest()[:8], 16)
 
 
-def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_hash: str, resume_progress, completed_stages):
+def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume_progress, completed):
     name = stage_cfg["name"]
-    train_path, valid_path = STAGE_FILES[name]
-    train_rows = _load_jsonl(train_path)
-    valid_rows = _load_jsonl(valid_path)
+    train_path = ROOT / manifest_stage["train_file"]
+    valid_path = ROOT / manifest_stage["valid_file"]
+    train_rows = load_jsonl(train_path)
+    valid_rows = load_jsonl(valid_path)
     seq_len = int(stage_cfg.get("seq_len", 160))
     batch_size = int(stage_cfg.get("batch_size", 4))
     max_epochs = int(stage_cfg["max_epochs"])
     lr = float(stage_cfg["lr"])
     patience = int(stage_cfg.get("patience", 1))
+    min_delta = float(stage_cfg.get("min_delta", 1e-3))
+    weight_decay = float(stage_cfg.get("weight_decay", 0.05))
     frozen = int(stage_cfg.get("frozen_first_blocks", 0))
 
-    train_ds = AssistantOnlyDataset(train_rows, tokenizer, seq_len=seq_len)
-    valid_ds = AssistantOnlyDataset(valid_rows, tokenizer, seq_len=seq_len)
+    train_ds = AssistantOnlyDialogueDataset(train_rows, tokenizer, seq_len=seq_len)
+    valid_ds = AssistantOnlyDialogueDataset(valid_rows, tokenizer, seq_len=seq_len)
     trainable, total_params, frozen = _set_frozen_blocks(model, frozen)
-    opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=lr, weight_decay=float(stage_cfg.get("weight_decay", 0.06)))
+    opt = torch.optim.AdamW(
+        [p for p in model.parameters() if p.requires_grad],
+        lr=lr,
+        weight_decay=weight_decay,
+    )
 
     best_loss = float("inf")
     bad_epochs = 0
     start_epoch = 1
     resume_step = 0
     epochs_completed = 0
-    completed_stages = list(completed_stages or [])
+    completed = list(completed or [])
 
-    if resume_progress and resume_progress.get("stage") == name and not resume_progress.get("stage_complete", False):
+    if resume_progress and resume_progress.get("stage") == name and not resume_progress.get("stage_complete"):
         start_epoch = max(1, int(resume_progress.get("epoch", 1)))
         resume_step = max(0, int(resume_progress.get("step", 0)))
         best_loss = float(resume_progress.get("best_validation_loss", float("inf")))
@@ -203,7 +152,7 @@ def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_
 
     print(f"\n=== STAGE {name.upper()} ===")
     print(f"train rows: {len(train_rows):,} | valid rows: {len(valid_rows):,}")
-    print(f"assistant target tokens: {train_ds.target_token_count:,} train | {valid_ds.target_token_count:,} valid")
+    print(f"assistant target tokens: {train_ds.answer_tokens:,} train | {valid_ds.answer_tokens:,} valid")
     print(f"batch: {batch_size} | max epochs: {max_epochs} | lr: {lr:g}")
     print(f"trainable parameters: {trainable:,}/{total_params:,} | frozen first blocks: {frozen}")
     print("Objective: USER tokens are context-only; loss is computed ONLY on Butterfly answer tokens.")
@@ -215,7 +164,7 @@ def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_
 
     for epoch in range(start_epoch, max_epochs + 1):
         generator = torch.Generator()
-        generator.manual_seed(530000 + sum(ord(c) for c in name) * 100 + epoch)
+        generator.manual_seed(_stable_stage_seed(int(experiment["random_seed"]), name, epoch))
         loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=0, generator=generator)
         model.train()
         running = []
@@ -246,8 +195,9 @@ def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_
 
             if time.time() - last_autosave >= AUTOSAVE_SECONDS:
                 progress = {
-                    "target_version": target_version,
-                    "recipe_hash": recipe_hash,
+                    "experiment_id": experiment["experiment_id"],
+                    "target_version": experiment["target_version"],
+                    "recipe_hash": experiment["recipe_hash"],
                     "stage": name,
                     "stage_complete": False,
                     "epoch": epoch,
@@ -255,7 +205,7 @@ def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_
                     "total_steps": total,
                     "best_validation_loss": best_loss,
                     "bad_epochs": bad_epochs,
-                    "completed_stages": completed_stages,
+                    "completed_stages": completed,
                     "updated_at": time.time(),
                 }
                 _save_resume(model, progress, f"{name} epoch {epoch} batch {step}/{total}")
@@ -266,18 +216,24 @@ def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_
         print(f"{name} epoch {epoch}: answer-train={train_avg:.4f} answer-valid={val:.4f}")
         epochs_completed = epoch
 
-        if val < best_loss - float(stage_cfg.get("min_delta", 1e-3)):
+        if val < best_loss - min_delta:
             best_loss = val
             bad_epochs = 0
-            _save_best(model, {"target_version": target_version, "stage": name, "epoch": epoch, "validation_loss": best_loss})
+            _save_best(model, {
+                "experiment_id": experiment["experiment_id"],
+                "stage": name,
+                "epoch": epoch,
+                "validation_loss": best_loss,
+            })
             print("  -> new best checkpoint for this stage (saved to disk)")
         else:
             bad_epochs += 1
             print(f"  -> no validation improvement ({bad_epochs}/{patience})")
 
         progress = {
-            "target_version": target_version,
-            "recipe_hash": recipe_hash,
+            "experiment_id": experiment["experiment_id"],
+            "target_version": experiment["target_version"],
+            "recipe_hash": experiment["recipe_hash"],
             "stage": name,
             "stage_complete": False,
             "epoch": epoch + 1,
@@ -285,7 +241,7 @@ def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_
             "total_steps": total,
             "best_validation_loss": best_loss,
             "bad_epochs": bad_epochs,
-            "completed_stages": completed_stages,
+            "completed_stages": completed,
             "updated_at": time.time(),
         }
         _save_resume(model, progress, f"{name} epoch {epoch} complete")
@@ -297,6 +253,7 @@ def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_
 
     if BEST_STAGE_MODEL.exists():
         _load_weights_into(model, BEST_STAGE_MODEL, device)
+
     result = {
         "stage": name,
         "best_validation_loss": best_loss,
@@ -305,134 +262,149 @@ def _train_stage(model, tokenizer, target_version: str, stage_cfg: dict, recipe_
         "train_rows": len(train_rows),
         "valid_rows": len(valid_rows),
     }
-    completed_stages = completed_stages + [result]
+    completed = completed + [result]
     progress = {
-        "target_version": target_version,
-        "recipe_hash": recipe_hash,
+        "experiment_id": experiment["experiment_id"],
+        "target_version": experiment["target_version"],
+        "recipe_hash": experiment["recipe_hash"],
         "stage": name,
         "stage_complete": True,
         "epoch": epochs_completed,
         "step": 0,
         "best_validation_loss": best_loss,
         "bad_epochs": bad_epochs,
-        "completed_stages": completed_stages,
+        "completed_stages": completed,
         "updated_at": time.time(),
     }
     _save_resume(model, progress, f"STAGE {name.upper()} COMPLETE")
     _clean_best()
-    return result, completed_stages
+    return result, completed
 
 
-def train_candidate(target_version: str, recipe: dict):
-    random.seed(530053)
-    torch.manual_seed(530053)
-
+def train_candidate(experiment: dict, recipe: dict):
     manifest = load_manifest()
-    if str(manifest.get("target_version")) != str(target_version):
-        raise RuntimeError(f"Corpus target is v{manifest.get('target_version')}, expected v{target_version}.")
-    if str(manifest.get("benchmark_suite")) != str(recipe.get("benchmark_suite")):
-        raise RuntimeError("Corpus benchmark suite does not match deliberate recipe.")
+    for key in ("experiment_id", "target_version", "recipe_hash", "suite_id"):
+        if str(manifest.get(key)) != str(experiment.get(key)):
+            raise RuntimeError(f"Corpus manifest mismatch for {key}.")
 
-    active = get_active_entry()
-    if not active:
-        raise RuntimeError("No active Butterfly brain.")
-    expected_active = str(recipe.get("expected_active"))
-    if active["version"] != expected_active:
-        raise RuntimeError(f"Expected active seed v{expected_active}, but active is v{active['version']}. Nothing changed.")
-    existing = get_entry(target_version)
-    if existing and existing.get("status") == "candidate":
-        raise RuntimeError(f"Candidate v{target_version} is already registered. Evaluate it or remove it deliberately before retraining.")
+    existing = get_candidate_entry()
+    if existing:
+        raise RuntimeError(f"A candidate is already registered: {existing['version']}")
+
+    seed = get_entry(experiment["seed_version"])
+    if not seed:
+        raise RuntimeError("Experiment seed is no longer registered.")
+
+    random.seed(int(experiment["random_seed"]))
+    torch.manual_seed(int(experiment["random_seed"]))
 
     device = best_device()
     threads = configure_cpu()
-    recipe_hash = _recipe_hash(recipe)
     progress = _read_progress()
+
     if progress:
-        if str(progress.get("target_version")) != str(target_version) or progress.get("recipe_hash") != recipe_hash:
-            raise RuntimeError(
-                "Existing deliberate recovery state belongs to another target/recipe. "
-                "It was preserved for inspection and was NOT overwritten."
-            )
+        if (
+            progress.get("experiment_id") != experiment["experiment_id"]
+            or progress.get("recipe_hash") != experiment["recipe_hash"]
+        ):
+            raise RuntimeError("Recovery state belongs to another experiment. It was not overwritten.")
         model, _ = load_checkpoint(RESUME_MODEL, device=device)
-        _, _, tokenizer = load_entry(active, device="cpu")
+        _, _, tokenizer = load_entry(seed, device="cpu")
         print("\nRECOVERY FOUND")
-        print(f"Stage: {progress.get('stage')} | complete: {progress.get('stage_complete')} | epoch: {progress.get('epoch')} | step: {progress.get('step')}")
+        print(
+            f"Stage: {progress.get('stage')} | complete: {progress.get('stage_complete')} | "
+            f"epoch: {progress.get('epoch')} | step: {progress.get('step')}"
+        )
         print("Continuing from last atomic weights-only autosave. Adam momentum intentionally restarts.")
     else:
-        model, _, tokenizer = load_entry(active, device=device)
+        model, _, tokenizer = load_entry(seed, device=device)
         progress = None
-        print(f"\nStarting v{target_version} FROM the accepted v{active['version']} weights.")
+        print(f"\nStarting candidate {experiment['target_version']} from seed {seed['version']} weights.")
         print("This is continued learning, NOT a random-weight restart.")
 
     if model.cfg.vocab_size != tokenizer.vocab_size:
         raise RuntimeError("Model/tokenizer vocabulary mismatch.")
-    tokenizer_rel = (active.get("metadata") or {}).get("tokenizer_path")
+    tokenizer_rel = (seed.get("metadata") or {}).get("tokenizer_path")
     if not tokenizer_rel:
-        raise RuntimeError("Active brain has no tokenizer lineage metadata.")
+        raise RuntimeError("Seed brain has no tokenizer lineage metadata.")
 
-    print(f"Seed brain: v{active['version']}")
+    print(f"Seed brain: {seed['version']} ({seed.get('status')})")
     print(f"Device: {device}")
-    print(f"CPU threads: {threads} (safe cap for Windows/USB headroom)" if device == "cpu" else "CPU threads: n/a")
-    print(f"Parameters: {model.parameter_count():,} (same architecture as v{active['version']})")
-    print(f"Tokenizer vocab: {tokenizer.vocab_size:,} (same accepted tokenizer)")
-    print(f"v{active['version']} remains ACTIVE and untouched until v{target_version} passes benchmark v{recipe['benchmark_suite']}.")
+    print(f"CPU threads: {threads}" if device == "cpu" else "CPU threads: n/a")
+    print(f"Parameters: {model.parameter_count():,}")
+    print(f"Tokenizer vocab: {tokenizer.vocab_size:,}")
 
     completed = list((progress or {}).get("completed_stages", []))
     completed_names = {x.get("stage") for x in completed}
-    for stage_cfg in recipe["training_stages"]:
+
+    for stage_cfg in recipe.get("training_stages", []):
         name = stage_cfg["name"]
         if name in completed_names:
             print(f"\n=== STAGE {name.upper()} === already completed in recovery; skipping.")
             continue
-        stage_resume = progress if progress and progress.get("stage") == name and not progress.get("stage_complete", False) else None
-        _, completed = _train_stage(model, tokenizer, target_version, stage_cfg, recipe_hash, stage_resume, completed)
+        manifest_stage = manifest.get("stages", {}).get(name)
+        if not manifest_stage:
+            raise RuntimeError(f"Manifest is missing stage {name}.")
+        stage_resume = (
+            progress
+            if progress and progress.get("stage") == name and not progress.get("stage_complete")
+            else None
+        )
+        _, completed = _train_stage(
+            model, tokenizer, experiment, stage_cfg, manifest_stage, stage_resume, completed
+        )
         completed_names.add(name)
         progress = _read_progress()
 
-    candidate_path = MODELS_DIR / f"butterfly-v{target_version}-candidate.safetensors"
+    target = experiment["target_version"]
+    candidate_path = MODELS_DIR / f"butterfly-v{target}-candidate.safetensors"
     extra = {
         "candidate": True,
-        "version": target_version,
-        "seed_brain": active["version"],
-        "benchmark_suite": recipe["benchmark_suite"],
+        "version": target,
+        "experiment_id": experiment["experiment_id"],
+        "seed_brain": seed["version"],
+        "seed_slot": experiment["seed_slot"],
+        "suite_id": experiment["suite_id"],
         "stages": completed,
         "tokenizer_path": tokenizer_rel,
         "created_at": time.time(),
-        "recipe_hash": recipe_hash,
-        "objective": "assistant-only-loss; boundary-safe; staged replay",
+        "recipe_hash": experiment["recipe_hash"],
+        "recipe_name": experiment["recipe_name"],
     }
     save_stable_model(candidate_path, model, extra=extra)
     register_model(
         candidate_path,
-        target_version,
+        target,
         active=False,
         status="candidate",
         metadata={
             "parameters": model.parameter_count(),
             "tokenizer_vocab": tokenizer.vocab_size,
             "tokenizer_path": tokenizer_rel,
-            "seed_brain": active["version"],
-            "benchmark_suite": recipe["benchmark_suite"],
+            "seed_brain": seed["version"],
+            "seed_slot": experiment["seed_slot"],
+            "suite_id": experiment["suite_id"],
             "stages": completed,
-            "recipe_hash": recipe_hash,
+            "recipe_hash": experiment["recipe_hash"],
+            "recipe_name": experiment["recipe_name"],
+            "experiment_id": experiment["experiment_id"],
         },
     )
-    reports_dir = ROOT / "reports"
-    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    reports = ROOT / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
     training_report = {
-        "target_version": target_version,
-        "seed_brain": active["version"],
-        "benchmark_suite": recipe["benchmark_suite"],
-        "candidate_path": str(candidate_path),
+        "experiment_id": experiment["experiment_id"],
+        "target_version": target,
+        "seed_version": seed["version"],
+        "recipe_name": experiment["recipe_name"],
         "stages": completed,
-        "created_at": time.time(),
     }
     text = json.dumps(training_report, indent=2, ensure_ascii=False)
-    (reports_dir / "latest-training.json").write_text(text, encoding="utf-8")
-    (reports_dir / f"v{target_version}-training.json").write_text(text, encoding="utf-8")
+    (reports / "latest-training.json").write_text(text, encoding="utf-8")
+    (reports / f"brain-{target}-training.json").write_text(text, encoding="utf-8")
 
     print(f"\nSaved candidate: {candidate_path}")
-    print(f"It is NOT active. v{active['version']} is still the accepted brain.")
-    print("Candidate saved successfully; temporary recovery checkpoints are now removed.")
+    print("ACTIVE and LAB remain unchanged until evaluation.")
     _clean_training_state()
     return candidate_path

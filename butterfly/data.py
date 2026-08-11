@@ -4,11 +4,7 @@ from torch.utils.data import Dataset
 
 
 class BlockTokenDataset(Dataset):
-    """Non-overlapping next-token blocks.
-
-    v0.0003 shifted one token per sample, which made a multi-million-token corpus
-    needlessly expensive to shuffle. v0.0004 walks the corpus in blocks.
-    """
+    """Efficient non-overlapping next-token blocks for language-model training."""
     def __init__(self, text: str, seq_len: int, tokenizer):
         ids=tokenizer.encode(text,add_bos=True,add_eos=True)
         self.tokens=torch.tensor(ids,dtype=torch.long)

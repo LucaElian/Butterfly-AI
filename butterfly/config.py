@@ -1,8 +1,10 @@
-from dataclasses import dataclass, asdict
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
 from pathlib import Path
 import json
+import os
 
-APP_VERSION = "0.00051"
 
 @dataclass
 class ModelConfig:
@@ -23,19 +25,22 @@ class ModelConfig:
         allowed = cls.__dataclass_fields__.keys()
         return cls(**{k: v for k, v in value.items() if k in allowed})
 
+
 PRESETS = {
-    "ryzen3600": ModelConfig(),
+    "base": ModelConfig(),
     "light": ModelConfig(max_seq_len=320, d_model=320, n_layers=6, n_heads=8, d_ff=1280),
 }
 
+
 def config_for_preset(name: str, vocab_size: int):
     if name == "auto":
-        name = "ryzen3600"
+        name = "base"
     if name not in PRESETS:
         raise KeyError(f"Unknown preset: {name}")
     cfg = ModelConfig(**PRESETS[name].to_dict())
     cfg.vocab_size = vocab_size
     return cfg, name
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
@@ -47,9 +52,12 @@ TOKENIZERS_DIR = STATE_DIR / "tokenizers"
 DB_PATH = STATE_DIR / "butterfly.db"
 REGISTRY_PATH = MODELS_DIR / "registry.json"
 LEGACY_TOKENIZER_PATH = STATE_DIR / "tokenizer-v2.json"
-V4_TOKENIZER_PATH = TOKENIZERS_DIR / "tokenizer-v3-v0.0004.json"
 BENCHMARKS_DIR = ROOT / "benchmarks"
 INHERITED_DIR = DATA_DIR / "inherited"
+CONFIG_DIR = ROOT / "config"
+PIPELINE_CONFIG_PATH = CONFIG_DIR / "pipeline.json"
+PROMOTION_POLICY_PATH = CONFIG_DIR / "promotion_policy.json"
+RECIPES_DIR = CONFIG_DIR / "recipes"
 
 LANG_TRAIN = CORPUS_DIR / "language_train.txt"
 LANG_VALID = CORPUS_DIR / "language_valid.txt"
@@ -62,10 +70,37 @@ CORPUS_MANIFEST = CORPUS_DIR / "manifest.json"
 
 
 def ensure_dirs():
-    for p in (DATA_DIR, STATIC_DIR, CORPUS_DIR, MODELS_DIR, STATE_DIR, TOKENIZERS_DIR, BENCHMARKS_DIR, INHERITED_DIR):
+    for p in (
+        DATA_DIR, STATIC_DIR, CORPUS_DIR, MODELS_DIR, STATE_DIR,
+        TOKENIZERS_DIR, BENCHMARKS_DIR, INHERITED_DIR, RECIPES_DIR,
+    ):
         p.mkdir(parents=True, exist_ok=True)
 
 
+def load_json(path: Path, default=None):
+    path = Path(path)
+    if not path.exists():
+        return default
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def save_json(path: Path, value):
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def load_pipeline_config() -> dict:
+    cfg = load_json(PIPELINE_CONFIG_PATH, {})
+    if not isinstance(cfg, dict):
+        raise RuntimeError("config/pipeline.json must contain a JSON object.")
+    return cfg
+
+
+def load_promotion_policy() -> dict:
+    value = load_json(PROMOTION_POLICY_PATH, {})
+    if not isinstance(value, dict):
+        raise RuntimeError("config/promotion_policy.json must contain a JSON object.")
+    return value

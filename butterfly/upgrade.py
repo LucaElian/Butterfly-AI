@@ -3,299 +3,251 @@ from __future__ import annotations
 import json
 import time
 
-from .config import ROOT, LEGACY_TOKENIZER_PATH, BENCHMARKS_DIR, ensure_dirs
+from .checkpoint import load_entry, move_model_artifacts, delete_model_artifacts
+from .config import ROOT, MODELS_DIR, BENCHMARKS_DIR, load_promotion_policy
+from .learning.evaluator import BENCHMARK_SUITE_ID, behavior_benchmark, print_benchmark, save_benchmark
 from .registry import (
-    get_active_entry,
-    update_entry,
-    promote,
-    compact_to_active,
-    load_registry,
-    save_registry,
     append_history,
+    compact_physical_models,
+    get_active_entry,
+    get_candidate_entry,
+    get_entry,
+    get_lab_entry,
+    promote_to_active,
+    promote_to_lab,
+    remove_entry,
+    update_entry,
 )
-from .checkpoint import (
-    load_entry,
-    move_model_artifacts,
-    delete_model_artifacts,
-)
-from .trainer import best_device
-from .learning.evaluator import (
-    BENCHMARK_SUITE_VERSION,
-    behavior_benchmark,
-    print_benchmark,
-    save_benchmark,
-)
+from .training.runtime import best_device
 
-def _remove_registry_version(version: str):
-    reg = load_registry()
-    reg["versions"] = [x for x in reg.get("versions", []) if x["version"] != version]
-    save_registry(reg)
 
-def _resolve_candidate(candidate_version: str | None):
-    reg = load_registry()
-    active_version = reg.get("active")
-    rows = reg.get("versions", [])
-    if candidate_version:
-        candidate = next((x for x in rows if x.get("version") == candidate_version), None)
-        if not candidate:
-            raise RuntimeError(f"Candidate v{candidate_version} is not registered.")
-        if candidate.get("version") == active_version or candidate.get("status") == "active":
-            raise RuntimeError(
-                f"Safety stop: v{candidate_version} is already the ACTIVE brain. "
-                "An active brain can never be treated as a rejectable candidate."
-            )
-        if candidate.get("status") != "candidate":
-            raise RuntimeError(
-                f"v{candidate_version} has status {candidate.get('status')!r}, not 'candidate'."
-            )
-        return candidate
+def _baseline_path(entry):
+    return BENCHMARKS_DIR / f"baseline-brain-{entry['version']}-suite-{BENCHMARK_SUITE_ID}.json"
 
-    candidates = [
-        x for x in rows
-        if x.get("status") == "candidate" and x.get("version") != active_version
-    ]
-    if not candidates:
-        return None
-    if len(candidates) > 1:
-        versions = ", ".join(x.get("version", "?") for x in candidates)
-        raise RuntimeError(
-            f"More than one candidate is registered ({versions}). "
-            "Specify the candidate version explicitly."
-        )
-    return candidates[0]
 
-def _strict_baseline(active):
-    path = BENCHMARKS_DIR / (
-        f"baseline-v{active['version']}-suite-v{BENCHMARK_SUITE_VERSION}.json"
-    )
-    if path.exists():
+def strict_baseline(entry, force: bool = False):
+    path = _baseline_path(entry)
+    if path.exists() and not force:
         value = json.loads(path.read_text(encoding="utf-8"))
-        if value.get("suite_version") == BENCHMARK_SUITE_VERSION:
+        if value.get("suite_id") == BENCHMARK_SUITE_ID:
             return value, path
-
-    print(
-        f"No strict v{BENCHMARK_SUITE_VERSION} baseline for active v{active['version']}; "
-        "evaluating it now..."
-    )
-    model, _, tok = load_entry(active, device=best_device())
-    metrics = behavior_benchmark(model, tok)
+    model, _, tokenizer = load_entry(entry, device=best_device())
+    metrics = behavior_benchmark(model, tokenizer)
     save_benchmark(path, metrics)
     return metrics, path
 
-def prepare_target(target_version: str, expected_active: str | None = None):
-    """Generic read-only preflight for any future deliberate candidate."""
-    ensure_dirs()
+
+def prepare_target(target_version: str, seed_version: str | None = None):
+    seed = get_entry(seed_version) if seed_version else (get_lab_entry() or get_active_entry())
     active = get_active_entry()
     if not active:
-        raise RuntimeError("No active Butterfly brain.")
+        raise RuntimeError("No ACTIVE Butterfly brain.")
+    if not seed:
+        raise RuntimeError("No seed brain.")
+    current_lab = get_lab_entry()
+    if target_version in {active.get("version"), (current_lab or {}).get("version")}:
+        raise RuntimeError("Target version must differ from ACTIVE and LAB.")
+    if get_candidate_entry():
+        raise RuntimeError("A candidate is already registered. Finish it before preparing another.")
 
-    if target_version == active["version"]:
-        raise RuntimeError(
-            f"Target v{target_version} is already active; a new candidate must use a distinct version."
-        )
-    if expected_active is not None and active["version"] != expected_active:
-        raise RuntimeError(
-            f"Expected active seed v{expected_active}, but active is v{active['version']}. "
-            "Nothing was changed."
-        )
-
-    candidates = [
-        x for x in load_registry().get("versions", [])
-        if x.get("status") == "candidate" and x.get("version") != active["version"]
-    ]
-    if candidates:
-        names = ", ".join("v" + str(x.get("version")) for x in candidates)
-        raise RuntimeError(
-            f"A candidate is already registered ({names}). Finish/reject it before stacking experiments."
-        )
-
-    model, _, tokenizer = load_entry(active, device="cpu")
-    tokenizer_rel = (active.get("metadata") or {}).get("tokenizer_path")
+    model, _, tokenizer = load_entry(seed, device="cpu")
+    tokenizer_rel = (seed.get("metadata") or {}).get("tokenizer_path")
     if not tokenizer_rel:
-        raise RuntimeError("Active brain has no tokenizer lineage in registry metadata.")
-    tokenizer_path = ROOT / tokenizer_rel
-    if not tokenizer_path.exists():
-        raise FileNotFoundError(tokenizer_path)
+        raise RuntimeError("Seed brain has no tokenizer lineage.")
     if model.cfg.vocab_size != tokenizer.vocab_size:
-        raise RuntimeError("Active model/tokenizer vocabulary mismatch. Nothing was changed.")
+        raise RuntimeError("Seed model/tokenizer vocabulary mismatch.")
 
-    baseline, baseline_path = _strict_baseline(active)
-    result = {
+    baseline, baseline_path = strict_baseline(seed)
+    print("ButterflyAI generic experiment preflight OK.")
+    print(f"Target brain           : {target_version}")
+    print(f"Seed brain             : {seed['version']} ({seed.get('status')})")
+    print(f"ACTIVE brain           : {active['version']} (READ ONLY until global promotion)")
+    print(f"Parameters             : {model.parameter_count():,}")
+    print(f"Tokenizer vocab        : {tokenizer.vocab_size:,}")
+    print(f"Evaluator suite        : {BENCHMARK_SUITE_ID}")
+    print(f"Seed baseline score    : {float(baseline.get('score', 0.0)):.4f}")
+    print(f"Baseline file          : {baseline_path}")
+    print("No weights, tokenizer, memory or corpus were modified.")
+    return {
         "target_version": target_version,
-        "active_seed": active["version"],
-        "parameters": model.parameter_count(),
-        "tokenizer_path": str(tokenizer_path),
-        "tokenizer_vocab": tokenizer.vocab_size,
-        "benchmark_suite": BENCHMARK_SUITE_VERSION,
+        "seed_version": seed["version"],
+        "suite_id": BENCHMARK_SUITE_ID,
         "baseline_score": baseline.get("score"),
-        "critical_pass_rate": baseline.get("critical_pass_rate"),
         "baseline_path": str(baseline_path),
     }
-    print("ButterflyAI generic target preflight OK.")
-    print(f"Target brain           : v{target_version}")
-    print(f"Active seed brain      : v{active['version']} (READ ONLY until promotion)")
-    print(f"Parameters             : {model.parameter_count():,}")
-    print(f"Tokenizer              : {tokenizer_path}")
-    print(f"Tokenizer vocab        : {tokenizer.vocab_size:,}")
-    print(f"Strict benchmark suite : v{BENCHMARK_SUITE_VERSION}")
-    print(f"Strict baseline score  : {float(baseline.get('score', 0.0)):.4f}")
-    print(f"Critical pass rate     : {float(baseline.get('critical_pass_rate', 0.0)):.4f}")
-    print(f"Baseline file          : {baseline_path}")
-    print("No weights, tokenizer, memory or corpus were modified. A new strict baseline file may be created for this suite.")
-    return result
 
-def compare_and_promote(candidate_version: str | None = None):
-    """Compare a distinct candidate against the active brain using strict hard gates."""
+
+def _no_regression(candidate, baseline, metrics: list[str], tolerance: float):
+    failures = []
+    for key in metrics:
+        cand = float(candidate.get(key, 0.0))
+        base = float(baseline.get(key, 0.0))
+        if cand < base - tolerance:
+            failures.append(f"{key}: {cand:.4f} < {base:.4f} - {tolerance:.4f}")
+    return not failures, failures
+
+
+def _lab_focus_check(candidate, seed_baseline, recipe, policy):
+    focus = list(recipe.get("focus_metrics") or [])
+    if not focus:
+        return False, ["recipe has no focus_metrics"]
+    minimum = float((policy.get("lab") or {}).get("min_focus_delta", 0.05))
+    require_all = bool((policy.get("lab") or {}).get("require_all_focus_metrics", True))
+    deltas = {
+        key: float(candidate.get(key, 0.0)) - float(seed_baseline.get(key, 0.0))
+        for key in focus
+    }
+    if require_all:
+        focus_ok = all(delta >= minimum for delta in deltas.values())
+    else:
+        focus_ok = sum(deltas.values()) / len(deltas) >= minimum
+
+    failures = []
+    if not focus_ok:
+        failures.append(
+            "focus delta: "
+            + ", ".join(f"{key}={delta:+.4f}" for key, delta in deltas.items())
+            + f" (required {minimum:+.4f})"
+        )
+
+    protected = list(recipe.get("protected_metrics") or [])
+    tolerance = float((policy.get("lab") or {}).get("max_protected_regression", 0.03))
+    protected_ok, protected_failures = _no_regression(candidate, seed_baseline, protected, tolerance)
+    failures.extend(protected_failures)
+    return focus_ok and protected_ok, failures
+
+
+def _active_check(candidate, active_baseline, recipe, policy):
+    active_policy = policy.get("active") or {}
+    minimum = float(active_policy.get("min_overall_delta", 0.03))
+    improvement = float(candidate.get("score", 0.0)) - float(active_baseline.get("score", 0.0))
+    gates_ok = bool(candidate.get("promotion_eligible"))
+    if not bool(active_policy.get("requires_all_hard_gates", True)):
+        gates_ok = True
+
+    protected = sorted(set(
+        list(recipe.get("protected_metrics") or [])
+        + list(recipe.get("focus_metrics") or [])
+    ))
+    tolerance = float(active_policy.get("max_protected_regression", 0.02))
+    regress_ok, regressions = _no_regression(candidate, active_baseline, protected, tolerance)
+
+    failures = []
+    if improvement < minimum:
+        failures.append(f"overall improvement {improvement:+.4f} < {minimum:+.4f}")
+    if not gates_ok:
+        failures.extend(candidate.get("promotion_blockers", []))
+    failures.extend(regressions)
+    return improvement >= minimum and gates_ok and regress_ok, failures
+
+
+def evaluate_candidate(target_version: str | None, recipe: dict):
+    candidate = get_candidate_entry()
+    if not candidate:
+        raise RuntimeError("No candidate brain is registered.")
+    if target_version and candidate.get("version") != target_version:
+        raise RuntimeError("Registered candidate does not match current experiment target.")
+
     active = get_active_entry()
     if not active:
-        raise RuntimeError("No active baseline model.")
+        raise RuntimeError("No ACTIVE brain.")
+    seed_version = (candidate.get("metadata") or {}).get("seed_brain")
+    seed = get_entry(seed_version)
+    if not seed:
+        raise RuntimeError("Candidate seed lineage is no longer registered.")
 
-    candidate = _resolve_candidate(candidate_version)
-    if candidate is None:
-        print("No candidate brain is registered. Nothing to compare or delete.")
-        print(f"Active brain remains Butterfly v{active['version']}.")
-        return False
+    active_baseline, active_path = strict_baseline(active)
+    if seed["version"] == active["version"]:
+        seed_baseline, seed_path = active_baseline, active_path
+    else:
+        seed_baseline, seed_path = strict_baseline(seed)
 
-    candidate_version = candidate["version"]
-    meta = candidate.get("metadata") or {}
-    seed_brain = meta.get("seed_brain")
-    if seed_brain is not None and seed_brain != active["version"]:
-        raise RuntimeError(
-            f"Safety stop: v{candidate_version} lineage says seed={seed_brain!r}, "
-            f"but active baseline is v{active['version']}. Nothing was promoted or deleted."
-        )
+    print(f"\nEvaluating candidate {candidate['version']} with suite {BENCHMARK_SUITE_ID}...")
+    model, _, tokenizer = load_entry(candidate, device=best_device())
+    metrics = behavior_benchmark(model, tokenizer)
+    print_benchmark(metrics)
 
-    candidate_tokenizer = meta.get("tokenizer_path")
-    active_tokenizer = (active.get("metadata") or {}).get("tokenizer_path")
-    if candidate_tokenizer is not None and candidate_tokenizer != active_tokenizer:
-        raise RuntimeError(
-            f"Safety stop: v{candidate_version} must inherit the exact accepted tokenizer. "
-            "Tokenizer lineage differs; nothing was promoted or deleted."
-        )
-    if candidate_version == active["version"]:
-        raise RuntimeError("Safety stop: candidate and active versions are identical.")
-
-    baseline, _ = _strict_baseline(active)
-
-    print(f"\nEvaluating candidate v{candidate_version} with suite v{BENCHMARK_SUITE_VERSION}...")
-    cm, _, ct = load_entry(candidate, device=best_device())
-    cand = behavior_benchmark(cm, ct)
-    print_benchmark(cand)
+    policy = load_promotion_policy()
+    active_ok, active_failures = _active_check(metrics, active_baseline, recipe, policy)
+    lab_ok, lab_failures = _lab_focus_check(metrics, seed_baseline, recipe, policy)
 
     report = {
-        "suite_version": BENCHMARK_SUITE_VERSION,
-        "baseline_version": active["version"],
-        "candidate_version": candidate_version,
-        "baseline": baseline,
-        "candidate": cand,
+        "suite_id": BENCHMARK_SUITE_ID,
+        "active_version": active["version"],
+        "seed_version": seed["version"],
+        "candidate_version": candidate["version"],
+        "active_baseline": active_baseline,
+        "seed_baseline": seed_baseline,
+        "candidate": metrics,
+        "active_promotion": {"eligible": active_ok, "failures": active_failures},
+        "lab_acceptance": {"eligible": lab_ok, "failures": lab_failures},
         "created_at": time.time(),
     }
     report_path = BENCHMARKS_DIR / (
-        f"comparison-v{active['version']}-vs-v{candidate_version}"
-        f"-suite-v{BENCHMARK_SUITE_VERSION}.json"
+        f"comparison-active-{active['version']}-seed-{seed['version']}-"
+        f"candidate-{candidate['version']}-suite-{BENCHMARK_SUITE_ID}.json"
     )
-    report_path.write_text(
-        json.dumps(report, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    improvement = cand["score"] - baseline["score"]
-    protected_components = (
-        "semantic_component",
-        "language_component",
-        "conversation_component",
-        "comprehension_component",
-        "instruction_component",
-        "epistemic_dialogue_component",
-        "coherence_component",
-    )
-    no_major_regression = all(
-        float(cand.get(key, 0.0)) >= float(baseline.get(key, 0.0)) - 0.02
-        for key in protected_components
-    )
-    passes = (
-        improvement >= 0.03
-        and bool(cand.get("promotion_eligible"))
-        and no_major_regression
-    )
-
-    print(f"\nBaseline overall : {baseline['score']:.4f}")
-    print(f"Candidate overall: {cand['score']:.4f}")
-    print(f"Improvement      : {improvement:+.4f}")
-    print(f"Hard gates       : {'PASS' if cand.get('promotion_eligible') else 'FAIL'}")
-    print(f"No regressions   : {'PASS' if no_major_regression else 'FAIL'}")
-
-    from .config import MODELS_DIR, DATA_DIR
     candidate_path = MODELS_DIR / candidate["path"]
-    active_path = MODELS_DIR / active["path"]
-    if candidate_path.resolve() == active_path.resolve():
-        raise RuntimeError(
-            "Safety stop: candidate path resolves to the active model path. Nothing was deleted."
-        )
+    target = candidate["version"]
 
-    if passes:
-        canonical = MODELS_DIR / f"butterfly-v{candidate_version}.safetensors"
+    if active_ok:
+        canonical = MODELS_DIR / f"butterfly-v{target}.safetensors"
         if candidate_path.resolve() != canonical.resolve():
             move_model_artifacts(candidate_path, canonical)
-            update_entry(candidate_version, path=canonical.name)
-        update_entry(
-            candidate_version,
-            score=cand["score"],
-            metadata={
-                "benchmark": str(report_path.relative_to(ROOT)),
-                "benchmark_suite": BENCHMARK_SUITE_VERSION,
-                "storage_format": "safetensors-weights-only",
-                "optimizer_included": False,
-            },
-        )
-        promote(candidate_version)
-        append_history(
-            candidate_version,
-            "promoted",
-            score=cand["score"],
-            metadata={
-                "parameters": (candidate.get("metadata") or {}).get("parameters"),
-                "tokenizer_vocab": (candidate.get("metadata") or {}).get("tokenizer_vocab"),
-                "benchmark": str(report_path.relative_to(ROOT)),
-                "benchmark_suite": BENCHMARK_SUITE_VERSION,
-                "brain_format": "safetensors-weights-only",
-            },
-        )
-        compact_to_active()
-        LEGACY_TOKENIZER_PATH.unlink(missing_ok=True)
-        for duplicate in (
-            DATA_DIR / "consolidated.txt",
-            DATA_DIR / "distilled.txt",
-            DATA_DIR / "distilled.jsonl",
-        ):
-            duplicate.unlink(missing_ok=True)
-
-        print(f"\nPROMOTED Butterfly v{candidate_version}.")
-        print("The accepted brain passed BOTH score improvement and strict semantic hard gates.")
-        print("Old physical brain/tokenizer are burned only after successful promotion.")
-        print("Corpus, memory, verified knowledge, lessons and benchmarks remain.")
-        return True
-
-    print("\nREJECTED: candidate failed the current strict promotion policy.")
-    if improvement < 0.03:
-        print("  - Overall improvement is below +0.0300.")
-    if not cand.get("promotion_eligible"):
-        for reason in cand.get("promotion_blockers", []):
-            print(f"  - {reason}")
-    if not no_major_regression:
-        print("  - At least one major capability regressed by more than 0.02.")
-
-    append_history(
-        candidate_version,
-        "rejected",
-        score=cand.get("score"),
-        metadata={
+            update_entry(target, path=canonical.name)
+        update_entry(target, score=metrics["score"], metadata={
             "benchmark": str(report_path.relative_to(ROOT)),
-            "benchmark_suite": BENCHMARK_SUITE_VERSION,
-            "critical_failures": cand.get("critical_failures", []),
-        },
-    )
+            "suite_id": BENCHMARK_SUITE_ID,
+            "storage_format": "safetensors-weights-only",
+            "optimizer_included": False,
+        })
+        promote_to_active(target)
+        append_history(target, "promoted", score=metrics["score"], metadata={
+            "benchmark": str(report_path.relative_to(ROOT)),
+            "suite_id": BENCHMARK_SUITE_ID,
+            "seed_brain": seed["version"],
+        })
+        compact_physical_models()
+        print(f"\nPROMOTED to ACTIVE: {target}")
+        return "PROMOTED", report_path, metrics
+
+    if lab_ok:
+        canonical = MODELS_DIR / f"butterfly-v{target}-lab.safetensors"
+        if candidate_path.resolve() != canonical.resolve():
+            move_model_artifacts(candidate_path, canonical)
+            update_entry(target, path=canonical.name)
+        update_entry(target, score=metrics["score"], metadata={
+            "benchmark": str(report_path.relative_to(ROOT)),
+            "suite_id": BENCHMARK_SUITE_ID,
+            "storage_format": "safetensors-weights-only",
+            "optimizer_included": False,
+        })
+        promote_to_lab(target)
+        append_history(target, "lab_accepted", score=metrics["score"], metadata={
+            "benchmark": str(report_path.relative_to(ROOT)),
+            "suite_id": BENCHMARK_SUITE_ID,
+            "seed_brain": seed["version"],
+            "focus_metrics": recipe.get("focus_metrics", []),
+        })
+        compact_physical_models()
+        print(f"\nACCEPTED as LAB: {target}")
+        print("ACTIVE was not replaced because the candidate did not pass global promotion.")
+        return "LAB_ACCEPTED", report_path, metrics
+
+    append_history(target, "rejected", score=metrics.get("score"), metadata={
+        "benchmark": str(report_path.relative_to(ROOT)),
+        "suite_id": BENCHMARK_SUITE_ID,
+        "seed_brain": seed["version"],
+        "lab_failures": lab_failures,
+        "active_failures": active_failures,
+    })
     delete_model_artifacts(candidate_path)
-    _remove_registry_version(candidate_version)
-    print("Candidate brain deleted; corpus, tokenizer assets, memory and report were kept.")
-    return False
+    remove_entry(target)
+    print("\nREJECTED: candidate did not qualify for LAB or ACTIVE.")
+    print("LAB blockers:")
+    for reason in lab_failures:
+        print("  -", reason)
+    print("Candidate physical weights deleted; history and benchmark kept.")
+    return "REJECTED", report_path, metrics

@@ -25,13 +25,7 @@ def load_jsonl(path: Path) -> list[dict]:
 
 
 class AssistantOnlyDialogueDataset(Dataset):
-    """Causal dialogue dataset where loss is paid only on Butterfly's answer.
-
-    v0.0004 trained on a flat text stream. That teaches the model to predict both
-    sides of a conversation, including the user's prompt. v0.0005 instead supplies
-    the user text as context and masks its targets with -100, so cross entropy only
-    rewards predicting the assistant response and its stop marker.
-    """
+    """Causal dialogue dataset where loss is computed only on Butterfly's answer."""
 
     def __init__(self, rows: list[dict], tokenizer, seq_len: int = 192):
         self.rows = rows
@@ -49,21 +43,19 @@ class AssistantOnlyDialogueDataset(Dataset):
             full = prefix_ids + suffix_ids
 
             if len(full) > seq_len + 1:
-                # Keep the complete prompt whenever possible and trim only the tail
-                # of an unusually long response. Corpus generation already keeps
-                # responses short, so this should be rare and is reported.
-                full = full[: seq_len + 1]
+                max_ids = seq_len + 1
+                answer_keep = min(len(suffix_ids), max_ids - 1)
+                prefix_keep = max_ids - answer_keep
+                prefix_ids = prefix_ids[-prefix_keep:]
+                suffix_ids = suffix_ids[-answer_keep:]
+                full = prefix_ids + suffix_ids
                 self.truncated += 1
 
             x_ids = full[:-1]
-            y_ids = full[1:]
-            labels = list(y_ids)
-
-            # The target at index len(prefix_ids)-1 is the FIRST assistant token.
-            # Everything before that predicts the user's text and is ignored.
+            labels = list(full[1:])
             assistant_start = max(0, len(prefix_ids) - 1)
-            for i in range(min(assistant_start, len(labels))):
-                labels[i] = -100
+            for index in range(min(assistant_start, len(labels))):
+                labels[index] = -100
 
             self.answer_tokens += sum(1 for value in labels if value != -100)
 

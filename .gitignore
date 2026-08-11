@@ -10,6 +10,9 @@ __pycache__/
 .butterfly/*.sqlite
 .butterfly/*.sqlite-*
 .butterfly/pipeline_state.json
+.butterfly/current_experiment.json
+.butterfly/experiment_history.json
+.butterfly/backups/
 
 # Physical brains are local/release artifacts, not normal Git history
 models/*.pt
@@ -28,14 +31,18 @@ training_state/
 logs/
 reports/
 
-# Generated large corpora. Keep manifests/source metadata, not generated books.
+# Generated large corpora. Keep stable source metadata, not generated books.
 data/corpus/*.txt
 data/corpus/*.part
 data/corpus/wikipedia_seen.txt
 data/corpus/wikipedia_sources.jsonl
-data/corpus/v*/*.jsonl
+data/corpus/v*/
 !data/corpus/manifest.json
-!data/corpus/v*/manifest.json
+
+# Deliberate-learning working corpus is generated locally.
+data/corpus/deliberate/*.jsonl
+data/corpus/deliberate/manifest.json
+data/corpus/deliberate/history.json
 
 # Generated/optional release bundles
 release/
@@ -44,9 +51,3 @@ release/
 .DS_Store
 Thumbs.db
 .vs/
-
-# Deliberate-learning working corpus is generated locally and archived locally.
-data/corpus/deliberate/*.jsonl
-data/corpus/deliberate/manifest.json
-data/corpus/deliberate/history.json
-data/corpus/deliberate/archive/

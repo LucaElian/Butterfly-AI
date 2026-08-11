@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=69"]
+requires = ["setuptools>=69", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "butterfly-ai-local"
-version = "0.0.51"
+dynamic = ["version"]
 description = "ButterflyAI experimental local Transformer, epistemic engine and continual-learning system"
 requires-python = ">=3.11"
 dependencies = [
@@ -17,3 +17,5 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 include = ["butterfly*"]
+
+[tool.setuptools_scm]

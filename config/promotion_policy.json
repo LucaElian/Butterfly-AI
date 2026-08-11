@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "active": {
+    "min_overall_delta": 0.03,
+    "max_protected_regression": 0.02,
+    "requires_all_hard_gates": true
+  },
+  "lab": {
+    "min_focus_delta": 0.05,
+    "max_protected_regression": 0.03,
+    "require_all_focus_metrics": true
+  }
+}

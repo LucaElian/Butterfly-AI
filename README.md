@@ -1,27 +1,21 @@
 # ButterflyAI
 
-ButterflyAI usa **una sola instalación permanente**. El código, la memoria, el corpus,
-los benchmarks y el historial evolucionan en el mismo proyecto. Los nombres de los
-scripts del pipeline ya no cambian con cada generación.
+ButterflyAI usa una sola instalación permanente. Las versiones de cerebro y la identidad
+del evaluador son **datos de runtime/historial**, no constantes escritas a mano en el código.
 
-## Estado actual tras la limpieza de infraestructura
+## Estados de modelo
 
-- cerebro aceptado: **v0.0004**;
-- arquitectura: **17,477,376 parámetros**;
-- tokenizer aceptado: **v3 / 8,192 tokens**;
-- benchmark estricto anterior: **v0.00042**;
-- v0.0005: candidata rechazada;
-- v0.00051: candidata rechazada;
-- target deliberado actual: **v0.00053**;
-- benchmark estricto nuevo: **v0.00043**;
-- `config/pipeline.json` apunta a v0.00053 usando el mismo pipeline permanente.
+Butterfly mantiene como máximo tres slots físicos:
 
-Las candidatas rechazadas no se conservan físicamente. Corpus, memoria, conocimiento
-verificado, manifests, benchmarks e historial sí se conservan.
+- **ACTIVE**: cerebro aceptado y seguro para uso normal.
+- **LAB**: mejor cerebro experimental acumulado; todavía no reemplaza a ACTIVE.
+- **CANDIDATE**: experimento que está entrenándose o evaluándose.
+
+Una candidata puede pasar a LAB si mejora las métricas foco de su receta sin romper las
+capacidades protegidas. Solo pasa a ACTIVE si además cumple la política global y todos los
+hard gates del evaluador.
 
 ## Pipeline permanente
-
-Estos nombres quedan fijos:
 
 ```text
 01_PREPARE.bat
@@ -31,81 +25,77 @@ Estos nombres quedan fijos:
 RUN_PIPELINE.bat
 ```
 
-`RUN_PIPELINE.bat` permite:
+`RUN_PIPELINE.bat` ofrece:
 
-1. automático;
-2. pausado entre etapas;
-3. reanudar desde la primera etapa incompleta;
-4. ejecutar una sola etapa.
+1. **AUTOMATICO**: busca la primera etapa pendiente y continúa hasta el final.
+2. **PAUSADO**: igual que automático, pero espera ENTER entre etapas.
+3. **UNA ETAPA**: ejecuta solo la etapa elegida y deja el estado listo para continuar.
 
-Si una etapa falla, el modo automático se detiene y no ejecuta las posteriores.
+No existe un modo `REANUDAR` separado: reanudar es el comportamiento normal.
+
+## Estado vs configuración
+
+`config/pipeline.json` describe comportamiento permanente. No guarda target ni suite.
+
+El experimento actual vive localmente en:
+
+```text
+.butterfly/current_experiment.json
+```
+
+El registry local mantiene ACTIVE/LAB/CANDIDATE:
+
+```text
+models/registry.json
+```
+
+Las recetas reutilizables viven en:
+
+```text
+config/recipes/
+```
+
+Una receta define objetivo, skills, hiperparámetros, métricas foco y métricas protegidas.
+No contiene la versión del cerebro ni la versión del evaluador.
+
+## Evaluador
+
+La suite no tiene un número manual que haya que incrementar. Su ID se calcula
+automáticamente a partir de casos, thresholds, valores reservados y reglas semánticas.
+Si cambia el examen, cambia su fingerprint.
 
 ## Logs
 
-Cada ejecución crea:
+Cada etapa escribe un log descriptivo independiente:
 
 ```text
-logs\pipeline-AAAA-MM-DD_HH-MM-SS.log
-logs\latest.log
-logs\latest-error.log        (solo al fallar)
-reports\latest-summary.txt
+AAAA-MM-DD_HH-MM-SS__prepare__target-vX__recipe-NOMBRE.log
+AAAA-MM-DD_HH-MM-SS__build-dataset__target-vX__recipe-NOMBRE.log
+AAAA-MM-DD_HH-MM-SS__train__target-vX__recipe-NOMBRE.log
+AAAA-MM-DD_HH-MM-SS__evaluate-and-promote__target-vX__recipe-NOMBRE.log
 ```
 
-La salida sigue apareciendo en la consola y simultáneamente se guarda en el log.
+`latest.log` conserva la salida completa de las etapas ejecutadas en la invocación actual.
 
-## Filosofía de almacenamiento
+También se mantienen:
 
-- un solo cerebro físico activo;
-- candidata física solo mientras está siendo evaluada;
-- old brain se elimina **solo después** de una promoción verificada;
-- modelos estables usan `safetensors` weights-only;
-- optimizer/recovery state es temporal y queda fuera de Git;
-- memoria local (`.butterfly/butterfly.db`) queda fuera de Git;
-- modelos físicos quedan fuera del historial Git normal.
+```text
+logs/latest.log
+logs/latest-error.log
+reports/latest-summary.txt
+```
+
+## Auditoría de hardcodes
+
+```text
+python -m butterfly audit-hardcodes
+```
+
+La auditoría falla si encuentra versiones de cerebro/suite escritas en código operativo,
+constantes de tokenizer ligadas a generaciones o rutas absolutas de ButterflyAI.
 
 ## Git
 
-Antes de commit revisá:
-
-```text
-git status
-```
-
-`models/history.json`, código, tokenizer, manifests y benchmarks pueden formar parte del
-historial. El cerebro físico, DB local, logs, reports y training state no.
-
-## Utilidades permanentes
-
-```text
-SETUP_WINDOWS.bat
-START_CHAT.bat
-STATUS.bat
-STORAGE_STATUS.bat
-EVALUATE_ACTIVE.bat
-VERIFY_EXAMPLE.bat
-SLEEP_AND_LEARN.bat
-EXPORT_ACTIVE_MODEL_FOR_RELEASE.bat
-```
-
-Sleep learning queda pausado por `config/pipeline.json` mientras v0.00053 sea el target deliberado, para que no cree una candidata paralela accidentalmente.
-
-## Versiones
-
-No existe un archivo raíz `VERSION` que haya que renombrar en cada experimento.
-
-- el cerebro activo sale del registry local;
-- el target deliberado sale de `config/pipeline.json`;
-- la suite de evaluación sale del evaluador;
-- el historial de experimentos vive en benchmarks + `models/history.json` + `CHANGELOG.md`.
-
-Así evitamos tener cuatro fuentes distintas diciendo versiones diferentes.
-
-## v0.00053 — generalización y replay
-
-v0.00053 continúa desde el cerebro aceptado v0.0004 y mantiene el mismo tokenizer. No reutiliza pesos de v0.0005 ni v0.00051 porque ambas candidatas fueron rechazadas.
-
-El curriculum separa cinco capacidades: `ROBUST_COMPREHENSION`, `COPY_BINDING`, `BASIC_ARITHMETIC`, `EPISTEMIC_CONTRAST` y `BALANCED_REPLAY`. Las etapas posteriores incluyen rehearsal de capacidades anteriores para reducir interferencia catastrófica.
-
-El benchmark v0.00043 conserva fallos antiguos como regresión y agrega nuevas frases, nuevos targets exactos, nuevas operaciones aritméticas y nuevos hechos ficticios held-out. Los valores del benchmark no entran ni en train ni en validación.
-
-El corpus deliberado usa nombres permanentes bajo `data/corpus/deliberate/`. Cuando una futura generación lo reemplace, el corpus anterior se archiva localmente antes de sobrescribir los archivos de trabajo.
+Se versionan código, configuración reusable, tests, manifests pequeños, benchmarks,
+CHANGELOG e historial. No se versionan pesos físicos, DB personal, recovery state, logs
+ni el experimento runtime actual.

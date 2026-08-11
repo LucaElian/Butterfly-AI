@@ -3,33 +3,23 @@ from __future__ import annotations
 import argparse
 import json
 
-from .config import ensure_dirs, BENCHMARKS_DIR
+from .config import ensure_dirs
 from .memory import MemoryStore
-from .trainer import best_device
+from .training.runtime import best_device
 from .checkpoint import load_active
 from .generation import generate
 from .epistemic.engine import EpistemicEngine
 from .agent.preflight import PreflightEvaluator
 from .learning.sleep_cycle import run_sleep_cycle
-from .learning.evaluator import (
-    BENCHMARK_SUITE_VERSION,
-    behavior_benchmark,
-    print_benchmark,
-    save_benchmark,
-)
+
 
 def command_init(_args):
     ensure_dirs()
     MemoryStore()
+    from .registry import load_registry
+    load_registry()
     print("ButterflyAI permanent installation initialized.")
 
-def command_compare(args):
-    from .upgrade import compare_and_promote
-    compare_and_promote(args.candidate)
-
-def command_prepare_target(args):
-    from .upgrade import prepare_target
-    prepare_target(args.target, expected_active=args.expected_active)
 
 def command_chat(args):
     model, _, tokenizer = load_active(device=best_device())
@@ -63,41 +53,58 @@ def command_chat(args):
         print("Butterfly >", answer)
         history.append((prompt, answer))
 
+
 def command_evaluate(_args):
     from .registry import get_active_entry, append_history
+    from .upgrade import strict_baseline
+    from .learning.evaluator import BENCHMARK_SUITE_ID, print_benchmark
+
     entry = get_active_entry()
     if not entry:
-        raise RuntimeError("No active Butterfly model.")
-    model, _, tok = load_active(device=best_device())
-    metrics = behavior_benchmark(model, tok)
+        raise RuntimeError("No ACTIVE Butterfly model.")
+    metrics, path = strict_baseline(entry, force=True)
     print_benchmark(metrics)
-    path = BENCHMARKS_DIR / (
-        f"baseline-v{entry['version']}-suite-v{BENCHMARK_SUITE_VERSION}.json"
-    )
-    save_benchmark(path, metrics)
     append_history(
         entry["version"],
-        f"benchmark-suite-v{BENCHMARK_SUITE_VERSION}",
+        f"benchmark-suite-{BENCHMARK_SUITE_ID}",
         score=metrics.get("score"),
         metadata={
-            "benchmark": str(path),
+            "benchmark": str(path.relative_to(ROOT)),
             "promotion_eligible": metrics.get("promotion_eligible", False),
             "critical_failures": metrics.get("critical_failures", []),
+            "suite_id": BENCHMARK_SUITE_ID,
         },
     )
     print(f"\nStrict baseline saved: {path}")
     print("No model weights, tokenizer, corpus or memory were changed.")
 
+
+def command_status(_args):
+    from .state import system_snapshot
+    print(json.dumps(system_snapshot(), indent=2, ensure_ascii=False))
+
+
+def command_storage(_args):
+    from .storage import storage_status
+    print(json.dumps(storage_status(), indent=2, ensure_ascii=False))
+
+
+def command_export_release(_args):
+    from .storage import export_active_release
+    export_active_release()
+
+
 def command_verify(args):
-    r = EpistemicEngine().verify(args.claim, allow_web=args.web)
+    result = EpistemicEngine().verify(args.claim, allow_web=args.web)
     print(json.dumps({
-        "claim": r.claim,
-        "status": r.status.value,
-        "confidence": r.confidence,
-        "method": r.method,
-        "explanation": r.explanation,
-        "evidence": [e.__dict__ for e in r.evidence],
+        "claim": result.claim,
+        "status": result.status.value,
+        "confidence": result.confidence,
+        "method": result.method,
+        "explanation": result.explanation,
+        "evidence": [e.__dict__ for e in result.evidence],
     }, indent=2, ensure_ascii=False))
+
 
 def command_preflight(args):
     print(json.dumps(
@@ -105,6 +112,7 @@ def command_preflight(args):
         indent=2,
         ensure_ascii=False,
     ))
+
 
 def command_experience(args):
     MemoryStore().add_experience(
@@ -117,60 +125,43 @@ def command_experience(args):
     )
     print("Experience stored.")
 
+
 def command_sleep(args):
     run_sleep_cycle(steps=args.steps)
 
-def command_status(_args):
-    from .registry import load_registry, load_history
-    from .pipeline import load_recipe, load_state
+
+def command_experiment_new(args):
+    from .experiments import clear_terminal_experiment, create_experiment, load_current_experiment
+    current = load_current_experiment()
+    if current:
+        clear_terminal_experiment()
+    exp = create_experiment(args.recipe)
+    print(json.dumps(exp, indent=2, ensure_ascii=False))
+
+
+def command_audit(_args):
+    from .audit import print_audit
+    raise SystemExit(print_audit())
+
+
+def command_health(_args):
+    from .learning.evaluator import BENCHMARK_SUITE_ID
+    from .registry import load_registry
     reg = load_registry()
-    try:
-        recipe = load_recipe()
-        pstate = load_state(recipe)
-        pipeline = {
-            "target_brain": recipe.get("target_brain"),
-            "benchmark_suite": recipe.get("benchmark_suite"),
-            "stages": pstate.get("stages"),
-            "last_error": pstate.get("last_error"),
-        }
-    except Exception as exc:
-        pipeline = {"error": str(exc)}
-    print(json.dumps({
-        "pipeline_infrastructure": "1.0",
-        "evaluator_suite": BENCHMARK_SUITE_VERSION,
-        "active_brain": reg.get("active"),
-        "models": reg.get("versions", []),
-        "pipeline": pipeline,
-        "history": load_history().get("versions", [])[-10:],
-    }, indent=2, ensure_ascii=False))
+    print("ButterflyAI health check: OK")
+    print(f"Registry schema : {reg.get('schema_version')}")
+    print(f"Evaluator suite : {BENCHMARK_SUITE_ID}")
+    print(f"ACTIVE          : {reg.get('active')}")
+    print(f"LAB             : {reg.get('lab')}")
+    print(f"CANDIDATE       : {reg.get('candidate')}")
 
-def command_export_release(_args):
-    from .storage import export_active_release
-    export_active_release()
-
-def command_storage(_args):
-    from .storage import storage_status
-    print(json.dumps(storage_status(), indent=2, ensure_ascii=False))
 
 def build_parser():
-    p = argparse.ArgumentParser(prog="butterfly")
-    sub = p.add_subparsers(dest="command", required=True)
+    parser = argparse.ArgumentParser(prog="butterfly")
+    sub = parser.add_subparsers(dest="command", required=True)
 
     sp = sub.add_parser("init")
     sp.set_defaults(func=command_init)
-
-    sp = sub.add_parser("prepare-target")
-    sp.add_argument("--target", required=True)
-    sp.add_argument("--expected-active", default=None)
-    sp.set_defaults(func=command_prepare_target)
-
-    sp = sub.add_parser("compare-promote")
-    sp.add_argument(
-        "--candidate",
-        default=None,
-        help="Candidate brain version. If omitted, Butterfly selects the sole registered candidate.",
-    )
-    sp.set_defaults(func=command_compare)
 
     sp = sub.add_parser("chat")
     sp.add_argument("--max-tokens", type=int, default=150)
@@ -211,7 +202,18 @@ def build_parser():
     sp = sub.add_parser("sleep")
     sp.add_argument("--steps", type=int, default=120)
     sp.set_defaults(func=command_sleep)
-    return p
+
+    sp = sub.add_parser("experiment-new")
+    sp.add_argument("--recipe", default=None)
+    sp.set_defaults(func=command_experiment_new)
+
+    sp = sub.add_parser("audit-hardcodes")
+    sp.set_defaults(func=command_audit)
+
+    sp = sub.add_parser("health")
+    sp.set_defaults(func=command_health)
+    return parser
+
 
 def main():
     args = build_parser().parse_args()

@@ -11,7 +11,7 @@ import requests
 
 from ..config import CORPUS_DIR, WIKI_SOURCES
 
-# v0.0004 hotfix:
+# Batched Wikipedia downloader:
 # Instead of requesting individual articles from MediaWiki, fetch Wikipedia rows
 # in batches (up to 100 articles per HTTP request) from Hugging Face's dataset
 # viewer mirror of the Wikimedia Wikipedia dump. This dramatically reduces the
@@ -21,7 +21,7 @@ DATASET = "wikimedia/wikipedia"
 CONFIG = "20231101.es"
 SPLIT = "train"
 BATCH_LENGTH = 100
-USER_AGENT = "ButterflyAI/0.0004 local educational language-model corpus builder"
+USER_AGENT = "ButterflyAI local educational language-model corpus builder"
 NOISY_SECTIONS = re.compile(
     r"\n\s*=+\s*(Referencias|Bibliograf[ií]a|Enlaces externos|V[eé]ase tambi[eé]n)\s*=+.*",
     re.I | re.S,

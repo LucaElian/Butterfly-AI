@@ -1,5 +1,21 @@
 # ButterflyAI — Changelog
 
+## General runtime-state refactor
+
+- Brain and evaluator versions are no longer hardcoded in operational code.
+- Runtime registry now has explicit ACTIVE / LAB / CANDIDATE slots.
+- Pipeline AUTOMATICO and PAUSADO resume from the first incomplete stage by default.
+- REANUDAR was removed as a separate mode.
+- Logs are stage-specific and include the dynamic target in their filename.
+- Pipeline stage completion is tied to input signatures; changed inputs invalidate downstream work.
+- Experiment target versions are allocated from registry/history.
+- Training recipes are reusable and do not contain target/active/suite versions.
+- Evaluator suite identity is a fingerprint of cases, gates and semantic rules.
+- Historical curriculum trainer was removed; general training runtime helpers remain.
+- Corpus building is modularized into reusable skills.
+- Promotion supports CANDIDATE -> LAB and CANDIDATE/LAB -> ACTIVE.
+- A hardcode audit is part of the permanent test/setup flow.
+
 ## v0.00044 — evaluator fairness + intent routing
 
 - No crea ni entrena un cerebro nuevo.
