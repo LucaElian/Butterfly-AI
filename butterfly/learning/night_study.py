@@ -312,27 +312,266 @@ def _resource_check(cfg: dict[str, Any], started_monotonic: float, max_minutes: 
 
 
 class _Tee:
+    # Best-effort tee: a transient project/log disk failure must not mask
+    # the durable training state behind a secondary logger exception.
     def __init__(self, *streams):
         self.streams = streams
+        self._failed_streams: set[int] = set()
 
     def write(self, text):
         for stream in self.streams:
-            stream.write(text)
-            stream.flush()
+            stream_id = id(stream)
+            if stream_id in self._failed_streams:
+                continue
+            try:
+                stream.write(text)
+                stream.flush()
+            except OSError:
+                self._failed_streams.add(stream_id)
         return len(text)
 
     def flush(self):
         for stream in self.streams:
-            stream.flush()
+            stream_id = id(stream)
+            if stream_id in self._failed_streams:
+                continue
+            try:
+                stream.flush()
+            except OSError:
+                self._failed_streams.add(stream_id)
 
 
-def _run_deliberate_block():
+def _raise_if_training_stop(stop_requested, stage: str):
+    if stop_requested is not None and stop_requested():
+        from ..deliberate_trainer import TrainingStopRequested
+        raise TrainingStopRequested(stage, 0, 0, 0)
+
+
+def _is_training_stop(exc: BaseException) -> bool:
+    return exc.__class__.__name__ == "TrainingStopRequested"
+
+
+def _interrupted_block_fields(exc: BaseException) -> dict[str, Any]:
+    return {
+        "finished_at": _utcnow(),
+        "status": "interrupted",
+        "stop_reason": "stop_file",
+        "resume_stage": getattr(exc, "stage", None),
+        "resume_epoch": getattr(exc, "epoch", None),
+        "resume_step": getattr(exc, "step", None),
+    }
+
+
+def _run_deliberate_block(stop_requested=None):
     # Import lazily so a night session can inspect/plan without touching training.
     from ..deliberate import command_prepare, command_build, command_train, command_evaluate
+    _raise_if_training_stop(stop_requested, "prepare")
     command_prepare()
+    _raise_if_training_stop(stop_requested, "build")
     command_build()
-    command_train()
+    _raise_if_training_stop(stop_requested, "train")
+    command_train(stop_requested=stop_requested)
+    _raise_if_training_stop(stop_requested, "evaluate")
     command_evaluate()
+
+
+# CRASH/DISCONNECT RECOVERY V4.2
+TERMINAL_EXPERIMENT_STATUSES = {"promoted", "lab_accepted", "rejected", "cancelled"}
+RECOVERABLE_EXPERIMENT_STATUSES = {"planned", "prepared", "dataset_ready", "candidate_ready"}
+
+
+def _recovery_steps(status: str) -> tuple[str, ...]:
+    status = str(status or "").strip()
+    if status in TERMINAL_EXPERIMENT_STATUSES:
+        return ()
+    mapping = {
+        "planned": ("prepare", "build", "train", "evaluate"),
+        "prepared": ("build", "train", "evaluate"),
+        "dataset_ready": ("train", "evaluate"),
+        "candidate_ready": ("evaluate",),
+    }
+    if status not in mapping:
+        raise RuntimeError(
+            f"Experiment status {status!r} is not a known crash-recoverable state. "
+            "Recovery stopped without clearing runtime state."
+        )
+    return mapping[status]
+
+
+def _recovery_lesson(experiment: dict[str, Any]) -> dict[str, Any]:
+    target = dict(experiment.get("focus_target") or {})
+    recipe = str(experiment.get("recipe_name") or "")
+    node_id = target.get("curriculum_node")
+    reason = target.get("reason")
+
+    legacy_capability = {
+        "night_conversation": "conversation",
+        "night_comprehension": "comprehension",
+        "night_instruction": "instruction_format",
+        "night_epistemic": "epistemic_dialogue",
+    }
+    if reason in {"critical_failure", "weakest_family"}:
+        capability = legacy_capability.get(recipe, f"recovery:{recipe or 'unknown'}")
+    elif node_id:
+        capability = f"lifelong:{node_id}"
+    else:
+        capability = f"recovery:{recipe or 'unknown'}"
+
+    return {
+        "capability": capability,
+        "metric": "recovery",
+        "score": 0.0,
+        "target": 0.0,
+        "gap": 0.0,
+        "priority": 0.0,
+        "recipe": recipe,
+        "implementation": "neural",
+        "trainable": True,
+        "critical_count": 0,
+        "focus_family": target.get("family") or target.get("dynamic_family"),
+        "focus_metric": target.get("study_metric"),
+        "focus_reason": reason or "crash_recovery",
+        "corpus_aliases": list(target.get("corpus_aliases") or []),
+        "curriculum_node": node_id,
+        "dynamic_family": target.get("dynamic_family"),
+        "strategy_id": target.get("strategy_id"),
+        "recovered": True,
+    }
+
+
+def _recovery_artifacts(experiment: dict[str, Any]) -> dict[str, Any]:
+    manifest_path = ROOT / "data" / "corpus" / "deliberate" / "manifest.json"
+    progress_path = ROOT / "training_state" / "deliberate" / "progress.json"
+    resume_path = ROOT / "training_state" / "deliberate" / "resume.safetensors"
+
+    manifest = load_json(manifest_path, {})
+    progress = load_json(progress_path, {})
+    manifest = manifest if isinstance(manifest, dict) else {}
+    progress = progress if isinstance(progress, dict) else {}
+
+    identity_keys = ("experiment_id", "target_version", "recipe_hash", "suite_id")
+    manifest_matches = bool(manifest) and all(
+        str(manifest.get(key)) == str(experiment.get(key))
+        for key in identity_keys
+    )
+    progress_matches = (
+        bool(progress)
+        and resume_path.is_file()
+        and str(progress.get("experiment_id")) == str(experiment.get("experiment_id"))
+        and str(progress.get("target_version")) == str(experiment.get("target_version"))
+        and str(progress.get("recipe_hash")) == str(experiment.get("recipe_hash"))
+    )
+    return {
+        "manifest_exists": manifest_path.is_file(),
+        "manifest_matches": manifest_matches,
+        "progress_exists": progress_path.is_file(),
+        "resume_weights_exist": resume_path.is_file(),
+        "resume_checkpoint_matches": progress_matches,
+        "resume_stage": progress.get("stage"),
+        "resume_stage_complete": progress.get("stage_complete"),
+        "resume_epoch": progress.get("epoch"),
+        "resume_step": progress.get("step"),
+    }
+
+
+def _reconcile_interrupted_experiment(experiment: dict[str, Any]) -> dict[str, Any]:
+    # Repair tiny crash windows without guessing or discarding evidence.
+    from ..experiments import mark_experiment_status
+    from ..registry import get_candidate_entry, load_history
+
+    current = load_current_experiment() or experiment
+    if current.get("status") in TERMINAL_EXPERIMENT_STATUSES:
+        return current
+
+    target_version = str(current.get("target_version"))
+    experiment_id = str(current.get("experiment_id"))
+
+    candidate = get_candidate_entry()
+    if candidate:
+        if str(candidate.get("version")) != target_version:
+            raise RuntimeError(
+                "Crash recovery found a different registered candidate. "
+                "Nothing was overwritten."
+            )
+        candidate_experiment = str((candidate.get("metadata") or {}).get("experiment_id") or "")
+        if candidate_experiment and candidate_experiment != experiment_id:
+            raise RuntimeError(
+                "Crash recovery candidate belongs to another experiment. "
+                "Nothing was overwritten."
+            )
+        if current.get("status") != "candidate_ready":
+            print(
+                "Recovery reconciliation: matching candidate was already saved "
+                "before the interruption; advancing experiment to candidate_ready."
+            )
+            mark_experiment_status(
+                "candidate_ready",
+                crash_recovery_reconciled=True,
+                crash_recovery_from_status=current.get("status"),
+            )
+            current = load_current_experiment() or current
+        return current
+
+    # evaluate_candidate writes model history before command_evaluate marks the
+    # experiment terminal. If the disk/process disappears in that tiny window,
+    # reconstruct the terminal experiment state from durable model history.
+    rows = [
+        row for row in (load_history().get("versions") or [])
+        if str(row.get("version")) == target_version
+        and row.get("status") in {"promoted", "lab_accepted", "rejected"}
+    ]
+    if rows:
+        row = max(rows, key=lambda item: float(item.get("recorded_at") or 0.0))
+        metadata = dict(row.get("metadata") or {})
+        print(
+            "Recovery reconciliation: evaluation result already exists in model "
+            f"history ({row.get('status')}); restoring terminal experiment state."
+        )
+        mark_experiment_status(
+            str(row["status"]),
+            evaluation_report=metadata.get("benchmark"),
+            final_score=row.get("score"),
+            crash_recovery_reconciled=True,
+            crash_recovery_from_history=True,
+        )
+        return load_current_experiment() or current
+
+    return current
+
+
+def _recover_incomplete_experiment(experiment: dict[str, Any], stop_requested=None) -> dict[str, Any]:
+    # Resume an interrupted deliberate block from the last durable boundary.
+    from ..deliberate import command_prepare, command_build, command_train, command_evaluate
+
+    commands = {
+        "planned": ("PREPARE", command_prepare),
+        "prepared": ("BUILD DATASET", command_build),
+        "dataset_ready": ("TRAIN / AUTOSAVE RECOVERY", command_train),
+        "candidate_ready": ("EVALUATE AND PROMOTE", command_evaluate),
+    }
+
+    current = _reconcile_interrupted_experiment(experiment)
+    while current.get("status") not in TERMINAL_EXPERIMENT_STATUSES:
+        status = str(current.get("status") or "")
+        _recovery_steps(status)
+        label, command = commands[status]
+        _raise_if_training_stop(stop_requested, label.lower())
+        print(f"Crash recovery continuing from status={status}: {label}")
+        before = status
+        if command is command_train:
+            command(stop_requested=stop_requested)
+        else:
+            command()
+        current = _reconcile_interrupted_experiment(
+            load_current_experiment() or current
+        )
+        after = str(current.get("status") or "")
+        if after == before:
+            raise RuntimeError(
+                f"Crash recovery stage {label} did not advance experiment state."
+            )
+
+    return current
 
 
 def _append_history(report: dict[str, Any]):
@@ -381,12 +620,15 @@ def run_night_study(
         raise RuntimeError("Night Study is disabled in config/night_study.json")
 
     current = load_current_experiment()
-    terminal = {"promoted", "lab_accepted", "rejected", "cancelled"}
-    if current and current.get("status") not in terminal:
-        raise RuntimeError(
-            f"Cannot start Night Study: experiment {current.get('experiment_id')} "
-            f"is still {current.get('status')}."
-        )
+    recovery_experiment = (
+        current
+        if current and current.get("status") not in TERMINAL_EXPERIMENT_STATUSES
+        else None
+    )
+    if recovery_experiment:
+        # Validate the state without modifying it. A real recovery only starts
+        # after dry-run handling and after the session log is open.
+        _recovery_steps(str(recovery_experiment.get("status") or ""))
 
     max_blocks = int(cfg.get("max_blocks_per_session", 0) if max_blocks is None else max_blocks)
     max_minutes = float(cfg.get("max_minutes_per_session", 0) if max_minutes is None else max_minutes)
@@ -408,13 +650,43 @@ def run_night_study(
             for item in ready:
                 mastery = "unknown" if item.get("mastery") is None else f"{float(item['mastery']):.3f}"
                 print(f"    - {item['id']}: mastery={mastery} priority={float(item['priority']):.3f}")
-        lesson = choose_lifelong_lesson(first_snapshot)
+        recovery_info = None
+        if recovery_experiment:
+            lesson = _recovery_lesson(recovery_experiment)
+            recovery_info = _recovery_artifacts(recovery_experiment)
+            print("")
+            print("Crash/disconnect recovery pending:")
+            print(
+                f"  Experiment : {recovery_experiment.get('experiment_id')} | "
+                f"target {recovery_experiment.get('target_version')} | "
+                f"status {recovery_experiment.get('status')}"
+            )
+            print(
+                f"  Manifest   : exists={recovery_info['manifest_exists']} "
+                f"matches={recovery_info['manifest_matches']}"
+            )
+            print(
+                f"  Autosave   : weights={recovery_info['resume_weights_exist']} "
+                f"matches={recovery_info['resume_checkpoint_matches']} "
+                f"stage={recovery_info.get('resume_stage')} "
+                f"epoch={recovery_info.get('resume_epoch')} "
+                f"step={recovery_info.get('resume_step')}"
+            )
+            print("  Dry-run does NOT resume or train.")
+        else:
+            lesson = choose_lifelong_lesson(first_snapshot)
         if lesson:
             print("")
-            print(
-                f"Next autonomous lesson: {lesson['capability']} "
-                f"using recipe {lesson['recipe']}"
-            )
+            if recovery_experiment:
+                print(
+                    f"Next autonomous action: RECOVER {lesson['capability']} "
+                    f"using recipe {lesson['recipe']}"
+                )
+            else:
+                print(
+                    f"Next autonomous lesson: {lesson['capability']} "
+                    f"using recipe {lesson['recipe']}"
+                )
         else:
             print("\nNo safe internal lesson currently needs study.")
         return {
@@ -422,11 +694,13 @@ def run_night_study(
             "snapshot": first_snapshot,
             "lifelong": first_lifelong,
             "next_lesson": lesson,
+            "recovery_pending": recovery_info,
         }
 
     stop_path = _stop_file(cfg)
     # A stale stop request should not make every future session silently exit.
     stop_path.unlink(missing_ok=True)
+    stop_requested = lambda: stop_path.exists()
 
     session_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     log_path = ROOT / "logs" / f"night-study-{session_id}.log"
@@ -442,7 +716,7 @@ def run_night_study(
         tee_err = _Tee(sys.stderr, log)
         with redirect_stdout(tee_out), redirect_stderr(tee_err):
             print("=" * 72)
-            print(" ButterflyAI LIFELONG NIGHT STUDY V4")
+            print(" ButterflyAI LIFELONG NIGHT STUDY V4.2")
             print("=" * 72)
             print(f"Session          : {session_id}")
             print(f"Maximum blocks   : {'unlimited' if max_blocks == 0 else max_blocks}")
@@ -453,7 +727,118 @@ def run_night_study(
             print("")
 
             block_index = 0
-            while max_blocks == 0 or block_index < max_blocks:
+            recovery_failed = False
+            recovery_halt = False
+
+            if recovery_experiment:
+                block_index += 1
+                lesson = _recovery_lesson(recovery_experiment)
+                attempted.add(lesson_attempt_key(lesson))
+                artifacts = _recovery_artifacts(recovery_experiment)
+                print("-" * 72)
+                print(
+                    f"RECOVERY BLOCK {block_index}/{('∞' if max_blocks == 0 else max_blocks)}: "
+                    f"{lesson['capability']}/{lesson.get('focus_family') or 'general'} "
+                    f"-> {lesson['recipe']}"
+                )
+                print(
+                    f"Resume target {recovery_experiment.get('target_version')} from "
+                    f"status={recovery_experiment.get('status')}"
+                )
+                print(
+                    f"Autosave: weights={artifacts['resume_weights_exist']} "
+                    f"matches={artifacts['resume_checkpoint_matches']} "
+                    f"stage={artifacts.get('resume_stage')} "
+                    f"epoch={artifacts.get('resume_epoch')} "
+                    f"step={artifacts.get('resume_step')}"
+                )
+                print("-" * 72)
+
+                block_record = {
+                    "block": block_index,
+                    "recovered": True,
+                    "recovery_start_status": recovery_experiment.get("status"),
+                    "recovery_artifacts": artifacts,
+                    "capability": lesson["capability"],
+                    "focus_family": lesson.get("focus_family"),
+                    "focus_metric": lesson.get("focus_metric"),
+                    "focus_reason": lesson.get("focus_reason"),
+                    "curriculum_node": lesson.get("curriculum_node"),
+                    "dynamic_family": lesson.get("dynamic_family"),
+                    "strategy_id": lesson.get("strategy_id"),
+                    "recipe": lesson["recipe"],
+                    "experiment_id": recovery_experiment.get("experiment_id"),
+                    "target_version": recovery_experiment.get("target_version"),
+                    "seed_version": recovery_experiment.get("seed_version"),
+                    "started_at": _utcnow(),
+                    "status": "recovering",
+                }
+                try:
+                    final = _recover_incomplete_experiment(recovery_experiment, stop_requested=stop_requested)
+                    block_record.update({
+                        "finished_at": _utcnow(),
+                        "status": final.get("status", "unknown"),
+                        "final_score": final.get("final_score"),
+                        "evaluation_report": final.get("evaluation_report"),
+                    })
+                    report_rel = final.get("evaluation_report")
+                    if report_rel:
+                        comparison = load_json(ROOT / report_rel, {})
+                        if isinstance(comparison, dict):
+                            block_record["lifelong_acceptance"] = comparison.get("lifelong_acceptance")
+                    try:
+                        record_block_outcome(lesson, block_record)
+                    except Exception as memory_exc:
+                        block_record["strategy_memory_warning"] = (
+                            f"{type(memory_exc).__name__}: {memory_exc}"
+                        )
+                        print(
+                            "Strategy-memory warning after recovery "
+                            f"(training result remains valid): {memory_exc}"
+                        )
+                    print(
+                        f"RECOVERY BLOCK result: {block_record['status']} "
+                        f"score={block_record.get('final_score')}"
+                    )
+                except BaseException as exc:
+                    if _is_training_stop(exc):
+                        block_record.update(_interrupted_block_fields(exc))
+                        stop_reason = "stop_file"
+                        recovery_halt = True
+                        print(
+                            "STOP_NIGHT_STUDY detected; recovery block interrupted "
+                            "after the current safe boundary."
+                        )
+                        blocks.append(block_record)
+                    block_record.update({
+                        "finished_at": _utcnow(),
+                        "status": "error",
+                        "error": f"{type(exc).__name__}: {exc}",
+                    })
+                    stop_reason = "error"
+                    recovery_failed = True
+                    print(
+                        "Crash recovery stopped safely; runtime/autosave state was "
+                        f"left intact: {block_record['error']}"
+                    )
+                blocks.append(block_record)
+
+                if (
+                    block_record["status"] == "promoted"
+                    and bool(cfg.get("stop_after_active_promotion", True))
+                ):
+                    stop_reason = "active_promoted"
+                    recovery_halt = True
+                    print(
+                        "ACTIVE promotion achieved during recovery; configured "
+                        "stop-after-promotion requested a safe stop."
+                    )
+
+            while (
+                not recovery_failed
+                and not recovery_halt
+                and (max_blocks == 0 or block_index < max_blocks)
+            ):
                 block_index += 1
                 allowed, reason = _resource_check(cfg, started_mono, max_minutes)
                 if not allowed:
@@ -509,7 +894,7 @@ def run_night_study(
                     "status": "running",
                 }
                 try:
-                    _run_deliberate_block()
+                    _run_deliberate_block(stop_requested=stop_requested)
                     final = load_current_experiment() or {}
                     block_record.update({
                         "finished_at": _utcnow(),
@@ -532,6 +917,15 @@ def run_night_study(
                         f"score={block_record.get('final_score')}"
                     )
                 except BaseException as exc:
+                    if _is_training_stop(exc):
+                        block_record.update(_interrupted_block_fields(exc))
+                        blocks.append(block_record)
+                        stop_reason = "stop_file"
+                        print(
+                            "STOP_NIGHT_STUDY detected; block interrupted after "
+                            "the current safe boundary."
+                        )
+                        break
                     block_record.update({
                         "finished_at": _utcnow(),
                         "status": "error",
@@ -552,8 +946,12 @@ def run_night_study(
                     print("ACTIVE promotion achieved; configured stop-after-promotion requested a safe stop.")
                     break
 
-            final_snapshot = capability_snapshot(force_baseline=False)
-            final_lifelong = strict_dynamic_diagnostic(force=False)
+            if stop_reason == "stop_file":
+                final_snapshot = first_snapshot
+                final_lifelong = first_lifelong
+            else:
+                final_snapshot = capability_snapshot(force_baseline=False)
+                final_lifelong = strict_dynamic_diagnostic(force=False)
             print("")
             print("=" * 72)
             print(" NIGHT STUDY SESSION COMPLETE")

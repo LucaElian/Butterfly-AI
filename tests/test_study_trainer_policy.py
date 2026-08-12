@@ -1,4 +1,9 @@
-from butterfly.deliberate_trainer import _study_focus_ok, _study_is_better, _study_protected_ok
+from butterfly.deliberate_trainer import (
+    _study_focus_ok,
+    _study_is_better,
+    _study_protected_ok,
+    is_better_study_checkpoint,
+)
 
 STAGE = {
     "study_focus_metrics": ["binding_exact_component", "instruction_format_component"],
@@ -30,8 +35,28 @@ def test_protected_metrics_are_checked_independently():
     assert not ok
     assert any("retention_conversation_component" in blocker for blocker in blockers)
 
-def test_weakest_focus_improvement_drives_selection():
+def test_valid_loss_breaks_global_study_tie():
     entry = exam(0, .2)
     best = exam(.08, .30)
     candidate = exam(.16, .31)
     assert _study_is_better(candidate, best, entry, .7, .8, STAGE)
+
+
+def test_study_checkpoint_ignores_better_dynamic_score():
+    best = {
+        "study": 0.4845,
+        "valid_loss": 1.1085,
+        "dynamic": 0.4317,
+    }
+    candidate = {
+        "study": 0.4705,
+        "valid_loss": 1.0158,
+        "dynamic": 0.4661,
+    }
+
+    assert not is_better_study_checkpoint(
+        candidate["study"],
+        candidate["valid_loss"],
+        best["study"],
+        best["valid_loss"],
+    )

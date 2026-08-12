@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import time
 
-from .checkpoint import load_entry, move_model_artifacts, delete_model_artifacts
+from .checkpoint import load_entry, move_model_artifacts, delete_model_artifacts, save_stable_model
 from .config import ROOT, MODELS_DIR, BENCHMARKS_DIR, load_promotion_policy, project_relpath
 from .learning.evaluator import BENCHMARK_SUITE_ID, PROMOTION_THRESHOLDS, behavior_benchmark, print_benchmark, save_benchmark
 from .registry import (
@@ -333,6 +333,16 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
             "suite_id": BENCHMARK_SUITE_ID,
             "seed_brain": seed["version"],
         })
+        try:
+            from .learning.skill_credit import record_full_candidate_credit
+            record_full_candidate_credit(
+                candidate,
+                result_version=target,
+                fixed_score=float(metrics.get("score", 0.0)),
+                benchmark_path=project_relpath(report_path),
+            )
+        except Exception as credit_exc:
+            print(f"Skill-credit ledger warning: {credit_exc}")
         compact_physical_models()
         print(f"\nPROMOTED to ACTIVE: {target}")
         return "PROMOTED", report_path, metrics
@@ -355,10 +365,137 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
             "seed_brain": seed["version"],
             "focus_metrics": recipe.get("focus_metrics", []),
         })
+        try:
+            from .learning.skill_credit import record_full_candidate_credit
+            record_full_candidate_credit(
+                candidate,
+                result_version=target,
+                fixed_score=float(metrics.get("score", 0.0)),
+                benchmark_path=project_relpath(report_path),
+            )
+        except Exception as credit_exc:
+            print(f"Skill-credit ledger warning: {credit_exc}")
         compact_physical_models()
         print(f"\nACCEPTED as LAB: {target}")
         print("ACTIVE was not replaced because the candidate did not pass global promotion.")
         return "LAB_ACCEPTED", report_path, metrics
+
+    # The full candidate failed. Before deleting it, try to preserve the
+    # curriculum subject it demonstrably learned without carrying the harmful
+    # regression into the next LAB.
+    skill_credit = None
+    credit_model = None
+    try:
+        from .learning.skill_credit import (
+            attempt_skill_credit_salvage,
+            record_skill_credit,
+        )
+        skill_credit, credit_model = attempt_skill_credit_salvage(
+            seed_entry=seed,
+            candidate_entry=candidate,
+            candidate_model=model,
+            tokenizer=tokenizer,
+            seed_baseline=seed_baseline,
+            recipe=recipe,
+        )
+    except Exception as credit_exc:
+        skill_credit = {
+            "schema_version": 1,
+            "passed": False,
+            "reason": "skill_credit_engine_error",
+            "error": f"{type(credit_exc).__name__}: {credit_exc}",
+        }
+        credit_model = None
+        print(f"Skill-credit salvage warning: {skill_credit['error']}")
+
+    if skill_credit and skill_credit.get("passed") and credit_model is not None:
+        credit_metrics = dict(skill_credit.get("fixed_metrics") or {})
+        original_lifelong = report.get("lifelong_acceptance")
+        report["candidate_original"] = metrics
+        report["candidate"] = credit_metrics
+        report["original_lifelong_acceptance"] = original_lifelong
+        report["skill_credit_salvage"] = skill_credit
+        report["lifelong_acceptance"] = skill_credit.get("acceptance")
+        report["lab_acceptance"] = {
+            "eligible": True,
+            "failures": [],
+            "accepted_by": "skill_credit_partial_consolidation",
+        }
+        report_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+        canonical = MODELS_DIR / f"butterfly-v{target}-lab.safetensors"
+        if canonical.resolve() != candidate_path.resolve():
+            delete_model_artifacts(canonical)
+        save_stable_model(
+            canonical,
+            credit_model,
+            extra={
+                "candidate": False,
+                "skill_credit_consolidated": True,
+                "version": target,
+                "experiment_id": candidate.get("metadata", {}).get("experiment_id"),
+                "seed_brain": seed["version"],
+                "suite_id": BENCHMARK_SUITE_ID,
+                "recipe_name": candidate.get("metadata", {}).get("recipe_name"),
+                "recipe_hash": candidate.get("metadata", {}).get("recipe_hash"),
+                "focus_target": candidate.get("metadata", {}).get("focus_target"),
+                "skill_credit": skill_credit,
+            },
+        )
+        update_entry(target, path=canonical.name, score=credit_metrics.get("score"), metadata={
+            "benchmark": project_relpath(report_path),
+            "suite_id": BENCHMARK_SUITE_ID,
+            "storage_format": "safetensors-weights-only",
+            "optimizer_included": False,
+            "skill_credit": skill_credit,
+            "lifelong_acceptance": skill_credit.get("acceptance"),
+        })
+        promote_to_lab(target)
+        append_history(target, "lab_accepted", score=credit_metrics.get("score"), metadata={
+            "benchmark": project_relpath(report_path),
+            "suite_id": BENCHMARK_SUITE_ID,
+            "seed_brain": seed["version"],
+            "focus_metrics": recipe.get("focus_metrics", []),
+            "accepted_by": "skill_credit_partial_consolidation",
+            "skill_credit": {
+                "node": skill_credit.get("node"),
+                "family": skill_credit.get("family"),
+                "alpha": skill_credit.get("alpha"),
+                "skill_delta": (skill_credit.get("acceptance") or {}).get("delta"),
+            },
+        })
+        try:
+            record_skill_credit(
+                skill_credit,
+                result_version=target,
+                benchmark_path=project_relpath(report_path),
+                mode="partial_consolidation",
+            )
+        except Exception as ledger_exc:
+            print(f"Skill-credit ledger warning: {ledger_exc}")
+        if candidate_path.resolve() != canonical.resolve():
+            delete_model_artifacts(candidate_path)
+        compact_physical_models()
+        print(
+            f"\nSUBJECT CREDIT ACCEPTED as LAB: {target} "
+            f"| node={skill_credit.get('node')} "
+            f"| alpha={float(skill_credit.get('alpha',0)):.3f}"
+        )
+        print(
+            "The full candidate failed, but its independently verified subject "
+            "improvement was preserved without the rejected regression."
+        )
+        return "LAB_ACCEPTED", report_path, credit_metrics
+
+    if skill_credit:
+        report["skill_credit_salvage"] = skill_credit
+        report_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
 
     append_history(target, "rejected", score=metrics.get("score"), metadata={
         "benchmark": project_relpath(report_path),
@@ -366,10 +503,18 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
         "seed_brain": seed["version"],
         "lab_failures": lab_failures,
         "active_failures": active_failures,
+        "skill_credit_salvage": (
+            None if not skill_credit else {
+                "passed": bool(skill_credit.get("passed")),
+                "node": skill_credit.get("node"),
+                "family": skill_credit.get("family"),
+                "reason": skill_credit.get("reason"),
+            }
+        ),
     })
     delete_model_artifacts(candidate_path)
     remove_entry(target)
-    print("\nREJECTED: candidate did not qualify for LAB or ACTIVE.")
+    print("\nREJECTED: candidate did not qualify for LAB, ACTIVE, or safe subject credit.")
     print("LAB blockers:")
     for reason in lab_failures:
         print("  -", reason)

@@ -6,7 +6,8 @@ from .config import ROOT
 
 EXCLUDED_PARTS = {
     ".git", ".venv", "benchmarks", "logs", "reports", "release",
-    "data", "models", ".butterfly", "__pycache__", "_general_refactor_payload",
+    "data", "models", ".butterfly", "training_state", "__pycache__",
+    "_general_refactor_payload",
 }
 EXCLUDED_FILES = {"CHANGELOG.md", "README.md", "_general_refactor_apply.py", "INSTALL_GENERAL_REFACTOR.bat"}
 

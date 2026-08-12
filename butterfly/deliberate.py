@@ -37,13 +37,13 @@ def command_build():
     mark_experiment_status("dataset_ready")
 
 
-def command_train():
+def command_train(stop_requested=None):
     from .deliberate_trainer import train_candidate
 
     exp, recipe = _context()
     print("ButterflyAI deliberate training")
     print("USER tokens are context; loss is computed only on Butterfly answer tokens.")
-    train_candidate(exp, recipe)
+    train_candidate(exp, recipe, stop_requested=stop_requested)
     mark_experiment_status("candidate_ready")
 
 

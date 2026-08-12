@@ -32,6 +32,18 @@ AUTOSAVE_SECONDS = 600
 DYNAMIC_FOCUS_KEY = "dynamic_selection_component"
 
 
+class TrainingStopRequested(RuntimeError):
+    def __init__(self, stage: str, epoch: int = 0, step: int = 0, total_steps: int = 0):
+        self.stage = stage
+        self.epoch = int(epoch)
+        self.step = int(step)
+        self.total_steps = int(total_steps)
+        super().__init__(
+            f"STOP_NIGHT_STUDY requested during {stage} epoch {self.epoch} "
+            f"batch {self.step}/{self.total_steps}"
+        )
+
+
 def _atomic_json(path: Path, value: dict):
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
@@ -157,30 +169,29 @@ def _study_focus_floor(exam: dict, entry: dict, names: list[str]) -> float:
     return min(float(exam.get(name, 0.0)) - float(entry.get(name, 0.0)) for name in names)
 
 
+def is_better_study_checkpoint(
+    candidate_study: float,
+    candidate_valid_loss: float,
+    best_study: float,
+    best_valid_loss: float | None,
+    eps: float = 1e-9,
+) -> bool:
+    if candidate_study > best_study + eps:
+        return True
+    if candidate_study < best_study - eps:
+        return False
+    if best_valid_loss is None:
+        return False
+    return candidate_valid_loss < best_valid_loss - eps
+
+
 def _study_is_better(candidate: dict, best: dict, entry: dict, candidate_val: float, best_val: float, stage_cfg: dict) -> bool:
-    focus = list(stage_cfg.get("study_focus_metrics", []))
-    protected = list(stage_cfg.get("study_protected_metrics", []))
-    delta = float(stage_cfg.get("min_study_delta", 0.01))
-
-    candidate_floor = _study_focus_floor(candidate, entry, focus)
-    best_floor = _study_focus_floor(best, entry, focus)
-    if candidate_floor > best_floor + delta:
-        return True
-    if candidate_floor < best_floor - delta:
-        return False
-
-    candidate_focus = _study_avg(candidate, focus)
-    best_focus = _study_avg(best, focus)
-    if candidate_focus > best_focus + delta:
-        return True
-    if candidate_focus < best_focus - delta:
-        return False
-
-    candidate_protected = _study_avg(candidate, protected) if protected else 0.0
-    best_protected = _study_avg(best, protected) if protected else 0.0
-    if candidate_protected > best_protected + 1e-9:
-        return True
-    return abs(candidate_protected - best_protected) <= 1e-9 and candidate_val < best_val
+    return is_better_study_checkpoint(
+        float(candidate.get("study_score", 0.0)),
+        candidate_val,
+        float(best.get("study_score", 0.0)),
+        None if best_val == float("inf") else best_val,
+    )
 
 
 def _print_study(label: str, exam: dict):
@@ -294,7 +305,7 @@ def _failure_driven_stage_cfg(stage_cfg: dict, experiment: dict) -> dict:
     return cfg
 
 
-def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume_progress, completed):
+def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume_progress, completed, stop_requested=None):
     stage_cfg = _failure_driven_stage_cfg(stage_cfg, experiment)
     name = stage_cfg["name"]
     train_path = ROOT / manifest_stage["train_file"]
@@ -381,6 +392,17 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
             return {}
         return {"stage_entry_study":entry_study,"best_study_exam":best_study,"selected_study_epoch":selected_epoch}
 
+    def stop_now(epoch: int, step: int, total_steps: int):
+        progress={"experiment_id":experiment["experiment_id"],"target_version":experiment["target_version"],"recipe_hash":experiment["recipe_hash"],
+                  "stage":name,"stage_complete":False,"epoch":epoch,"step":step,"total_steps":total_steps,
+                  "best_validation_loss":None if best_loss == float("inf") else best_loss,"bad_epochs":bad_epochs,
+                  "completed_stages":completed,"updated_at":time.time(),**extra_state()}
+        try:
+            _save_resume(model, progress, f"STOP_NIGHT_STUDY detected at {name} epoch {epoch} batch {step}/{total_steps}")
+        except Exception as exc:
+            print(f"WARNING: emergency autosave failed: {type(exc).__name__}: {exc}")
+        raise TrainingStopRequested(name, epoch, step, total_steps)
+
     for epoch in range(start_epoch, max_epochs + 1):
         generator = torch.Generator()
         generator.manual_seed(_stable_stage_seed(int(experiment["random_seed"]), name, epoch))
@@ -398,6 +420,8 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
             opt.zero_grad(set_to_none=True); loss.backward()
             torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.0)
             opt.step(); running.append(float(loss.item()))
+            if stop_requested is not None and stop_requested():
+                stop_now(epoch, step, total)
             if step == skip_through + 1 or step % max(1,total//12) == 0 or step == total:
                 elapsed=time.time()-started; done=max(1,step-skip_through); rate=done/max(elapsed,1e-6)
                 eta=(total-step)/max(rate,1e-6); avg=sum(running[-50:])/max(1,len(running[-50:]))
@@ -409,11 +433,15 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
                           "completed_stages":completed,"updated_at":time.time(),**extra_state()}
                 _save_resume(model, progress, f"{name} epoch {epoch} batch {step}/{total}"); last_autosave=time.time()
 
+        if stop_requested is not None and stop_requested():
+            stop_now(epoch, total, total)
         val = _validation_loss(model, valid_ds, batch_size=batch_size)
         train_avg = sum(running)/max(1,len(running)) if running else float("nan")
         print(f"{name} epoch {epoch}: answer-train={train_avg:.4f} answer-valid={val:.4f}")
         epochs_completed = epoch
 
+        if stop_requested is not None and stop_requested():
+            stop_now(epoch + 1, 0, total)
         if study_enabled:
             exam = _study_with_dynamic_focus(model, tokenizer, experiment, stage_cfg, include_transfer=False)
             _print_study(f"{name} epoch {epoch} exam", exam)
@@ -457,11 +485,15 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
                   "best_validation_loss":None if best_loss == float("inf") else best_loss,"bad_epochs":bad_epochs,
                   "completed_stages":completed,"updated_at":time.time(),**extra_state()}
         _save_resume(model, progress, f"{name} epoch {epoch} complete"); last_autosave=time.time(); resume_step=0
+        if stop_requested is not None and stop_requested():
+            stop_now(epoch + 1, 0, total)
         if bad_epochs >= effective_patience:
             print("  -> early stopping"); break
 
     if BEST_STAGE_MODEL.exists():
         _load_weights_into(model, BEST_STAGE_MODEL, device)
+    if stop_requested is not None and stop_requested():
+        stop_now(epochs_completed + 1, 0, 0)
     dynamic_transfer = None
     if study_enabled:
         _print_study(f"{name} selected checkpoint", best_study)
@@ -563,7 +595,7 @@ def _candidate_lifelong_acceptance(model, tokenizer, seed: dict, experiment: dic
     return result
 
 
-def train_candidate(experiment: dict, recipe: dict):
+def train_candidate(experiment: dict, recipe: dict, stop_requested=None):
     manifest = load_manifest()
     for key in ("experiment_id", "target_version", "recipe_hash", "suite_id"):
         if str(manifest.get(key)) != str(experiment.get(key)):
@@ -633,11 +665,13 @@ def train_candidate(experiment: dict, recipe: dict):
             else None
         )
         _, completed = _train_stage(
-            model, tokenizer, experiment, stage_cfg, manifest_stage, stage_resume, completed
+            model, tokenizer, experiment, stage_cfg, manifest_stage, stage_resume, completed, stop_requested=stop_requested
         )
         completed_names.add(name)
         progress = _read_progress()
 
+    if stop_requested is not None and stop_requested():
+        raise TrainingStopRequested("candidate_acceptance", 0, 0, 0)
     lifelong_acceptance = _candidate_lifelong_acceptance(
         model, tokenizer, seed, experiment, recipe, device
     )

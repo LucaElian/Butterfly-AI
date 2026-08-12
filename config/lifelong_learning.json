@@ -224,5 +224,27 @@
       "legacy_family": "state",
       "source": "internal_verified"
     }
+  },
+  "skill_credit": {
+    "enabled": true,
+    "mode": "safe_partial_weight_interpolation",
+    "alpha_ladder": [
+      1.0,
+      0.75,
+      0.5,
+      0.35,
+      0.25,
+      0.15
+    ],
+    "search_cases": 12,
+    "acceptance_cases": 16,
+    "search_min_delta": 0.015,
+    "acceptance_min_delta": 0.02,
+    "minimum_skill_score": 0.6,
+    "max_overall_regression": 0.005,
+    "max_component_regression": 0.01,
+    "require_no_new_critical": true,
+    "ledger_max_entries": 500,
+    "policy": "A globally rejected Lifelong candidate may preserve only the independently verified curriculum skill that survives fresh subject-credit exams and strict fixed-capability non-regression gates."
   }
 }
