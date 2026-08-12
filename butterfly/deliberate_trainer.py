@@ -116,15 +116,19 @@ def _set_frozen_blocks(model, frozen_first_blocks: int):
 
 
 @torch.no_grad()
-def _validation_loss(model, dataset, batch_size: int):
+def _validation_loss(model, dataset, batch_size: int, stop_requested=None):
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
     model.eval()
     device = next(model.parameters()).device
     values = []
     for x, y in loader:
+        if stop_requested is not None and stop_requested():
+            raise StopIteration("STOP_AUTONOMY requested during validation")
         x, y = x.to(device), y.to(device)
         _, loss = model(x, y)
         values.append(float(loss.item()))
+        if stop_requested is not None and stop_requested():
+            raise StopIteration("STOP_AUTONOMY requested during validation")
     return sum(values) / max(1, len(values))
 
 
@@ -240,15 +244,23 @@ def _dynamic_stage_banks(experiment: dict, stage_name: str, count: int = 12):
     return fresh_pair(str(family), seed, count=count)
 
 
-def _study_with_dynamic_focus(model, tokenizer, experiment: dict, stage_cfg: dict, *, include_transfer: bool = False):
-    exam = study_microbenchmark(model, tokenizer)
+def _study_with_dynamic_focus(
+    model,
+    tokenizer,
+    experiment: dict,
+    stage_cfg: dict,
+    *,
+    include_transfer: bool = False,
+    stop_requested=None,
+):
+    exam = study_microbenchmark(model, tokenizer, stop_requested=stop_requested)
     target = dict(experiment.get("focus_target") or {})
     family = target.get("dynamic_family")
     if not family:
         return exam
     count = int(target.get("selection_cases", 12))
     selection, transfer = _dynamic_stage_banks(experiment, stage_cfg["name"], count=count)
-    selection_result = evaluate_bank(model, tokenizer, selection)
+    selection_result = evaluate_bank(model, tokenizer, selection, stop_requested=stop_requested)
     exam[DYNAMIC_FOCUS_KEY] = float(selection_result["score"])
     exam["dynamic_selection"] = {
         "family": family,
@@ -257,7 +269,7 @@ def _study_with_dynamic_focus(model, tokenizer, experiment: dict, stage_cfg: dic
         "semantic": float(selection_result["semantic"]),
     }
     if include_transfer:
-        transfer_result = evaluate_bank(model, tokenizer, transfer)
+        transfer_result = evaluate_bank(model, tokenizer, transfer, stop_requested=stop_requested)
         exam["dynamic_transfer_entry"] = {
             "family": family,
             "fingerprint": transfer["fingerprint"],
@@ -360,9 +372,14 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
         _clean_best()
         if study_enabled:
             print(f"\n=== STUDY ENTRY EXAM: {name} ===")
-            entry_study = _study_with_dynamic_focus(
-                model, tokenizer, experiment, stage_cfg, include_transfer=True
-            )
+            try:
+                entry_study = _study_with_dynamic_focus(
+                    model, tokenizer, experiment, stage_cfg,
+                    include_transfer=True,
+                    stop_requested=stop_requested,
+                )
+            except StopIteration:
+                stop_now(1, 0, 0)
             best_study = entry_study
             selected_epoch = 0
             _print_study("entry", entry_study)
@@ -380,7 +397,10 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
     print(f"trainable parameters: {trainable:,}/{total_params:,} | frozen first blocks: {frozen}")
     print("Objective: USER tokens are context-only; loss is computed ONLY on Butterfly answer tokens.")
     if study_enabled:
-        print("Checkpoint policy: held-out STUDY EXAM is primary; token validation loss is only a tiebreaker.")
+        print(
+            "Checkpoint policy: eligibility gates first; among eligible checkpoints, "
+            "held-out STUDY EXAM is primary and validation loss is only a tiebreaker."
+        )
     print("Recovery: weights-only autosave about every 10 minutes + every epoch/stage.")
 
     device = next(model.parameters()).device
@@ -435,7 +455,10 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
 
         if stop_requested is not None and stop_requested():
             stop_now(epoch, total, total)
-        val = _validation_loss(model, valid_ds, batch_size=batch_size)
+        try:
+            val = _validation_loss(model, valid_ds, batch_size=batch_size, stop_requested=stop_requested)
+        except StopIteration:
+            stop_now(epoch, total, total)
         train_avg = sum(running)/max(1,len(running)) if running else float("nan")
         print(f"{name} epoch {epoch}: answer-train={train_avg:.4f} answer-valid={val:.4f}")
         epochs_completed = epoch
@@ -443,7 +466,14 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
         if stop_requested is not None and stop_requested():
             stop_now(epoch + 1, 0, total)
         if study_enabled:
-            exam = _study_with_dynamic_focus(model, tokenizer, experiment, stage_cfg, include_transfer=False)
+            try:
+                exam = _study_with_dynamic_focus(
+                    model, tokenizer, experiment, stage_cfg,
+                    include_transfer=False,
+                    stop_requested=stop_requested,
+                )
+            except StopIteration:
+                stop_now(epoch + 1, 0, total)
             _print_study(f"{name} epoch {epoch} exam", exam)
             protected_ok, protected_blockers = _study_protected_ok(exam, entry_study, stage_cfg)
             focus_ok, focus_blockers = _study_focus_ok(exam, entry_study, stage_cfg)
@@ -503,7 +533,12 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
             target = dict(experiment.get("focus_target") or {})
             count = int(target.get("selection_cases", 12))
             _, transfer_bank = _dynamic_stage_banks(experiment, name, count=count)
-            transfer_exam = evaluate_bank(model, tokenizer, transfer_bank)
+            try:
+                transfer_exam = evaluate_bank(
+                    model, tokenizer, transfer_bank, stop_requested=stop_requested
+                )
+            except StopIteration:
+                stop_now(epochs_completed + 1, 0, 0)
             base_transfer = float((entry_study.get("dynamic_transfer_entry") or {}).get("score", 0.0))
             final_transfer = float(transfer_exam.get("score", 0.0))
             required_transfer = float(target.get("transfer_min_delta", 0.015))

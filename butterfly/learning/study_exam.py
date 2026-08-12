@@ -190,9 +190,16 @@ def _avg(rows, key="score"):
     return sum(float(row[key]) for row in rows) / max(1, len(rows))
 
 
-def study_microbenchmark(model, tokenizer, max_new_tokens: int = BENCHMARK_MAX_NEW_TOKENS):
+def study_microbenchmark(
+    model,
+    tokenizer,
+    max_new_tokens: int = BENCHMARK_MAX_NEW_TOKENS,
+    stop_requested=None,
+):
     rows = []
     for case in STUDY_CASES:
+        if stop_requested is not None and stop_requested():
+            raise StopIteration("STOP_AUTONOMY requested during study exam")
         shaped = f"User: {case['prompt']}\nButterfly:"
         out = generate(
             model,
@@ -208,6 +215,8 @@ def study_microbenchmark(model, tokenizer, max_new_tokens: int = BENCHMARK_MAX_N
         if case.get("retention_family"):
             row["retention_family"] = case["retention_family"]
         rows.append(row)
+        if stop_requested is not None and stop_requested():
+            raise StopIteration("STOP_AUTONOMY requested during study exam")
 
     binding = [r for r in rows if r["group"] == "binding"]
     fmt = [r for r in rows if r["group"] == "instruction_format"]
@@ -288,4 +297,3 @@ def study_suite_id() -> str:
     }
     raw = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     return "study-" + hashlib.sha256(raw).hexdigest()[:12]
-

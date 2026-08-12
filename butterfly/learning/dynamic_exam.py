@@ -566,10 +566,19 @@ def _extract(output: str, shaped: str) -> str:
     return answer.strip()
 
 
-def evaluate_bank(model, tokenizer, bank: dict[str, Any], *, max_new_tokens: int = BENCHMARK_MAX_NEW_TOKENS) -> dict[str, Any]:
+def evaluate_bank(
+    model,
+    tokenizer,
+    bank: dict[str, Any],
+    *,
+    max_new_tokens: int = BENCHMARK_MAX_NEW_TOKENS,
+    stop_requested=None,
+) -> dict[str, Any]:
     validate_bank(bank)
     rows = []
     for case in bank["cases"]:
+        if stop_requested is not None and stop_requested():
+            raise StopIteration("STOP_AUTONOMY requested during dynamic exam")
         shaped = f"User: {case['prompt']}\nButterfly:"
         output = generate(
             model,
@@ -579,6 +588,8 @@ def evaluate_bank(model, tokenizer, bank: dict[str, Any], *, max_new_tokens: int
             **BENCHMARK_GENERATION_CONFIG,
         )
         rows.append(_dynamic_case_result(_extract(output, shaped), case))
+        if stop_requested is not None and stop_requested():
+            raise StopIteration("STOP_AUTONOMY requested during dynamic exam")
 
     score = sum(float(row["score"]) for row in rows) / max(1, len(rows))
     semantic = sum(float(row["semantic"]) for row in rows) / max(1, len(rows))
