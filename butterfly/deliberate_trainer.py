@@ -30,6 +30,9 @@ BEST_STAGE_MODEL = TRAINING_ROOT / "best-stage.safetensors"
 ENTRY_STAGE_MODEL = TRAINING_ROOT / "entry-stage.safetensors"
 AUTOSAVE_SECONDS = 600
 DYNAMIC_FOCUS_KEY = "dynamic_selection_component"
+RESUME_PHASE_ENTRY_EXAM = "entry_exam"
+RESUME_PHASE_VALIDATION_COMPLETE = "validation_complete"
+RESUME_PHASE_ACCEPTED_CHECKPOINT = "accepted_checkpoint"
 
 
 class TrainingStopRequested(RuntimeError):
@@ -101,6 +104,12 @@ def _load_weights_into(model, path: Path, device: str):
     loaded, _ = load_checkpoint(path, device=device)
     model.load_state_dict(loaded.state_dict(), strict=True)
     del loaded
+
+
+def _rollback_to_best_for_stop(model, device: str):
+    if not BEST_STAGE_MODEL.exists():
+        raise RuntimeError("STOP_AUTONOMY requested before an accepted stage checkpoint exists")
+    _load_weights_into(model, BEST_STAGE_MODEL, device)
 
 
 def _set_frozen_blocks(model, frozen_first_blocks: int):
@@ -349,8 +358,48 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
     entry_study = None
     best_study = None
     selected_epoch = None
+    device = next(model.parameters()).device
+    stage_start = time.time()
+    last_autosave = time.time()
 
-    if resume_progress and resume_progress.get("stage") == name and not resume_progress.get("stage_complete"):
+    def extra_state():
+        if not study_enabled:
+            return {}
+        state = {}
+        if entry_study is not None:
+            state["stage_entry_study"] = entry_study
+        if best_study is not None:
+            state["best_study_exam"] = best_study
+        if selected_epoch is not None:
+            state["selected_study_epoch"] = selected_epoch
+        return state
+
+    def stop_now(epoch: int, step: int, total_steps: int, *, resume_phase: str | None = None):
+        progress={"experiment_id":experiment["experiment_id"],"target_version":experiment["target_version"],"recipe_hash":experiment["recipe_hash"],
+                  "stage":name,"stage_complete":False,"epoch":epoch,"step":step,"total_steps":total_steps,
+                  "best_validation_loss":None if best_loss == float("inf") else best_loss,"bad_epochs":bad_epochs,
+                  "completed_stages":completed,"updated_at":time.time(),**extra_state()}
+        if resume_phase is not None:
+            progress["resume_phase"] = resume_phase
+        try:
+            _save_resume(model, progress, f"STOP_AUTONOMY detected at {name} epoch {epoch} batch {step}/{total_steps}")
+        except Exception as exc:
+            print(f"WARNING: emergency autosave failed: {type(exc).__name__}: {exc}")
+        raise TrainingStopRequested(name, epoch, step, total_steps)
+
+    def stop_from_accepted_checkpoint(epoch: int, step: int, total_steps: int):
+        _rollback_to_best_for_stop(model, device)
+        stop_now(epoch, step, total_steps, resume_phase=RESUME_PHASE_ACCEPTED_CHECKPOINT)
+
+    resume_phase = str((resume_progress or {}).get("resume_phase") or "")
+    resume_entry_exam = study_enabled and resume_phase == RESUME_PHASE_ENTRY_EXAM
+
+    if (
+        resume_progress
+        and resume_progress.get("stage") == name
+        and not resume_progress.get("stage_complete")
+        and not resume_entry_exam
+    ):
         start_epoch = max(1, int(resume_progress.get("epoch", 1)))
         resume_step = max(0, int(resume_progress.get("step", 0)))
         raw = resume_progress.get("best_validation_loss")
@@ -379,7 +428,7 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
                     stop_requested=stop_requested,
                 )
             except StopIteration:
-                stop_now(1, 0, 0)
+                stop_now(1, 0, 0, resume_phase=RESUME_PHASE_ENTRY_EXAM)
             best_study = entry_study
             selected_epoch = 0
             _print_study("entry", entry_study)
@@ -402,26 +451,6 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
             "held-out STUDY EXAM is primary and validation loss is only a tiebreaker."
         )
     print("Recovery: weights-only autosave about every 10 minutes + every epoch/stage.")
-
-    device = next(model.parameters()).device
-    stage_start = time.time()
-    last_autosave = time.time()
-
-    def extra_state():
-        if not study_enabled:
-            return {}
-        return {"stage_entry_study":entry_study,"best_study_exam":best_study,"selected_study_epoch":selected_epoch}
-
-    def stop_now(epoch: int, step: int, total_steps: int):
-        progress={"experiment_id":experiment["experiment_id"],"target_version":experiment["target_version"],"recipe_hash":experiment["recipe_hash"],
-                  "stage":name,"stage_complete":False,"epoch":epoch,"step":step,"total_steps":total_steps,
-                  "best_validation_loss":None if best_loss == float("inf") else best_loss,"bad_epochs":bad_epochs,
-                  "completed_stages":completed,"updated_at":time.time(),**extra_state()}
-        try:
-            _save_resume(model, progress, f"STOP_AUTONOMY detected at {name} epoch {epoch} batch {step}/{total_steps}")
-        except Exception as exc:
-            print(f"WARNING: emergency autosave failed: {type(exc).__name__}: {exc}")
-        raise TrainingStopRequested(name, epoch, step, total_steps)
 
     for epoch in range(start_epoch, max_epochs + 1):
         generator = torch.Generator()
@@ -464,7 +493,7 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
         epochs_completed = epoch
 
         if stop_requested is not None and stop_requested():
-            stop_now(epoch + 1, 0, total)
+            stop_now(epoch, total, total, resume_phase=RESUME_PHASE_VALIDATION_COMPLETE)
         if study_enabled:
             try:
                 exam = _study_with_dynamic_focus(
@@ -473,7 +502,7 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
                     stop_requested=stop_requested,
                 )
             except StopIteration:
-                stop_now(epoch + 1, 0, total)
+                stop_from_accepted_checkpoint(epoch + 1, 0, total)
             _print_study(f"{name} epoch {epoch} exam", exam)
             protected_ok, protected_blockers = _study_protected_ok(exam, entry_study, stage_cfg)
             focus_ok, focus_blockers = _study_focus_ok(exam, entry_study, stage_cfg)
