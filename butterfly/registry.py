@@ -66,7 +66,7 @@ def load_registry():
     ensure_dirs()
     if not REGISTRY_PATH.exists():
         return _blank_registry()
-    raw = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    raw = json.loads(REGISTRY_PATH.read_text(encoding="utf-8-sig"))
     reg, changed = _migrate_registry(raw)
     if changed:
         save_registry(reg)
@@ -85,7 +85,7 @@ def load_history():
     ensure_dirs()
     if not HISTORY_PATH.exists():
         return {"format": 1, "versions": []}
-    return json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+    return json.loads(HISTORY_PATH.read_text(encoding="utf-8-sig"))
 
 
 def append_history(version: str, status: str, score=None, metadata=None):

@@ -83,11 +83,41 @@ def _slot_row(entry):
     }
 
 
-def storage_status():
+def _compact_history_row(row: dict) -> dict:
+    metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    compact = {
+        "version": row.get("version"),
+        "status": row.get("status"),
+        "score": row.get("score"),
+        "recorded_at": row.get("recorded_at"),
+    }
+    for key in ("suite_id", "benchmark"):
+        if metadata.get(key):
+            compact[key] = metadata[key]
+    return compact
+
+
+def _history_status(history: dict, limit: int) -> dict:
+    rows = list(history.get("versions") or [])
+    recent = rows[-max(0, int(limit)):] if limit else []
+    counts = {}
+    for row in rows:
+        status = str(row.get("status") or "unknown")
+        counts[status] = counts.get(status, 0) + 1
+    return {
+        "format": history.get("format"),
+        "total_entries": len(rows),
+        "status_counts": counts,
+        "recent": [_compact_history_row(row) for row in recent],
+    }
+
+
+def storage_status(*, full_history: bool = False, history_limit: int = 12):
+    history = load_history()
     return {
         "active": _slot_row(get_active_entry()),
         "lab": _slot_row(get_lab_entry()),
         "candidate": _slot_row(get_candidate_entry()),
-        "history": load_history(),
+        "history": history if full_history else _history_status(history, history_limit),
         "release_dir": str(RELEASE_DIR),
     }

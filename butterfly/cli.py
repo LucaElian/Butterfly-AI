@@ -73,9 +73,16 @@ def command_status(_args):
     print(json.dumps(system_snapshot(), indent=2, ensure_ascii=False))
 
 
-def command_storage(_args):
+def command_storage(args):
     from .storage import storage_status
-    print(json.dumps(storage_status(), indent=2, ensure_ascii=False))
+    print(json.dumps(
+        storage_status(
+            full_history=args.full_history,
+            history_limit=args.history_limit,
+        ),
+        indent=2,
+        ensure_ascii=False,
+    ))
 
 
 def command_export_release(_args):
@@ -203,6 +210,8 @@ def build_parser():
     sp.set_defaults(func=command_status)
 
     sp = sub.add_parser("storage")
+    sp.add_argument("--full-history", action="store_true")
+    sp.add_argument("--history-limit", type=int, default=12)
     sp.set_defaults(func=command_storage)
 
     sp = sub.add_parser("export-release")
