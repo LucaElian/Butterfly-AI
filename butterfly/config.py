@@ -89,7 +89,7 @@ def load_json(path: Path, default=None):
     path = Path(path)
     if not path.exists():
         return default
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def save_json(path: Path, value):

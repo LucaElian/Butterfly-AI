@@ -5,12 +5,7 @@ import json
 
 from .config import ensure_dirs, project_relpath
 from .memory import MemoryStore
-from .training.runtime import best_device
-from .checkpoint import load_active
-from .runtime import ButterflyRuntime, load_capabilities, route_deterministic
-from .epistemic.engine import EpistemicEngine
 from .agent.preflight import PreflightEvaluator
-from .learning.sleep_cycle import run_sleep_cycle
 
 
 def command_init(_args):
@@ -22,6 +17,10 @@ def command_init(_args):
 
 
 def command_chat(args):
+    from .checkpoint import load_active
+    from .runtime import ButterflyRuntime
+    from .training.runtime import best_device
+
     model, _, tokenizer = load_active(device=best_device())
     runtime = ButterflyRuntime(model, tokenizer)
     print("ButterflyAI unified local chat. Ctrl+C to exit.")
@@ -85,6 +84,8 @@ def command_export_release(_args):
 
 
 def command_verify(args):
+    from .epistemic.engine import EpistemicEngine
+
     result = EpistemicEngine().verify(args.claim, allow_web=args.web)
     print(json.dumps({
         "claim": result.claim,
@@ -114,10 +115,6 @@ def command_experience(args):
         quality=args.quality,
     )
     print("Experience stored.")
-
-
-def command_sleep(args):
-    run_sleep_cycle(steps=args.steps)
 
 
 def command_experiment_new(args):
@@ -156,6 +153,8 @@ def command_autonomy_plan(_args):
 
 
 def command_route(args):
+    from .runtime import route_deterministic
+
     result = route_deterministic(args.prompt)
     payload = {
         "prompt": args.prompt,
@@ -167,6 +166,8 @@ def command_route(args):
 
 
 def command_capabilities(_args):
+    from .runtime import load_capabilities
+
     print(json.dumps(load_capabilities(), indent=2, ensure_ascii=False))
 
 
@@ -224,10 +225,6 @@ def build_parser():
     sp.add_argument("--verified", action="store_true")
     sp.add_argument("--quality", type=float, default=.8)
     sp.set_defaults(func=command_experience)
-
-    sp = sub.add_parser("sleep")
-    sp.add_argument("--steps", type=int, default=120)
-    sp.set_defaults(func=command_sleep)
 
     sp = sub.add_parser("experiment-new")
     sp.add_argument("--recipe", default=None)

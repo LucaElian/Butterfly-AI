@@ -1,6 +1,5 @@
 from .types import VerificationResult, ClaimStatus
 from .math_verifier import MathVerifier
-from .web import WebResearch
 from ..memory import MemoryStore
 
 
@@ -8,14 +7,15 @@ class EpistemicEngine:
     def __init__(self, memory=None):
         self.memory = memory or MemoryStore()
         self.math = MathVerifier()
-        self.web = WebResearch()
 
     def verify(self, claim: str, allow_web=False):
         if self.math.can_handle(claim):
             result = self.math.verify(claim)
         elif allow_web:
             try:
-                evidence = self.web.wikipedia_search(claim)
+                from .web import WebResearch
+
+                evidence = WebResearch().wikipedia_search(claim)
                 # Web snippets are evidence, not proof. We deliberately do not auto-promote to VERIFIED.
                 result = VerificationResult(
                     claim=claim,

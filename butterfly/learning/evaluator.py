@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+import ast
 import hashlib
 import inspect
 import json
 import re
 import unicodedata
 from typing import Any
-
-from ..generation import generate
-from ..runtime import ButterflyRuntime, runtime_fingerprint_payload
-from ..epistemic.engine import EpistemicEngine
 
 # Reserved benchmark-only values. The deliberate corpus builder imports these and
 # refuses to place them in train OR validation. This keeps the final benchmark a
@@ -45,6 +42,17 @@ BENCHMARK_GENERATION_CONFIG = {
     "repetition_penalty": 1.25,
     "min_new_tokens": 1,
 }
+
+
+def _source_function_from_file(path: Path, name: str) -> str:
+    source = path.read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    lines = source.splitlines(keepends=True)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            start = node.decorator_list[0].lineno if node.decorator_list else node.lineno
+            return "".join(lines[start - 1:node.end_lineno])
+    raise RuntimeError(f"Cannot fingerprint missing function {name!r} in {path}")
 
 
 def _strip_accents(text: str) -> str:
@@ -455,7 +463,13 @@ def _case_result(answer: str, case: dict[str, Any]) -> dict[str, Any]:
 
 
 def benchmark_suite_id() -> str:
+    from ..runtime import runtime_fingerprint_payload
+
     # Fingerprint the actual exam instead of maintaining a manual suite number.
+    generation_source = _source_function_from_file(
+        Path(__file__).resolve().parents[1] / "generation.py",
+        "generate",
+    )
     rules = {
         "cases": CASES,
         "thresholds": PROMOTION_THRESHOLDS,
@@ -479,7 +493,7 @@ def benchmark_suite_id() -> str:
         "style_rule": inspect.getsource(_style_score),
         "case_rule": inspect.getsource(_case_result),
         "runtime": runtime_fingerprint_payload(),
-        "generation_rule": inspect.getsource(generate),
+        "generation_rule": generation_source,
         "generation_config": BENCHMARK_GENERATION_CONFIG,
         "benchmark_max_new_tokens": BENCHMARK_MAX_NEW_TOKENS,
     }
@@ -505,6 +519,9 @@ def _promotion_check(metrics: dict[str, Any]) -> tuple[bool, list[str]]:
 
 
 def behavior_benchmark(model, tokenizer, max_new_tokens: int = BENCHMARK_MAX_NEW_TOKENS):
+    from ..epistemic.engine import EpistemicEngine
+    from ..runtime import ButterflyRuntime
+
     rows: list[dict[str, Any]] = []
     categories: dict[str, list[float]] = {}
     runtime = ButterflyRuntime(model, tokenizer)

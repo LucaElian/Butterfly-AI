@@ -1,4 +1,14 @@
 from pathlib import Path
+import ast
+
+
+def _top_level_imports(path):
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    return {
+        node.module
+        for node in tree.body
+        if isinstance(node, ast.ImportFrom)
+    }
 
 
 def test_manual_pipeline_entrypoints_are_retired():
@@ -40,3 +50,48 @@ def test_public_learning_cli_is_autonomy():
         pass
     else:
         raise AssertionError(f"{retired_command} should no longer be a public CLI command")
+
+    try:
+        parser.parse_args(["sleep"])
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("sleep should no longer be a public CLI command")
+
+
+def test_cli_imports_are_lightweight_for_diagnostics():
+    root = Path(__file__).resolve().parents[1]
+    top_level_imports = _top_level_imports(root / "butterfly" / "cli.py")
+    assert "training.runtime" not in top_level_imports
+    assert "checkpoint" not in top_level_imports
+    assert "learning.sleep_cycle" not in top_level_imports
+
+
+def test_storage_status_does_not_import_checkpoint_runtime():
+    root = Path(__file__).resolve().parents[1]
+    top_level_imports = _top_level_imports(root / "butterfly" / "storage.py")
+    assert "checkpoint" not in top_level_imports
+
+
+def test_evaluator_runtime_imports_are_lightweight():
+    root = Path(__file__).resolve().parents[1]
+    evaluator_imports = _top_level_imports(root / "butterfly" / "learning" / "evaluator.py")
+    runtime_imports = _top_level_imports(root / "butterfly" / "runtime.py")
+    engine_imports = _top_level_imports(root / "butterfly" / "epistemic" / "engine.py")
+
+    assert "generation" not in runtime_imports
+    assert "web" not in engine_imports
+    assert "generation" not in evaluator_imports
+
+
+def test_legacy_learning_modules_are_retired():
+    root = Path(__file__).resolve().parents[1]
+    retired = {
+        "butterfly/learning/sleep_cycle.py",
+        "butterfly/agent/postflight.py",
+        "butterfly/corpus/builder.py",
+        "butterfly/trainer.py",
+        "config/recipes/sleep_learning.json",
+    }
+    for rel in retired:
+        assert not (root / rel).exists()

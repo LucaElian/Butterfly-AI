@@ -11,9 +11,12 @@ from .registry import (
     get_active_entry, get_lab_entry, get_candidate_entry,
     load_history, resolve_tokenizer_path,
 )
-from .checkpoint import metadata_path
 
 RELEASE_DIR = ROOT / "release"
+
+
+def metadata_path(path: Path) -> Path:
+    return Path(path).with_suffix(Path(path).suffix + ".json")
 
 
 def sha256(path: Path) -> str:

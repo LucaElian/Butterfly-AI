@@ -9,7 +9,6 @@ import unicodedata
 from typing import Any
 
 from .config import ROOT
-from .generation import generate
 from .epistemic.engine import EpistemicEngine
 
 
@@ -298,6 +297,8 @@ class ButterflyRuntime:
         repetition_penalty: float = 1.24,
         min_new_tokens: int = 1,
     ) -> RuntimeResponse:
+        from .generation import generate
+
         history = history or []
         context = "".join(
             f"User: {user}\nButterfly: {answer}\n<END>\n"
