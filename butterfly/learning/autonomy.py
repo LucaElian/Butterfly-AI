@@ -26,10 +26,10 @@ from .lifelong_bridge import (
 )
 
 
-CONFIG_PATH = ROOT / "config" / "night_study.json"
+CONFIG_PATH = ROOT / "config" / "autonomy_learning.json"
 LATEST_PLAN_PATH = ROOT / "reports" / "autonomy-plan.json"
 LATEST_REPORT_PATH = ROOT / "reports" / "autonomy-latest.json"
-HISTORY_PATH = ROOT / ".butterfly" / "night_study_history.json"
+HISTORY_PATH = ROOT / ".butterfly" / "autonomy_history.json"
 LOG_RETENTION_COUNT = 3
 REPORT_RETENTION_COUNT = 6
 
@@ -38,10 +38,10 @@ def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def load_night_config() -> dict[str, Any]:
+def load_autonomy_learning_config() -> dict[str, Any]:
     cfg = load_json(CONFIG_PATH)
     if not isinstance(cfg, dict) or cfg.get("schema_version") != 1:
-        raise RuntimeError("Invalid config/night_study.json")
+        raise RuntimeError("Invalid config/autonomy_learning.json")
     return cfg
 
 
@@ -166,7 +166,7 @@ def capability_snapshot(force_baseline: bool = False) -> dict[str, Any]:
         raise RuntimeError("No ACTIVE/LAB seed available.")
 
     metrics, baseline_path = strict_baseline(seed, force=force_baseline)
-    cfg = load_night_config()
+    cfg = load_autonomy_learning_config()
     capabilities = _capability_registry()
     critical_by_category = _critical_failures_by_category(metrics)
 
@@ -399,7 +399,7 @@ def _interrupted_block_fields(exc: BaseException) -> dict[str, Any]:
 
 
 def _run_deliberate_block(stop_requested=None):
-    # Import lazily so a night session can inspect/plan without touching training.
+    # Import lazily so an autonomy session can inspect/plan without touching training.
     from ..deliberate import command_prepare, command_build, command_train, command_evaluate
     _raise_if_training_stop(stop_requested, "prepare")
     command_prepare()
@@ -441,10 +441,10 @@ def _recovery_lesson(experiment: dict[str, Any]) -> dict[str, Any]:
     reason = target.get("reason")
 
     legacy_capability = {
-        "night_conversation": "conversation",
-        "night_comprehension": "comprehension",
-        "night_instruction": "instruction_format",
-        "night_epistemic": "epistemic_dialogue",
+        "autonomy_conversation": "conversation",
+        "autonomy_comprehension": "comprehension",
+        "autonomy_instruction": "instruction_format",
+        "autonomy_epistemic": "epistemic_dialogue",
     }
     if reason in {"critical_failure", "weakest_family"}:
         capability = legacy_capability.get(recipe, f"recovery:{recipe or 'unknown'}")
@@ -645,15 +645,15 @@ def print_plan(snapshot: dict[str, Any]):
         print(f"  - {name}")
 
 
-def run_night_study(
+def run_autonomy(
     *,
     max_blocks: int | None = None,
     max_minutes: float | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    cfg = load_night_config()
+    cfg = load_autonomy_learning_config()
     if not bool(cfg.get("enabled", True)):
-        raise RuntimeError("Autonomy is disabled in config/night_study.json")
+        raise RuntimeError("Autonomy is disabled in config/autonomy_learning.json")
 
     current = load_current_experiment()
     recovery_experiment = (
@@ -773,7 +773,7 @@ def run_night_study(
                 artifacts = _recovery_artifacts(recovery_experiment)
                 print("-" * 72)
                 print(
-                    f"RECOVERY BLOCK {block_index}/{('∞' if max_blocks == 0 else max_blocks)}: "
+                    f"RECOVERY BLOCK {block_index}/{('âˆž' if max_blocks == 0 else max_blocks)}: "
                     f"{lesson['capability']}/{lesson.get('focus_family') or 'general'} "
                     f"-> {lesson['recipe']}"
                 )
@@ -904,7 +904,7 @@ def run_night_study(
                 print("")
                 print("-" * 72)
                 print(
-                    f"BLOCK {block_index}/{('∞' if max_blocks == 0 else max_blocks)}: {lesson['capability']}/{lesson.get('focus_family') or 'general'} "
+                    f"BLOCK {block_index}/{('âˆž' if max_blocks == 0 else max_blocks)}: {lesson['capability']}/{lesson.get('focus_family') or 'general'} "
                     f"-> {lesson['recipe']}"
                 )
                 print(

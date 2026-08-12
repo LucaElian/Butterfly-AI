@@ -8,7 +8,7 @@ echo  ButterflyAI - AUTONOMY
 echo ==================================================
 echo.
 echo La sesion elegira autonomamente que capacidad estudiar.
-echo La sesion usa los limites configurados en config/night_study.json.
+echo La sesion usa los limites configurados en config/autonomy_learning.json.
 echo Puede continuar hasta que pidas parada segura con STOP_AUTONOMY.bat.
 echo Para pedir parada segura durante la noche ejecuta:
 echo   STOP_AUTONOMY.bat

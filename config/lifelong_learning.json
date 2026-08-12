@@ -61,7 +61,7 @@
   "material_bindings": {
     "computing.files": {
       "dynamic_family": "file",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "file",
         "archivo"
@@ -72,7 +72,7 @@
     },
     "computing.folders": {
       "dynamic_family": "folder",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "folder",
         "carpeta"
@@ -83,7 +83,7 @@
     },
     "programming.api_basics": {
       "dynamic_family": "api",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "api"
       ],
@@ -93,7 +93,7 @@
     },
     "ai.parameters": {
       "dynamic_family": "parameter",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "parameter",
         "parametro"
@@ -104,7 +104,7 @@
     },
     "ai.tokens": {
       "dynamic_family": "token",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "token"
       ],
@@ -114,7 +114,7 @@
     },
     "ai.datasets": {
       "dynamic_family": "dataset",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "dataset"
       ],
@@ -122,7 +122,7 @@
     },
     "ai.training_epochs": {
       "dynamic_family": "epoch",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "epoch"
       ],
@@ -130,7 +130,7 @@
     },
     "computing.memory": {
       "dynamic_family": "ram",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "ram"
       ],
@@ -138,7 +138,7 @@
     },
     "computing.cpu": {
       "dynamic_family": "cpu",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "corpus_aliases": [
         "cpu"
       ],
@@ -146,7 +146,7 @@
     },
     "instruction.sentence": {
       "dynamic_family": "sentence",
-      "recipe": "night_instruction",
+      "recipe": "autonomy_instruction",
       "corpus_aliases": [
         "instruction:sentence"
       ],
@@ -156,7 +156,7 @@
     },
     "instruction.two_steps": {
       "dynamic_family": "two_steps",
-      "recipe": "night_instruction",
+      "recipe": "autonomy_instruction",
       "corpus_aliases": [
         "instruction:two"
       ],
@@ -166,7 +166,7 @@
     },
     "instruction.missing": {
       "dynamic_family": "missing",
-      "recipe": "night_instruction",
+      "recipe": "autonomy_instruction",
       "corpus_aliases": [
         "instruction:missing"
       ],
@@ -176,7 +176,7 @@
     },
     "instruction.short": {
       "dynamic_family": "short",
-      "recipe": "night_instruction",
+      "recipe": "autonomy_instruction",
       "corpus_aliases": [
         "instruction:short"
       ],
@@ -186,7 +186,7 @@
     },
     "conversation.greeting": {
       "dynamic_family": "greeting",
-      "recipe": "night_conversation",
+      "recipe": "autonomy_conversation",
       "corpus_aliases": [
         "greeting"
       ],
@@ -196,7 +196,7 @@
     },
     "conversation.thanks": {
       "dynamic_family": "thanks",
-      "recipe": "night_conversation",
+      "recipe": "autonomy_conversation",
       "corpus_aliases": [
         "thanks"
       ],
@@ -206,7 +206,7 @@
     },
     "conversation.identity": {
       "dynamic_family": "identity",
-      "recipe": "night_conversation",
+      "recipe": "autonomy_conversation",
       "corpus_aliases": [
         "identity"
       ],
@@ -216,7 +216,7 @@
     },
     "conversation.state": {
       "dynamic_family": "state",
-      "recipe": "night_conversation",
+      "recipe": "autonomy_conversation",
       "corpus_aliases": [
         "state"
       ],

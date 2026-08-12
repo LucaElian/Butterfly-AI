@@ -18,7 +18,7 @@ hard gates del evaluador.
 ## Autonomy
 
 `RUN_AUTONOMY.bat` ejecuta el aprendizaje autonomo con los limites definidos en
-`config/night_study.json`. En modo Lifelong puede continuar hasta que se pida una parada
+`config/autonomy_learning.json`. En modo Lifelong puede continuar hasta que se pida una parada
 segura con `STOP_AUTONOMY.bat`.
 
 `AUTONOMY_STATUS.bat` muestra el estado del curriculum graph y hace un chequeo rapido del

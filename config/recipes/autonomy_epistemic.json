@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "name": "night_epistemic",
+  "name": "autonomy_epistemic",
   "objective": "Improve epistemic dialogue while retaining conversation, comprehension, routing, instruction format and language quality.",
   "focus_metrics": [
     "epistemic_dialogue_component"

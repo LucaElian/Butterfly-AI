@@ -2,7 +2,7 @@ import json
 
 from butterfly.config import ROOT
 from butterfly.learning.evaluator import benchmark_surface_prompts, normalize_surface
-from butterfly.learning.night_study import choose_lesson
+from butterfly.learning.autonomy import choose_lesson
 from butterfly.learning.study_exam import STUDY_CASES
 from butterfly.upgrade import _lab_focus_check
 
@@ -22,7 +22,7 @@ def test_instruction_shadow_has_balanced_families():
     assert min(counts.values()) >= 5
 
 
-def test_night_curriculum_can_prioritize_critical_with_zero_metric_gap():
+def test_autonomy_curriculum_can_prioritize_critical_with_zero_metric_gap():
     snapshot = {
         "capabilities": [
             {
@@ -31,7 +31,7 @@ def test_night_curriculum_can_prioritize_critical_with_zero_metric_gap():
                 "critical_count": 1,
                 "priority": 0.12,
                 "trainable": True,
-                "recipe": "night_conversation",
+                "recipe": "autonomy_conversation",
             },
             {
                 "capability": "instruction_format",
@@ -39,7 +39,7 @@ def test_night_curriculum_can_prioritize_critical_with_zero_metric_gap():
                 "critical_count": 0,
                 "priority": 0.02,
                 "trainable": True,
-                "recipe": "night_instruction",
+                "recipe": "autonomy_instruction",
             },
         ]
     }
@@ -104,8 +104,8 @@ def test_lab_can_accept_clean_critical_repair_near_ceiling():
     assert ok, failures
 
 
-def test_night_config_has_all_remaining_neural_categories():
-    cfg = json.loads((ROOT / "config" / "night_study.json").read_text(encoding="utf-8"))
+def test_autonomy_config_has_all_remaining_neural_categories():
+    cfg = json.loads((ROOT / "config" / "autonomy_learning.json").read_text(encoding="utf-8"))
     assert {"conversation", "comprehension", "instruction_format", "epistemic_dialogue"} <= set(cfg["curriculum"])
     # V2/V3 used a positive finite block budget. Lifelong V4 uses 0 as explicit unlimited.
     blocks = cfg["max_blocks_per_session"]

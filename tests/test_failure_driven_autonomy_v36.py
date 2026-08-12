@@ -1,8 +1,8 @@
 from butterfly.learning.evaluator import CASES
-from butterfly.learning.night_study import (
+from butterfly.learning.autonomy import (
     _critical_cases,
     _family_target_from_failure,
-    load_night_config,
+    load_autonomy_learning_config,
 )
 
 
@@ -33,7 +33,7 @@ def test_critical_folder_validator_maps_to_configured_folder_focus():
         "cases": [{"id": case["id"], "category": "comprehension"}],
     }
     rows = _critical_cases(metrics, "comprehension")
-    spec = load_night_config()["curriculum"]["comprehension"]
+    spec = load_autonomy_learning_config()["curriculum"]["comprehension"]
     family, target = _family_target_from_failure(spec, rows)
     assert family == "folder"
     assert target["study_metric"] == "retention_folder_component"

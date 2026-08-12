@@ -134,9 +134,9 @@ def command_audit(_args):
     raise SystemExit(print_audit())
 
 
-def command_night_study(args):
-    from .learning.night_study import run_night_study
-    report = run_night_study(
+def command_autonomy(args):
+    from .learning.autonomy import run_autonomy
+    report = run_autonomy(
         max_blocks=args.max_blocks,
         max_minutes=args.max_minutes,
         dry_run=args.dry_run,
@@ -151,7 +151,7 @@ def command_night_study(args):
 
 
 def command_autonomy_plan(_args):
-    from .learning.night_study import capability_snapshot, print_plan
+    from .learning.autonomy import capability_snapshot, print_plan
     print_plan(capability_snapshot(force_baseline=False))
 
 
@@ -253,7 +253,7 @@ def build_parser():
     sp.add_argument("--max-blocks", type=int, default=None)
     sp.add_argument("--max-minutes", type=float, default=None)
     sp.add_argument("--dry-run", action="store_true")
-    sp.set_defaults(func=command_night_study)
+    sp.set_defaults(func=command_autonomy)
     return parser
 
 

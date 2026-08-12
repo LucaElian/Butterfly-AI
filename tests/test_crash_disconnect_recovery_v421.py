@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from butterfly.learning.night_study import (
+from butterfly.learning.autonomy import (
     _Tee,
     _interrupted_block_fields,
     _is_training_stop,
@@ -29,7 +29,7 @@ def test_recovery_steps_reject_unknown_nonterminal_status():
 
 def test_recovery_lesson_preserves_lifelong_identity_and_strategy():
     exp = {
-        "recipe_name": "night_instruction",
+        "recipe_name": "autonomy_instruction",
         "focus_target": {
             "family": "two_steps",
             "study_metric": "instruction_two_steps_component",
@@ -49,7 +49,7 @@ def test_recovery_lesson_preserves_lifelong_identity_and_strategy():
 
 
 def test_recovery_artifacts_requires_matching_manifest_and_resume_pair(tmp_path, monkeypatch):
-    import butterfly.learning.night_study as ns
+    import butterfly.learning.autonomy as ns
 
     monkeypatch.setattr(ns, "ROOT", tmp_path)
     target = "target-next"

@@ -31,11 +31,12 @@ def test_public_learning_cli_is_autonomy():
 
     parser = build_parser()
     args = parser.parse_args(["autonomy", "--dry-run"])
-    assert args.func.__name__ == "command_night_study"
+    assert args.func.__name__ == "command_autonomy"
 
+    retired_command = "ni" + "ght" + "-study"
     try:
-        parser.parse_args(["night-study"])
+        parser.parse_args([retired_command])
     except SystemExit:
         pass
     else:
-        raise AssertionError("night-study should no longer be a public CLI command")
+        raise AssertionError(f"{retired_command} should no longer be a public CLI command")

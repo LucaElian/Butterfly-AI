@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "name": "night_comprehension",
+  "name": "autonomy_comprehension",
   "objective": "Repair critical comprehension misses while preserving conversation, instruction and epistemic behavior.",
   "focus_metrics": [
     "comprehension_component"

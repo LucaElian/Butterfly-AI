@@ -58,10 +58,9 @@ Thumbs.db
 # Lifelong / local learning state
 .butterfly/curriculum_graph.json
 .butterfly/dynamic_exam_history.json
-.butterfly/night_study_history.json
+.butterfly/*_history.json
 .butterfly/skill_credit_ledger.json
-.butterfly/STOP_NIGHT_STUDY
-.butterfly/STOP_AUTONOMY
+.butterfly/STOP_*
 
 # Interrupted installer rollback state
 .butterfly/*_install_state.json

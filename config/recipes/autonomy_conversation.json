@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "name": "night_instruction",
-  "objective": "Improve structural instruction following using family-balanced held-out shadows while retaining routing, comprehension and epistemic behavior.",
+  "name": "autonomy_conversation",
+  "objective": "Repair critical casual conversation routing without sacrificing already-good capabilities.",
   "focus_metrics": [
-    "instruction_format_component"
+    "conversation_component"
   ],
   "protected_metrics": [
+    "instruction_format_component",
     "epistemic_dialogue_component",
     "intent_routing_component",
-    "conversation_component",
     "comprehension_component",
     "semantic_component",
     "language_component",
@@ -20,26 +20,30 @@
     "arithmetic_component"
   ],
   "lab_acceptance": {
-    "allow_hard_gate_closure": true
+    "allow_critical_repair": true,
+    "critical_categories": [
+      "conversation"
+    ],
+    "max_focus_regression": 0.01
   },
   "training_stages": [
     {
-      "name": "instruction_focus_v2",
+      "name": "conversation_repair_v2",
       "skills": [
         {
-          "name": "instruction_following",
+          "name": "intent_routing",
           "train_limit": 900,
-          "valid_limit": 114
+          "valid_limit": 240
+        },
+        {
+          "name": "instruction_following",
+          "train_limit": 280,
+          "valid_limit": 80
         },
         {
           "name": "epistemic",
-          "train_limit": 280,
-          "valid_limit": 90
-        },
-        {
-          "name": "intent_routing",
-          "train_limit": 520,
-          "valid_limit": 150
+          "train_limit": 260,
+          "valid_limit": 80
         },
         {
           "name": "comprehension",
@@ -50,61 +54,54 @@
       "max_epochs": 3,
       "lr": 4e-06,
       "batch_size": 4,
-      "seq_len": 192,
+      "seq_len": 176,
       "patience": 1,
       "min_delta": 0.001,
       "weight_decay": 0.05,
       "frozen_first_blocks": 3,
       "study_focus_metrics": [
-        "instruction_format_component"
+        "retention_conversation_component"
       ],
       "study_protected_metrics": [
-        "instruction_sentence_component",
-        "instruction_two_steps_component",
-        "instruction_missing_component",
-        "instruction_short_component",
         "retention_greeting_component",
         "retention_thanks_component",
         "retention_identity_component",
         "retention_state_component",
+        "instruction_format_component",
         "retention_comprehension_component",
         "retention_epistemic_component",
         "retention_quality_component"
       ],
       "study_protected_regression_budgets": {
-        "instruction_sentence_component": 0.0,
-        "instruction_two_steps_component": 0.0,
-        "instruction_missing_component": 0.0,
-        "instruction_short_component": 0.0,
         "retention_greeting_component": 0.0,
         "retention_thanks_component": 0.0,
         "retention_identity_component": 0.0,
         "retention_state_component": 0.0
       },
       "max_study_protected_regression": 0.05,
-      "min_each_study_focus_delta": 0.01,
-      "min_study_delta": 0.008,
+      "min_each_study_focus_delta": 0.0,
+      "min_study_delta": 0.005,
       "study_patience": 2,
       "focus_repeat": 3,
       "failure_focus_min_delta": 0.02
     },
     {
-      "name": "instruction_consolidation_v2",
+      "name": "conversation_consolidation_v2",
       "skills": [
         {
-          "name": "instruction_following",
+          "name": "intent_routing",
           "train_limit": 700,
-          "valid_limit": 114
+          "valid_limit": 220
+        },
+        {
+          "name": "instruction_following",
+          "train_limit": 300,
+          "valid_limit": 90
         },
         {
           "name": "epistemic",
-          "train_limit": 320,
-          "valid_limit": 100
-        },
-        {
-          "name": "intent_routing",
-          "train_limit": 620,
-          "valid_limit": 180
+          "train_limit": 300,
+          "valid_limit": 90
         },
         {
           "name": "comprehension",
@@ -115,32 +112,25 @@
       "max_epochs": 2,
       "lr": 1.5e-06,
       "batch_size": 4,
-      "seq_len": 192,
+      "seq_len": 176,
       "patience": 1,
       "min_delta": 0.001,
       "weight_decay": 0.04,
       "frozen_first_blocks": 3,
       "study_focus_metrics": [
-        "instruction_format_component"
+        "retention_conversation_component"
       ],
       "study_protected_metrics": [
-        "instruction_sentence_component",
-        "instruction_two_steps_component",
-        "instruction_missing_component",
-        "instruction_short_component",
         "retention_greeting_component",
         "retention_thanks_component",
         "retention_identity_component",
         "retention_state_component",
+        "instruction_format_component",
         "retention_comprehension_component",
         "retention_epistemic_component",
         "retention_quality_component"
       ],
       "study_protected_regression_budgets": {
-        "instruction_sentence_component": 0.0,
-        "instruction_two_steps_component": 0.0,
-        "instruction_missing_component": 0.0,
-        "instruction_short_component": 0.0,
         "retention_greeting_component": 0.0,
         "retention_thanks_component": 0.0,
         "retention_identity_component": 0.0,
@@ -148,7 +138,7 @@
       },
       "max_study_protected_regression": 0.04,
       "min_each_study_focus_delta": 0.0,
-      "min_study_delta": 0.005,
+      "min_study_delta": 0.003,
       "study_patience": 2,
       "focus_repeat": 2,
       "failure_focus_min_delta": 0.005

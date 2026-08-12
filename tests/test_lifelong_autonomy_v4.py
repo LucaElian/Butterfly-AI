@@ -11,7 +11,7 @@ from butterfly.learning.dynamic_exam import (
     normalize_surface,
 )
 from butterfly.learning.lifelong_bridge import load_lifelong_config
-from butterfly.learning.night_study import load_night_config
+from butterfly.learning.autonomy import load_autonomy_learning_config
 from butterfly.upgrade import _lab_focus_check
 
 
@@ -43,7 +43,7 @@ def test_material_bindings_reference_real_nodes_and_dynamic_families():
     for node_id, binding in bindings.items():
         assert node_id in nodes
         assert binding["dynamic_family"] in GENERATORS
-        assert binding["recipe"].startswith("night_")
+        assert binding["recipe"].startswith("autonomy_")
         assert binding["source"] == "internal_verified"
 
 
@@ -160,8 +160,8 @@ def test_lifelong_acceptance_never_allows_new_fixed_critical_failure():
     assert not ok
 
 
-def test_night_study_zero_budget_means_user_stoppable_unlimited_session():
-    cfg = load_night_config()
+def test_autonomy_zero_budget_means_user_stoppable_unlimited_session():
+    cfg = load_autonomy_learning_config()
     assert cfg["engine_version"] == 4
     assert cfg["max_blocks_per_session"] == 0
     assert cfg["max_minutes_per_session"] == 0

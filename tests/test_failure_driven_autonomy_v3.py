@@ -1,7 +1,7 @@
 import json
 from butterfly.config import ROOT
 from butterfly.learning.evaluator import _semantic_score
-from butterfly.learning.night_study import _family_target_from_failure, _weakest_study_family
+from butterfly.learning.autonomy import _family_target_from_failure, _weakest_study_family
 from butterfly.corpus.deliberate import _row_matches_focus
 from butterfly.deliberate_trainer import _failure_driven_stage_cfg
 
@@ -9,7 +9,7 @@ from butterfly.deliberate_trainer import _failure_driven_stage_cfg
 def test_mixed_greeting_state_validator_accepts_either_response():
     case = {"validator": "greeting_or_state"}
     assert _semantic_score("Todo bien. Estoy lista para ayudarte.", case) == 1.0
-    assert _semantic_score("¡Buenas! Decime qué querés hacer.", case) == 1.0
+    assert _semantic_score("Â¡Buenas! Decime quÃ© querÃ©s hacer.", case) == 1.0
     assert _semantic_score("Un archivo guarda datos.", case) == 0.0
 
 
@@ -62,7 +62,7 @@ def test_trainer_redirects_checkpoint_focus_to_family():
 
 
 def test_v3_config_has_family_targets():
-    cfg = json.loads((ROOT / "config" / "night_study.json").read_text(encoding="utf-8"))
+    cfg = json.loads((ROOT / "config" / "autonomy_learning.json").read_text(encoding="utf-8"))
     # Failure-driven family targeting was introduced in V3 and remains a required contract.
     assert cfg["engine_version"] >= 3
     assert "folder" in cfg["curriculum"]["comprehension"]["family_targets"]

@@ -16,7 +16,7 @@
   "curriculum": {
     "conversation": {
       "metric": "conversation_component",
-      "recipe": "night_conversation",
+      "recipe": "autonomy_conversation",
       "priority_weight": 1.0,
       "critical_category": "conversation",
       "critical_weight": 0.12,
@@ -61,7 +61,7 @@
     },
     "comprehension": {
       "metric": "comprehension_component",
-      "recipe": "night_comprehension",
+      "recipe": "autonomy_comprehension",
       "priority_weight": 1.0,
       "critical_category": "comprehension",
       "critical_weight": 0.11,
@@ -118,7 +118,7 @@
     },
     "instruction_format": {
       "metric": "instruction_format_component",
-      "recipe": "night_instruction",
+      "recipe": "autonomy_instruction",
       "priority_weight": 1.0,
       "critical_category": "instruction",
       "critical_weight": 0.1,
@@ -151,7 +151,7 @@
     },
     "epistemic_dialogue": {
       "metric": "epistemic_dialogue_component",
-      "recipe": "night_epistemic",
+      "recipe": "autonomy_epistemic",
       "priority_weight": 1.25,
       "critical_category": "epistemic_dialogue",
       "critical_weight": 0.1
