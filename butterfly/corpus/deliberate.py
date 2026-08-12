@@ -4,6 +4,7 @@ from collections import Counter
 from pathlib import Path
 import hashlib
 import json
+import random
 import re
 
 from ..config import ROOT, project_relpath
@@ -66,6 +67,31 @@ def _validate_rows(stage: str, train: list[dict], valid: list[dict]):
                 raise RuntimeError(f"Reserved fictional entity leaked into {stage}: {fictional}")
 
 
+def _focus_aliases(experiment: dict) -> list[str]:
+    target = experiment.get("focus_target") or {}
+    return [str(v).casefold() for v in target.get("corpus_aliases", []) if str(v).strip()]
+
+
+def _row_matches_focus(row: dict, aliases: list[str]) -> bool:
+    if not aliases:
+        return False
+    haystack = (str(row.get("family", "")) + " " + str(row.get("skill", ""))).casefold()
+    return any(alias in haystack for alias in aliases)
+
+
+def _boost_focus_rows(rows: list[dict], aliases: list[str], repeat: int, seed: int) -> tuple[list[dict], int]:
+    if not aliases or repeat <= 1:
+        return list(rows), 0
+    focus_rows = [row for row in rows if _row_matches_focus(row, aliases)]
+    if not focus_rows:
+        return list(rows), 0
+    boosted = list(rows)
+    for _ in range(repeat - 1):
+        boosted.extend(dict(row) for row in focus_rows)
+    random.Random(seed).shuffle(boosted)
+    return boosted, len(focus_rows)
+
+
 def _clean_working_rows():
     DATA_ROOT.mkdir(parents=True, exist_ok=True)
     for path in DATA_ROOT.glob("*.jsonl"):
@@ -125,6 +151,12 @@ def build_corpus(experiment: dict, recipe: dict) -> dict:
         valid = dedupe(valid, normalize_surface)
         _validate_rows(stage, train, valid)
 
+        focus_aliases = _focus_aliases(experiment)
+        focus_repeat = int(stage_cfg.get("focus_repeat", 1))
+        focus_repeat += int((experiment.get("focus_target") or {}).get("focus_repeat_delta", 0))
+        focus_repeat = max(1, focus_repeat)
+        train, focus_unique_rows = _boost_focus_rows(train, focus_aliases, focus_repeat, int(experiment["random_seed"]) + stage_index * 31337)
+
         train_path, valid_path = stage_files(stage)
         _write_jsonl(train_path, train)
         _write_jsonl(valid_path, valid)
@@ -135,6 +167,10 @@ def build_corpus(experiment: dict, recipe: dict) -> dict:
             "train_families": len({x["family"] for x in train}),
             "valid_families": len({x["family"] for x in valid}),
             "train_skills": dict(Counter(x["skill"] for x in train)),
+            "focus_family": (experiment.get("focus_target") or {}).get("family"),
+            "focus_aliases": focus_aliases,
+            "focus_repeat": focus_repeat,
+            "focus_unique_rows": focus_unique_rows,
             "train_file": project_relpath(train_path),
             "valid_file": project_relpath(valid_path),
             "train_sha256": hashlib.sha256(train_path.read_bytes()).hexdigest(),

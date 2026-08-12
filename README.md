@@ -33,6 +33,15 @@ RUN_PIPELINE.bat
 
 No existe un modo `REANUDAR` separado: reanudar es el comportamiento normal.
 
+## Night Study
+
+`RUN_NIGHT_STUDY.bat` ejecuta el estudio autonomo con los limites definidos en
+`config/night_study.json`. En modo Lifelong puede continuar hasta que se pida una parada
+segura con `STOP_NIGHT_STUDY.bat`.
+
+`LIFELONG_STATUS.bat` muestra el estado del curriculum graph y hace un chequeo rapido del
+motor de examenes dinamicos.
+
 ## Estado vs configuración
 
 `config/pipeline.json` describe comportamiento permanente. No guarda target ni suite.

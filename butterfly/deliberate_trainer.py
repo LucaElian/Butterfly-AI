@@ -16,6 +16,10 @@ from .checkpoint import load_checkpoint, load_entry, metadata_path, save_stable_
 from .config import MODELS_DIR, ROOT
 from .corpus.deliberate import load_manifest
 from .learning.study_exam import study_microbenchmark
+from .learning.dynamic_exam import (
+    evaluate_bank, fresh_bank_excluding, fresh_pair, record_bank_use,
+)
+from .learning.evaluator import normalize_surface
 from .registry import get_entry, get_candidate_entry, register_model
 from .training.runtime import best_device, configure_cpu
 
@@ -23,7 +27,9 @@ TRAINING_ROOT = ROOT / "training_state" / "deliberate"
 PROGRESS_PATH = TRAINING_ROOT / "progress.json"
 RESUME_MODEL = TRAINING_ROOT / "resume.safetensors"
 BEST_STAGE_MODEL = TRAINING_ROOT / "best-stage.safetensors"
+ENTRY_STAGE_MODEL = TRAINING_ROOT / "entry-stage.safetensors"
 AUTOSAVE_SECONDS = 600
+DYNAMIC_FOCUS_KEY = "dynamic_selection_component"
 
 
 def _atomic_json(path: Path, value: dict):
@@ -67,6 +73,11 @@ def _read_progress():
 def _clean_best():
     BEST_STAGE_MODEL.unlink(missing_ok=True)
     metadata_path(BEST_STAGE_MODEL).unlink(missing_ok=True)
+
+
+def _clean_entry():
+    ENTRY_STAGE_MODEL.unlink(missing_ok=True)
+    metadata_path(ENTRY_STAGE_MODEL).unlink(missing_ok=True)
 
 
 def _clean_training_state():
@@ -207,8 +218,84 @@ def _print_study(label: str, exam: dict):
             f"parameter={float(exam.get('retention_parameter_component',0)):.4f} | "
             f"token={float(exam.get('retention_token_component',0)):.4f}"
         )
+    _print_dynamic(exam)
+
+def _dynamic_stage_banks(experiment: dict, stage_name: str, count: int = 12):
+    target = dict(experiment.get("focus_target") or {})
+    family = target.get("dynamic_family")
+    if not family:
+        return None, None
+    seed = _stable_stage_seed(int(experiment["random_seed"]), f"dynamic:{stage_name}", 0)
+    return fresh_pair(str(family), seed, count=count)
+
+
+def _study_with_dynamic_focus(model, tokenizer, experiment: dict, stage_cfg: dict, *, include_transfer: bool = False):
+    exam = study_microbenchmark(model, tokenizer)
+    target = dict(experiment.get("focus_target") or {})
+    family = target.get("dynamic_family")
+    if not family:
+        return exam
+    count = int(target.get("selection_cases", 12))
+    selection, transfer = _dynamic_stage_banks(experiment, stage_cfg["name"], count=count)
+    selection_result = evaluate_bank(model, tokenizer, selection)
+    exam[DYNAMIC_FOCUS_KEY] = float(selection_result["score"])
+    exam["dynamic_selection"] = {
+        "family": family,
+        "fingerprint": selection["fingerprint"],
+        "score": float(selection_result["score"]),
+        "semantic": float(selection_result["semantic"]),
+    }
+    if include_transfer:
+        transfer_result = evaluate_bank(model, tokenizer, transfer)
+        exam["dynamic_transfer_entry"] = {
+            "family": family,
+            "fingerprint": transfer["fingerprint"],
+            "score": float(transfer_result["score"]),
+            "semantic": float(transfer_result["semantic"]),
+        }
+        record_bank_use(selection, purpose="checkpoint_selection", experiment_id=experiment.get("experiment_id"))
+        record_bank_use(transfer, purpose="stage_transfer", experiment_id=experiment.get("experiment_id"))
+    return exam
+
+
+def _print_dynamic(exam: dict):
+    dynamic = exam.get("dynamic_selection") or {}
+    if dynamic:
+        print(
+            f"    dynamic selection: family={dynamic.get('family')} "
+            f"score={float(dynamic.get('score',0)):.4f} "
+            f"bank={dynamic.get('fingerprint')}"
+        )
+    transfer = exam.get("dynamic_transfer_entry") or {}
+    if transfer:
+        print(
+            f"    transfer entry   : score={float(transfer.get('score',0)):.4f} "
+            f"bank={transfer.get('fingerprint')}"
+        )
+
+
+def _failure_driven_stage_cfg(stage_cfg: dict, experiment: dict) -> dict:
+    cfg = dict(stage_cfg)
+    target = dict(experiment.get("focus_target") or {})
+    if target.get("dynamic_family"):
+        cfg["study_focus_metrics"] = [DYNAMIC_FOCUS_KEY]
+        cfg["min_each_study_focus_delta"] = float(
+            target.get("selection_min_delta", cfg.get("failure_focus_min_delta", 0.02))
+        )
+        cfg["lr"] = float(cfg.get("lr", 0.0)) * float(target.get("lr_scale", 1.0))
+        return cfg
+    metric = target.get("study_metric")
+    if not metric:
+        return cfg
+    cfg["study_focus_metrics"] = [str(metric)]
+    cfg["study_protected_metrics"] = [name for name in cfg.get("study_protected_metrics", []) if name != metric]
+    if target.get("reason") in {"critical_failure", "weakest_family"}:
+        cfg["min_each_study_focus_delta"] = float(cfg.get("failure_focus_min_delta", cfg.get("min_each_study_focus_delta", 0.0)))
+    return cfg
+
 
 def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume_progress, completed):
+    stage_cfg = _failure_driven_stage_cfg(stage_cfg, experiment)
     name = stage_cfg["name"]
     train_path = ROOT / manifest_stage["train_file"]
     valid_path = ROOT / manifest_stage["valid_file"]
@@ -253,6 +340,8 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
             selected_epoch = resume_progress.get("selected_study_epoch", 0)
             if not entry_study or not best_study:
                 raise RuntimeError(f"Recovery for study-enabled stage {name} lacks study state")
+            if (experiment.get("focus_target") or {}).get("dynamic_family") and not ENTRY_STAGE_MODEL.exists():
+                raise RuntimeError(f"Recovery for dynamic stage {name} lacks entry-stage weights")
             if not BEST_STAGE_MODEL.exists():
                 _save_best(model, {"experiment_id":experiment["experiment_id"],"stage":name,"reconstructed_from_resume":True,"study_exam":best_study})
         print(f"\nRESUME {name}: epoch {start_epoch}, after batch {resume_step:,}. Optimizer momentum restarts; weights do not.")
@@ -260,12 +349,19 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
         _clean_best()
         if study_enabled:
             print(f"\n=== STUDY ENTRY EXAM: {name} ===")
-            entry_study = study_microbenchmark(model, tokenizer)
+            entry_study = _study_with_dynamic_focus(
+                model, tokenizer, experiment, stage_cfg, include_transfer=True
+            )
             best_study = entry_study
             selected_epoch = 0
             _print_study("entry", entry_study)
             _save_best(model, {"experiment_id":experiment["experiment_id"],"stage":name,"epoch":0,"stage_entry":True,"study_exam":entry_study})
+            if (experiment.get("focus_target") or {}).get("dynamic_family"):
+                _atomic_weights(ENTRY_STAGE_MODEL, model, {"experiment_id":experiment["experiment_id"],"stage":name,"dynamic_stage_entry":True})
 
+    target = experiment.get("focus_target") or {}
+    if target.get("study_metric"):
+        print(f"Failure-driven focus: family={target.get('family')} | metric={target.get('study_metric')} | reason={target.get('reason')}")
     print(f"\n=== STAGE {name.upper()} ===")
     print(f"train rows: {len(train_rows):,} | valid rows: {len(valid_rows):,}")
     print(f"assistant target tokens: {train_ds.answer_tokens:,} train | {valid_ds.answer_tokens:,} valid")
@@ -319,7 +415,7 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
         epochs_completed = epoch
 
         if study_enabled:
-            exam = study_microbenchmark(model, tokenizer)
+            exam = _study_with_dynamic_focus(model, tokenizer, experiment, stage_cfg, include_transfer=False)
             _print_study(f"{name} epoch {epoch} exam", exam)
             protected_ok, protected_blockers = _study_protected_ok(exam, entry_study, stage_cfg)
             focus_ok, focus_blockers = _study_focus_ok(exam, entry_study, stage_cfg)
@@ -366,10 +462,39 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
 
     if BEST_STAGE_MODEL.exists():
         _load_weights_into(model, BEST_STAGE_MODEL, device)
+    dynamic_transfer = None
     if study_enabled:
         _print_study(f"{name} selected checkpoint", best_study)
         if selected_epoch == 0:
             print("  -> STAGE ROLLBACK: no epoch beat the stage-entry study checkpoint")
+        elif (experiment.get("focus_target") or {}).get("dynamic_family"):
+            target = dict(experiment.get("focus_target") or {})
+            count = int(target.get("selection_cases", 12))
+            _, transfer_bank = _dynamic_stage_banks(experiment, name, count=count)
+            transfer_exam = evaluate_bank(model, tokenizer, transfer_bank)
+            base_transfer = float((entry_study.get("dynamic_transfer_entry") or {}).get("score", 0.0))
+            final_transfer = float(transfer_exam.get("score", 0.0))
+            required_transfer = float(target.get("transfer_min_delta", 0.015))
+            transfer_passed = final_transfer >= base_transfer + required_transfer
+            dynamic_transfer = {
+                "fingerprint": transfer_bank["fingerprint"],
+                "entry_score": base_transfer,
+                "final_score": final_transfer,
+                "delta": final_transfer - base_transfer,
+                "required_delta": required_transfer,
+                "passed": transfer_passed,
+            }
+            print(
+                f"  -> fresh TRANSFER exam: {base_transfer:.4f} -> {final_transfer:.4f} "
+                f"delta={final_transfer-base_transfer:+.4f} required={required_transfer:+.4f}"
+            )
+            if not transfer_passed:
+                if not ENTRY_STAGE_MODEL.exists():
+                    raise RuntimeError("Dynamic transfer failed but entry-stage checkpoint is missing")
+                _load_weights_into(model, ENTRY_STAGE_MODEL, device)
+                best_study = entry_study
+                selected_epoch = 0
+                print("  -> TRANSFER GATE FAILED: rollback to unseen stage-entry weights")
 
     result={"stage":name,"best_validation_loss":None if best_loss == float("inf") else best_loss,
             "seconds":time.time()-stage_start,"epochs_completed":epochs_completed,
@@ -377,6 +502,8 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
     if study_enabled:
         result.update({"stage_entry_study":entry_study,"best_study_exam":best_study,
                        "selected_study_epoch":selected_epoch,"stage_rolled_back":selected_epoch == 0})
+        if dynamic_transfer is not None:
+            result["dynamic_transfer"] = dynamic_transfer
     completed = completed + [result]
     progress={"experiment_id":experiment["experiment_id"],"target_version":experiment["target_version"],"recipe_hash":experiment["recipe_hash"],
               "stage":name,"stage_complete":True,"epoch":epochs_completed,"step":0,
@@ -384,7 +511,57 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
               "completed_stages":completed,"updated_at":time.time(),**extra_state()}
     _save_resume(model, progress, f"STAGE {name.upper()} COMPLETE")
     _clean_best()
+    _clean_entry()
     return result, completed
+
+def _candidate_lifelong_acceptance(model, tokenizer, seed: dict, experiment: dict, recipe: dict, device: str):
+    target = dict(experiment.get("focus_target") or {})
+    family = target.get("dynamic_family")
+    node_id = target.get("curriculum_node")
+    if not family or not node_id:
+        return None
+
+    count = int(target.get("acceptance_cases", 16))
+    forbidden = set()
+    for stage_cfg in recipe.get("training_stages", []):
+        selection, transfer = _dynamic_stage_banks(experiment, stage_cfg["name"], count=int(target.get("selection_cases", 12)))
+        for bank in (selection, transfer):
+            forbidden |= {normalize_surface(row["prompt"]) for row in bank.get("cases", [])}
+
+    acceptance_seed = _stable_stage_seed(int(experiment["random_seed"]), "dynamic:candidate-acceptance", 0)
+    bank = fresh_bank_excluding(
+        str(family), acceptance_seed, count=count, mode="acceptance", forbidden_surfaces=forbidden
+    )
+    record_bank_use(bank, purpose="candidate_acceptance", experiment_id=experiment.get("experiment_id"))
+
+    seed_model, _, _ = load_entry(seed, device=device)
+    seed_exam = evaluate_bank(seed_model, tokenizer, bank)
+    del seed_model
+    candidate_exam = evaluate_bank(model, tokenizer, bank)
+    base = float(seed_exam["score"])
+    current = float(candidate_exam["score"])
+    minimum_delta = float(target.get("acceptance_min_delta", 0.02))
+    minimum_score = float(target.get("acceptance_min_score", 0.60))
+    passed = current >= base + minimum_delta and current >= minimum_score
+    result = {
+        "curriculum_node": node_id,
+        "family": family,
+        "fingerprint": bank["fingerprint"],
+        "seed_score": base,
+        "candidate_score": current,
+        "delta": current - base,
+        "required_delta": minimum_delta,
+        "required_score": minimum_score,
+        "passed": passed,
+    }
+    print("\n=== FRESH CANDIDATE ACCEPTANCE EXAM ===")
+    print(f"node   : {node_id}")
+    print(f"family : {family}")
+    print(f"bank   : {bank['fingerprint']}")
+    print(f"score  : {base:.4f} -> {current:.4f} delta={current-base:+.4f}")
+    print(f"gate   : delta>={minimum_delta:+.4f} and score>={minimum_score:.4f} -> {'PASS' if passed else 'FAIL'}")
+    return result
+
 
 def train_candidate(experiment: dict, recipe: dict):
     manifest = load_manifest()
@@ -461,6 +638,10 @@ def train_candidate(experiment: dict, recipe: dict):
         completed_names.add(name)
         progress = _read_progress()
 
+    lifelong_acceptance = _candidate_lifelong_acceptance(
+        model, tokenizer, seed, experiment, recipe, device
+    )
+
     target = experiment["target_version"]
     candidate_path = MODELS_DIR / f"butterfly-v{target}-candidate.safetensors"
     extra = {
@@ -475,6 +656,8 @@ def train_candidate(experiment: dict, recipe: dict):
         "created_at": time.time(),
         "recipe_hash": experiment["recipe_hash"],
         "recipe_name": experiment["recipe_name"],
+        "focus_target": experiment.get("focus_target"),
+        "lifelong_acceptance": lifelong_acceptance,
     }
     save_stable_model(candidate_path, model, extra=extra)
     register_model(
@@ -493,6 +676,8 @@ def train_candidate(experiment: dict, recipe: dict):
             "recipe_hash": experiment["recipe_hash"],
             "recipe_name": experiment["recipe_name"],
             "experiment_id": experiment["experiment_id"],
+            "focus_target": experiment.get("focus_target"),
+            "lifelong_acceptance": lifelong_acceptance,
         },
     )
 
@@ -504,6 +689,8 @@ def train_candidate(experiment: dict, recipe: dict):
         "seed_version": seed["version"],
         "recipe_name": experiment["recipe_name"],
         "stages": completed,
+        "focus_target": experiment.get("focus_target"),
+        "lifelong_acceptance": lifelong_acceptance,
     }
     text = json.dumps(training_report, indent=2, ensure_ascii=False)
     (reports / "latest-training.json").write_text(text, encoding="utf-8")

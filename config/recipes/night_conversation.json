@@ -81,7 +81,9 @@
       "max_study_protected_regression": 0.05,
       "min_each_study_focus_delta": 0.0,
       "min_study_delta": 0.005,
-      "study_patience": 2
+      "study_patience": 2,
+      "focus_repeat": 3,
+      "failure_focus_min_delta": 0.02
     },
     {
       "name": "conversation_consolidation_v2",
@@ -137,7 +139,9 @@
       "max_study_protected_regression": 0.04,
       "min_each_study_focus_delta": 0.0,
       "min_study_delta": 0.003,
-      "study_patience": 2
+      "study_patience": 2,
+      "focus_repeat": 2,
+      "failure_focus_min_delta": 0.005
     }
   ]
 }

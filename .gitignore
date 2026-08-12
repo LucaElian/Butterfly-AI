@@ -47,7 +47,22 @@ data/corpus/deliberate/history.json
 # Generated/optional release bundles
 release/
 
+# Local packaged snapshots
+*.rar
+
 # OS/editor
 .DS_Store
 Thumbs.db
 .vs/
+
+# Lifelong / local learning state
+.butterfly/curriculum_graph.json
+.butterfly/dynamic_exam_history.json
+.butterfly/night_study_history.json
+
+# Interrupted installer rollback state
+.butterfly/*_install_state.json
+.butterfly/*_install_backup/
+
+# Corpus download/resume state
+data/corpus/hf_wikipedia_state.json

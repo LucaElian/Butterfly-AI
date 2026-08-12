@@ -107,4 +107,6 @@ def test_lab_can_accept_clean_critical_repair_near_ceiling():
 def test_night_config_has_all_remaining_neural_categories():
     cfg = json.loads((ROOT / "config" / "night_study.json").read_text(encoding="utf-8"))
     assert {"conversation", "comprehension", "instruction_format", "epistemic_dialogue"} <= set(cfg["curriculum"])
-    assert cfg["max_blocks_per_session"] >= 3
+    # V2/V3 used a positive finite block budget. Lifelong V4 uses 0 as explicit unlimited.
+    blocks = cfg["max_blocks_per_session"]
+    assert blocks == 0 or blocks >= 3

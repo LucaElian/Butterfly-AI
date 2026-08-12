@@ -8,7 +8,8 @@ echo  ButterflyAI - NIGHT STUDY
 echo ==================================================
 echo.
 echo La sesion elegira autonomamente que capacidad estudiar.
-echo Default: maximo 2 bloques o 180 minutos.
+echo La sesion usa los limites configurados en config/night_study.json.
+echo En modo Lifelong puede continuar hasta STOP_NIGHT_STUDY.bat.
 echo Para pedir parada segura durante la noche ejecuta:
 echo   STOP_NIGHT_STUDY.bat
 echo.

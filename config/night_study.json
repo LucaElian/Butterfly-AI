@@ -1,16 +1,17 @@
 {
   "schema_version": 1,
   "enabled": true,
-  "max_blocks_per_session": 3,
-  "max_minutes_per_session": 180,
+  "engine_version": 4,
+  "max_blocks_per_session": 0,
+  "max_minutes_per_session": 0,
   "min_free_disk_gb": 2.0,
   "stop_file": ".butterfly/STOP_NIGHT_STUDY",
-  "stop_after_active_promotion": true,
-  "retry_same_capability_in_session": false,
+  "stop_after_active_promotion": false,
+  "retry_same_capability_in_session": true,
   "verified_experiences": {
     "minimum_quality": 0.7,
     "automatic_training_enabled": false,
-    "reason": "V2 tracks verified experiences but still does not train factual material until provenance-aware lesson building is integrated."
+    "reason": "V3 tracks verified experiences but does not auto-train factual material until provenance-aware lesson construction is integrated."
   },
   "curriculum": {
     "conversation": {
@@ -18,21 +19,135 @@
       "recipe": "night_conversation",
       "priority_weight": 1.0,
       "critical_category": "conversation",
-      "critical_weight": 0.12
+      "critical_weight": 0.12,
+      "family_targets": {
+        "greeting": {
+          "validators": [
+            "greeting"
+          ],
+          "study_metric": "retention_greeting_component",
+          "corpus_aliases": [
+            "greeting"
+          ]
+        },
+        "thanks": {
+          "validators": [
+            "thanks"
+          ],
+          "study_metric": "retention_thanks_component",
+          "corpus_aliases": [
+            "thanks"
+          ]
+        },
+        "identity": {
+          "validators": [
+            "identity"
+          ],
+          "study_metric": "retention_identity_component",
+          "corpus_aliases": [
+            "identity"
+          ]
+        },
+        "state": {
+          "validators": [
+            "state"
+          ],
+          "study_metric": "retention_state_component",
+          "corpus_aliases": [
+            "state"
+          ]
+        }
+      }
     },
     "comprehension": {
       "metric": "comprehension_component",
       "recipe": "night_comprehension",
       "priority_weight": 1.0,
       "critical_category": "comprehension",
-      "critical_weight": 0.11
+      "critical_weight": 0.11,
+      "family_targets": {
+        "file": {
+          "validators": [
+            "definition_file"
+          ],
+          "study_metric": "retention_file_component",
+          "corpus_aliases": [
+            "file",
+            "archivo"
+          ]
+        },
+        "folder": {
+          "validators": [
+            "definition_folder"
+          ],
+          "study_metric": "retention_folder_component",
+          "corpus_aliases": [
+            "folder",
+            "carpeta"
+          ]
+        },
+        "api": {
+          "validators": [
+            "definition_api"
+          ],
+          "study_metric": "retention_api_component",
+          "corpus_aliases": [
+            "api"
+          ]
+        },
+        "parameter": {
+          "validators": [
+            "definition_parameter"
+          ],
+          "study_metric": "retention_parameter_component",
+          "corpus_aliases": [
+            "parameter",
+            "parametro"
+          ]
+        },
+        "token": {
+          "validators": [
+            "definition_token"
+          ],
+          "study_metric": "retention_token_component",
+          "corpus_aliases": [
+            "token"
+          ]
+        }
+      }
     },
     "instruction_format": {
       "metric": "instruction_format_component",
       "recipe": "night_instruction",
       "priority_weight": 1.0,
       "critical_category": "instruction",
-      "critical_weight": 0.1
+      "critical_weight": 0.1,
+      "family_targets": {
+        "sentence": {
+          "study_metric": "instruction_sentence_component",
+          "corpus_aliases": [
+            "instruction:sentence"
+          ]
+        },
+        "two_steps": {
+          "study_metric": "instruction_two_steps_component",
+          "corpus_aliases": [
+            "instruction:two"
+          ]
+        },
+        "missing": {
+          "study_metric": "instruction_missing_component",
+          "corpus_aliases": [
+            "instruction:missing"
+          ]
+        },
+        "short": {
+          "study_metric": "instruction_short_component",
+          "corpus_aliases": [
+            "instruction:short"
+          ]
+        }
+      }
     },
     "epistemic_dialogue": {
       "metric": "epistemic_dialogue_component",
@@ -41,5 +156,13 @@
       "critical_category": "epistemic_dialogue",
       "critical_weight": 0.1
     }
+  },
+  "lifelong_learning": {
+    "enabled": true,
+    "dynamic_exams": true,
+    "curriculum_graph": true,
+    "strategy_memory": true,
+    "research_engine_enabled": false,
+    "unlimited_zero_value": true
   }
 }

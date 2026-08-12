@@ -1,0 +1,228 @@
+{
+  "schema_version": 2,
+  "dynamic_exam": {
+    "enabled": true,
+    "fixed_benchmark_role": "regression_canary_and_global_promotion_only",
+    "selection_exam_role": "fresh_checkpoint_selection",
+    "transfer_exam_role": "independent_generalization_confirmation",
+    "focus_cases": 16,
+    "sibling_cases": 4,
+    "retention_cases": 2,
+    "max_history_entries": 2000,
+    "reuse_policy": "never_reuse_exam_bank_across_experiments",
+    "selection_and_transfer_must_be_disjoint": true,
+    "diagnostic_cases": 4,
+    "selection_cases": 12,
+    "transfer_cases": 12,
+    "acceptance_cases": 16,
+    "selection_min_delta": 0.02,
+    "transfer_min_delta": 0.015,
+    "acceptance_min_delta": 0.02,
+    "acceptance_min_score": 0.6
+  },
+  "curriculum": {
+    "enabled": true,
+    "mastery_threshold": 0.82,
+    "prerequisite_threshold": 0.75,
+    "plateau_after_failed_strategies": 3,
+    "max_same_strategy_failures": 2,
+    "novelty_weight": 0.2,
+    "weakness_weight": 0.55,
+    "prerequisite_weight": 0.25,
+    "study_strategies": [
+      {
+        "id": "balanced",
+        "focus_repeat_delta": 0,
+        "lr_scale": 1.0
+      },
+      {
+        "id": "focused",
+        "focus_repeat_delta": 2,
+        "lr_scale": 1.0
+      },
+      {
+        "id": "gentle",
+        "focus_repeat_delta": 1,
+        "lr_scale": 0.5
+      }
+    ]
+  },
+  "research": {
+    "enabled": false,
+    "direct_web_to_weights": false,
+    "verified_learning_packets_required": true,
+    "phase": "disabled_until_dynamic_exams_and_curriculum_graph_are_integrated",
+    "preferred_source_order": [
+      "primary_official_documentation",
+      "standards_and_specifications",
+      "high_quality_secondary_sources"
+    ]
+  },
+  "material_bindings": {
+    "computing.files": {
+      "dynamic_family": "file",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "file",
+        "archivo"
+      ],
+      "legacy_capability": "comprehension",
+      "legacy_family": "file",
+      "source": "internal_verified"
+    },
+    "computing.folders": {
+      "dynamic_family": "folder",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "folder",
+        "carpeta"
+      ],
+      "legacy_capability": "comprehension",
+      "legacy_family": "folder",
+      "source": "internal_verified"
+    },
+    "programming.api_basics": {
+      "dynamic_family": "api",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "api"
+      ],
+      "legacy_capability": "comprehension",
+      "legacy_family": "api",
+      "source": "internal_verified"
+    },
+    "ai.parameters": {
+      "dynamic_family": "parameter",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "parameter",
+        "parametro"
+      ],
+      "legacy_capability": "comprehension",
+      "legacy_family": "parameter",
+      "source": "internal_verified"
+    },
+    "ai.tokens": {
+      "dynamic_family": "token",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "token"
+      ],
+      "legacy_capability": "comprehension",
+      "legacy_family": "token",
+      "source": "internal_verified"
+    },
+    "ai.datasets": {
+      "dynamic_family": "dataset",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "dataset"
+      ],
+      "source": "internal_verified"
+    },
+    "ai.training_epochs": {
+      "dynamic_family": "epoch",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "epoch"
+      ],
+      "source": "internal_verified"
+    },
+    "computing.memory": {
+      "dynamic_family": "ram",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "ram"
+      ],
+      "source": "internal_verified"
+    },
+    "computing.cpu": {
+      "dynamic_family": "cpu",
+      "recipe": "night_comprehension",
+      "corpus_aliases": [
+        "cpu"
+      ],
+      "source": "internal_verified"
+    },
+    "instruction.sentence": {
+      "dynamic_family": "sentence",
+      "recipe": "night_instruction",
+      "corpus_aliases": [
+        "instruction:sentence"
+      ],
+      "legacy_capability": "instruction_format",
+      "legacy_family": "sentence",
+      "source": "internal_verified"
+    },
+    "instruction.two_steps": {
+      "dynamic_family": "two_steps",
+      "recipe": "night_instruction",
+      "corpus_aliases": [
+        "instruction:two"
+      ],
+      "legacy_capability": "instruction_format",
+      "legacy_family": "two_steps",
+      "source": "internal_verified"
+    },
+    "instruction.missing": {
+      "dynamic_family": "missing",
+      "recipe": "night_instruction",
+      "corpus_aliases": [
+        "instruction:missing"
+      ],
+      "legacy_capability": "instruction_format",
+      "legacy_family": "missing",
+      "source": "internal_verified"
+    },
+    "instruction.short": {
+      "dynamic_family": "short",
+      "recipe": "night_instruction",
+      "corpus_aliases": [
+        "instruction:short"
+      ],
+      "legacy_capability": "instruction_format",
+      "legacy_family": "short",
+      "source": "internal_verified"
+    },
+    "conversation.greeting": {
+      "dynamic_family": "greeting",
+      "recipe": "night_conversation",
+      "corpus_aliases": [
+        "greeting"
+      ],
+      "legacy_capability": "conversation",
+      "legacy_family": "greeting",
+      "source": "internal_verified"
+    },
+    "conversation.thanks": {
+      "dynamic_family": "thanks",
+      "recipe": "night_conversation",
+      "corpus_aliases": [
+        "thanks"
+      ],
+      "legacy_capability": "conversation",
+      "legacy_family": "thanks",
+      "source": "internal_verified"
+    },
+    "conversation.identity": {
+      "dynamic_family": "identity",
+      "recipe": "night_conversation",
+      "corpus_aliases": [
+        "identity"
+      ],
+      "legacy_capability": "conversation",
+      "legacy_family": "identity",
+      "source": "internal_verified"
+    },
+    "conversation.state": {
+      "dynamic_family": "state",
+      "recipe": "night_conversation",
+      "corpus_aliases": [
+        "state"
+      ],
+      "legacy_capability": "conversation",
+      "legacy_family": "state",
+      "source": "internal_verified"
+    }
+  }
+}

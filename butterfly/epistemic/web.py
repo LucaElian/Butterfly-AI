@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 from .types import Evidence
 
-USER_AGENT = "ButterflyAI/0.0004 educational local research agent"
+USER_AGENT = "ButterflyAI educational local research agent"
 
 
 def source_trust(url: str):

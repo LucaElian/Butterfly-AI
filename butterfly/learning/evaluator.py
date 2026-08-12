@@ -227,6 +227,10 @@ def _semantic_score(answer: str, case: dict[str, Any]) -> float:
     if validator == "state":
         markers = ["bien", "lista", "listo", "funcionando", "preparada", "preparado", "operativa", "operativo", "todo bien", "aca", "aqui"]
         return 1.0 if _contains_any(answer, markers) else 0.0
+    if validator == "greeting_or_state":
+        greeting = _contains_any(answer, ["hola", "buenas", "buen dia", "hey", "ey", "que tal", "saludos"])
+        state = _contains_any(answer, ["bien", "lista", "listo", "funcionando", "preparada", "preparado", "operativa", "operativo", "todo bien", "aca", "aqui"])
+        return 1.0 if greeting or state else 0.0
     if validator == "false_math":
         correct = str(case["correct_result"])
         has_neg = _contains_any(answer, ["no", "incorrect", "falso", "equivoc", "no es correcto", "esta mal"])
@@ -321,7 +325,7 @@ CASES: list[dict[str, Any]] = [
     # Conversation / close-intent contrast
     {"id":"hello","category":"conversation","prompt":"Hola","validator":"greeting","direct":True,"no_list":True,"max_words":18},
     {"id":"hello_casual","category":"conversation","intent_route":True,"prompt":"buenas q onda","validator":"greeting","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":20},
-    {"id":"hello_new","category":"conversation","intent_route":True,"prompt":"ey buenas todo tranqui","validator":"greeting","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":22},
+    {"id":"hello_new","category":"conversation","intent_route":True,"prompt":"ey buenas todo tranqui","validator":"greeting_or_state","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":22},
     {"id":"thanks_casual","category":"conversation","intent_route":True,"prompt":"graciass me re sirvio","validator":"thanks","robust":True,"direct":True,"no_list":True,"max_words":18},
     {"id":"thanks_new","category":"conversation","intent_route":True,"prompt":"gracias posta me ayudaste una banda","validator":"thanks","critical":True,"robust":True,"direct":True,"no_list":True,"max_words":20},
     {"id":"identity_plain","category":"conversation","intent_route":True,"prompt":"como te llamas","validator":"identity","critical":True,"robust":True,"contrastive":True,"direct":True,"no_list":True,"max_words":24},

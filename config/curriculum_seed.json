@@ -1,0 +1,1154 @@
+{
+  "schema_version": 1,
+  "description": "Expandable seed curriculum. This is a roadmap, not trusted factual knowledge.",
+  "nodes": [
+    {
+      "id": "foundation.language",
+      "title": "Language comprehension",
+      "domain": "foundation",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "foundation.instructions",
+      "title": "Instruction following",
+      "domain": "foundation",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "foundation.epistemic",
+      "title": "Evidence, uncertainty and verification",
+      "domain": "foundation",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "foundation.conversation",
+      "title": "Natural conversation and intent",
+      "domain": "foundation",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "learning.source_quality",
+      "title": "Source quality",
+      "domain": "learning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.epistemic"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "learning.provenance",
+      "title": "Knowledge provenance",
+      "domain": "learning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.epistemic"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "learning.contradictions",
+      "title": "Contradictory evidence",
+      "domain": "learning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "learning.source_quality"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "learning.documentation",
+      "title": "Reading technical documentation",
+      "domain": "learning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.instructions"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "learning.transfer",
+      "title": "Transfer to unseen problems",
+      "domain": "learning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.instructions"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "learning.retention",
+      "title": "Retention without catastrophic forgetting",
+      "domain": "learning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "learning.transfer"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "learning.research_planning",
+      "title": "Planning a research task",
+      "domain": "learning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "learning.source_quality",
+        "learning.provenance"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "reasoning.decomposition",
+      "title": "Problem decomposition",
+      "domain": "reasoning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "reasoning.comparison",
+      "title": "Comparison and contrast",
+      "domain": "reasoning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "reasoning.causality",
+      "title": "Cause and effect",
+      "domain": "reasoning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "reasoning.comparison"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "reasoning.planning",
+      "title": "Multi-step planning",
+      "domain": "reasoning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "reasoning.decomposition"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "reasoning.diagnosis",
+      "title": "Systematic diagnosis",
+      "domain": "reasoning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "reasoning.decomposition",
+        "reasoning.causality"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "reasoning.constraints",
+      "title": "Constraint satisfaction",
+      "domain": "reasoning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.instructions"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "reasoning.state_tracking",
+      "title": "State tracking across steps",
+      "domain": "reasoning",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "reasoning.planning"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.files",
+      "title": "Files",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.folders",
+      "title": "Folders and directories",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.paths",
+      "title": "Paths and filesystem hierarchy",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files",
+        "computing.folders"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.permissions",
+      "title": "Permissions and access control basics",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.processes",
+      "title": "Processes",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.memory",
+      "title": "Computer memory",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.cpu",
+      "title": "CPU and execution",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.storage",
+      "title": "Persistent storage",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.encodings",
+      "title": "Text encodings",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.logs",
+      "title": "Logs and event records",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "computing.cli",
+      "title": "Command-line interfaces",
+      "domain": "computing",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.instructions"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "networking.basics",
+      "title": "Networking fundamentals",
+      "domain": "networking",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "networking.addressing",
+      "title": "Addresses, ports and endpoints",
+      "domain": "networking",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "networking.basics"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "networking.client_server",
+      "title": "Client-server communication",
+      "domain": "networking",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "networking.basics"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "networking.dns",
+      "title": "DNS",
+      "domain": "networking",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "networking.addressing"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.variables",
+      "title": "Variables and values",
+      "domain": "programming",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.control_flow",
+      "title": "Control flow",
+      "domain": "programming",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.variables"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.functions",
+      "title": "Functions and parameters",
+      "domain": "programming",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.variables"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.data_structures",
+      "title": "Core data structures",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.variables"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.algorithms",
+      "title": "Algorithms",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.control_flow",
+        "programming.data_structures"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.errors",
+      "title": "Errors and exceptions",
+      "domain": "programming",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.control_flow"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.debugging",
+      "title": "Debugging",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.errors",
+        "reasoning.diagnosis"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.testing",
+      "title": "Software testing",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.functions",
+        "reasoning.constraints"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.json",
+      "title": "JSON",
+      "domain": "programming",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.regex",
+      "title": "Regular expressions",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.language"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.python",
+      "title": "Python",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.functions",
+        "programming.control_flow"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.csharp",
+      "title": "C#",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.functions",
+        "programming.control_flow"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.sql",
+      "title": "SQL",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.data_structures"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.git",
+      "title": "Git",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files",
+        "computing.cli"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.api_design",
+      "title": "API concepts and design",
+      "domain": "programming",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "networking.client_server",
+        "programming.functions"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "windows.filesystem",
+      "title": "Windows filesystem",
+      "domain": "windows",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.paths",
+        "computing.permissions"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "windows.powershell",
+      "title": "PowerShell",
+      "domain": "windows",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.cli",
+        "programming.variables"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "windows.processes",
+      "title": "Windows processes",
+      "domain": "windows",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.processes"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "windows.services",
+      "title": "Windows services",
+      "domain": "windows",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "windows.processes"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "windows.registry",
+      "title": "Windows Registry",
+      "domain": "windows",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "windows.filesystem"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "windows.uia",
+      "title": "Windows UI Automation",
+      "domain": "windows",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.instructions",
+        "windows.processes"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "windows.win32",
+      "title": "Win32 fundamentals",
+      "domain": "windows",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.csharp",
+        "windows.processes"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.http",
+      "title": "HTTP",
+      "domain": "web",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "networking.client_server"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.html",
+      "title": "HTML",
+      "domain": "web",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.language"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.css",
+      "title": "CSS",
+      "domain": "web",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "web.html"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.javascript",
+      "title": "JavaScript",
+      "domain": "web",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.control_flow",
+        "programming.functions"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.dom",
+      "title": "DOM",
+      "domain": "web",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "web.html",
+        "web.javascript"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.rest",
+      "title": "REST APIs",
+      "domain": "web",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "web.http",
+        "programming.api_design"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.tls",
+      "title": "TLS basics",
+      "domain": "web",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "web.http",
+        "networking.addressing"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.cookies",
+      "title": "Cookies and sessions",
+      "domain": "web",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "web.http"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "web.authentication",
+      "title": "Web authentication",
+      "domain": "web",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "web.http",
+        "web.cookies"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "automation.filesystem",
+      "title": "Filesystem automation",
+      "domain": "automation",
+      "stage": "core",
+      "kind": "procedural",
+      "prerequisites": [
+        "computing.paths",
+        "programming.python"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "automation.process_control",
+      "title": "Process automation",
+      "domain": "automation",
+      "stage": "intermediate",
+      "kind": "procedural",
+      "prerequisites": [
+        "windows.processes",
+        "programming.python"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "automation.browser",
+      "title": "Browser automation",
+      "domain": "automation",
+      "stage": "intermediate",
+      "kind": "procedural",
+      "prerequisites": [
+        "web.dom",
+        "programming.python"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "automation.excel",
+      "title": "Spreadsheet automation",
+      "domain": "automation",
+      "stage": "intermediate",
+      "kind": "procedural",
+      "prerequisites": [
+        "programming.python",
+        "programming.data_structures"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "automation.windows_ui",
+      "title": "Windows UI automation workflows",
+      "domain": "automation",
+      "stage": "advanced",
+      "kind": "procedural",
+      "prerequisites": [
+        "windows.uia",
+        "reasoning.planning"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.tokens",
+      "title": "Tokens and tokenization",
+      "domain": "ai",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.parameters",
+      "title": "Model parameters",
+      "domain": "ai",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.datasets",
+      "title": "Datasets",
+      "domain": "ai",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.training",
+      "title": "Model training",
+      "domain": "ai",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "ai.parameters",
+        "ai.datasets"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.inference",
+      "title": "Model inference",
+      "domain": "ai",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "ai.tokens",
+        "ai.parameters"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.embeddings",
+      "title": "Embeddings",
+      "domain": "ai",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "ai.tokens",
+        "programming.data_structures"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.transformers",
+      "title": "Transformer architecture",
+      "domain": "ai",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "ai.parameters",
+        "ai.tokens"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.evaluation",
+      "title": "AI evaluation and benchmarks",
+      "domain": "ai",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "ai.inference",
+        "reasoning.comparison"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "security.authentication",
+      "title": "Authentication",
+      "domain": "security",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.permissions"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "security.authorization",
+      "title": "Authorization",
+      "domain": "security",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "security.authentication"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "security.hashing",
+      "title": "Hashing and integrity",
+      "domain": "security",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "computing.files"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "security.secrets",
+      "title": "Secret handling",
+      "domain": "security",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "security.authentication"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "security.network",
+      "title": "Network security fundamentals",
+      "domain": "security",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "networking.basics",
+        "security.authentication"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "security.threat_modeling",
+      "title": "Threat modeling",
+      "domain": "security",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "reasoning.causality",
+        "security.authorization"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "security.secure_coding",
+      "title": "Secure coding fundamentals",
+      "domain": "security",
+      "stage": "intermediate",
+      "kind": "conceptual",
+      "prerequisites": [
+        "programming.testing",
+        "security.authorization"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "programming.api_basics",
+      "title": "API fundamentals",
+      "domain": "programming",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "ai.training_epochs",
+      "title": "Epochs in model training",
+      "domain": "ai",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "ai.datasets"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "instruction.sentence",
+      "title": "Single-sentence constraints",
+      "domain": "instruction",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "instruction.two_steps",
+      "title": "Two-step ordered instructions",
+      "domain": "instruction",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "instruction.missing",
+      "title": "Detecting missing information",
+      "domain": "instruction",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "instruction.short",
+      "title": "Concise response constraints",
+      "domain": "instruction",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "conversation.greeting",
+      "title": "Greetings",
+      "domain": "conversation",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "conversation.thanks",
+      "title": "Thanks and acknowledgements",
+      "domain": "conversation",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "conversation.identity",
+      "title": "Assistant identity",
+      "domain": "conversation",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "conversation.state",
+      "title": "Assistant state responses",
+      "domain": "conversation",
+      "stage": "foundation",
+      "kind": "conceptual",
+      "prerequisites": [],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "epistemic.verification",
+      "title": "Verify claims before accepting them",
+      "domain": "epistemic",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.epistemic"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "epistemic.unknown",
+      "title": "Recognize insufficient information",
+      "domain": "epistemic",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.epistemic"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    },
+    {
+      "id": "epistemic.conflict",
+      "title": "Handle conflicting evidence",
+      "domain": "epistemic",
+      "stage": "core",
+      "kind": "conceptual",
+      "prerequisites": [
+        "foundation.epistemic"
+      ],
+      "source_policy": "primary_or_multi_source",
+      "target_mastery": 0.82
+    }
+  ]
+}

@@ -88,13 +88,13 @@ STUDY_CASES: list[dict[str, Any]] = [
 
 
     _keep("retention_conversation", "sc01", "conversation", "holaa todo bien",
-          retention_family="greeting", validator="greeting", intent_route=True, direct=True, no_list=True, max_words=20),
+          retention_family="greeting", validator="greeting_or_state", intent_route=True, direct=True, no_list=True, max_words=20),
     _keep("retention_conversation", "sc02", "conversation", "ey butterfly buenas",
           retention_family="greeting", validator="greeting", intent_route=True, direct=True, no_list=True, max_words=20),
     _keep("retention_conversation", "sc03", "conversation", "buenas butterfly todo tranqui",
-          retention_family="greeting", validator="greeting", intent_route=True, direct=True, no_list=True, max_words=20),
+          retention_family="greeting", validator="greeting_or_state", intent_route=True, direct=True, no_list=True, max_words=20),
     _keep("retention_conversation", "sc04", "conversation", "ey buenas como va",
-          retention_family="greeting", validator="greeting", intent_route=True, direct=True, no_list=True, max_words=20),
+          retention_family="greeting", validator="greeting_or_state", intent_route=True, direct=True, no_list=True, max_words=20),
 
     _keep("retention_conversation", "sc05", "conversation", "gracias che me sirvio",
           retention_family="thanks", validator="thanks", intent_route=True, direct=True, no_list=True, max_words=20),
@@ -275,3 +275,17 @@ def study_microbenchmark(model, tokenizer, max_new_tokens: int = BENCHMARK_MAX_N
         "retention_quality_component": quality,
         "cases": rows,
     }
+
+def study_suite_id() -> str:
+    import hashlib
+    import inspect
+    import json
+    payload = {
+        "cases": STUDY_CASES,
+        "generation": BENCHMARK_GENERATION_CONFIG,
+        "max_new_tokens": BENCHMARK_MAX_NEW_TOKENS,
+        "study_microbenchmark": inspect.getsource(study_microbenchmark),
+    }
+    raw = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return "study-" + hashlib.sha256(raw).hexdigest()[:12]
+

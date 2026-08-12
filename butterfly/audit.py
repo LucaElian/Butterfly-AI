@@ -14,6 +14,7 @@ PATTERNS = [
     ("brain/suite version literal", re.compile(r"\bv0\.\d{4,}\b", re.I)),
     ("quoted version-like literal", re.compile(r"""["']0\.\d{4,}["']""")),
     ("old compact version token", re.compile(r"\bv000\d+\b", re.I)),
+    ("ButterflyAI user-agent version literal", re.compile(r"ButterflyAI/0\.\d{4,}", re.I)),
     ("version-bound tokenizer constant", re.compile(r"\bV\d+_TOKENIZER_PATH\b")),
     ("literal benchmark suite assignment", re.compile(r"""BENCHMARK_SUITE_(?:VERSION|ID)\s*=\s*["']""")),
     ("absolute Butterfly path", re.compile(r"[A-Za-z]:\\[^\"'\r\n]*ButterflyAI", re.I)),

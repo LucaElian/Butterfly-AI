@@ -401,6 +401,45 @@
           "instruction_format_component 0.6952 < 0.7200"
         ]
       }
+    },
+    {
+      "version": "0.00063",
+      "status": "rejected",
+      "score": 0.8858830391573629,
+      "recorded_at": 1786489756.946704,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00063-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0230 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8571 < 0.9643 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8359 < 0.8763 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200"
+        ]
+      }
+    },
+    {
+      "version": "0.00064",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786491008.8577468,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00064-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ]
+      }
     }
   ]
 }

@@ -83,7 +83,7 @@ def _default_recipe_name() -> str:
     return str(name)
 
 
-def create_experiment(recipe_name: str | None = None, force: bool = False) -> dict:
+def create_experiment(recipe_name: str | None = None, force: bool = False, focus_target: dict | None = None) -> dict:
     current = load_current_experiment()
     if current and current.get("status") not in {"promoted", "lab_accepted", "rejected", "cancelled"}:
         if not force:
@@ -112,6 +112,8 @@ def create_experiment(recipe_name: str | None = None, force: bool = False) -> di
         "created_at": time.time(),
         "updated_at": time.time(),
     }
+    if focus_target:
+        exp["focus_target"] = dict(focus_target)
     save_current_experiment(exp)
     return exp
 

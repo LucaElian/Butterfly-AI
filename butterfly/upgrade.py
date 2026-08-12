@@ -113,7 +113,7 @@ def _critical_failures_for_categories(metrics, categories):
     }
 
 
-def _lab_focus_check(candidate, seed_baseline, recipe, policy):
+def _lab_focus_check(candidate, seed_baseline, recipe, policy, candidate_entry=None):
     focus = list(recipe.get("focus_metrics") or [])
     if not focus:
         return False, ["recipe has no focus_metrics"]
@@ -180,7 +180,39 @@ def _lab_focus_check(candidate, seed_baseline, recipe, policy):
             focus_ok = True
             accepted_by = "critical_repair"
 
+    if not focus_ok and candidate_entry:
+        metadata = candidate_entry.get("metadata") or {}
+        focus_target = metadata.get("focus_target") or {}
+        lifelong = metadata.get("lifelong_acceptance") or {}
+        if focus_target.get("lifelong_mode") and lifelong.get("passed"):
+            seed_all = set(seed_baseline.get("critical_failures") or [])
+            cand_all = set(candidate.get("critical_failures") or [])
+            no_new_critical = cand_all.issubset(seed_all)
+            max_focus_regression = float(focus_target.get("max_fixed_focus_regression", 0.02))
+            fixed_focus_safe = all(
+                float(candidate.get(key, 0.0))
+                >= float(seed_baseline.get(key, 0.0)) - max_focus_regression
+                for key in focus
+            )
+            if no_new_critical and fixed_focus_safe:
+                focus_ok = True
+                accepted_by = "lifelong_dynamic_acceptance"
+
+    lifelong_required = False
+    lifelong_passed = True
+    if candidate_entry:
+        metadata = candidate_entry.get("metadata") or {}
+        focus_target = metadata.get("focus_target") or {}
+        lifelong_required = bool(focus_target.get("lifelong_mode"))
+        if lifelong_required:
+            lifelong_passed = bool((metadata.get("lifelong_acceptance") or {}).get("passed"))
+            if not lifelong_passed:
+                focus_ok = False
+                accepted_by = None
+
     failures = []
+    if lifelong_required and not lifelong_passed:
+        failures.append("fresh lifelong acceptance exam did not pass")
     if not focus_ok:
         failures.append(
             "focus delta: "
@@ -203,7 +235,7 @@ def _lab_focus_check(candidate, seed_baseline, recipe, policy):
     return focus_ok and protected_ok, failures
 
 
-def _active_check(candidate, active_baseline, recipe, policy):
+def _active_check(candidate, active_baseline, recipe, policy, candidate_entry=None):
     active_policy = policy.get("active") or {}
     minimum = float(active_policy.get("min_overall_delta", 0.03))
     improvement = float(candidate.get("score", 0.0)) - float(active_baseline.get("score", 0.0))
@@ -224,7 +256,15 @@ def _active_check(candidate, active_baseline, recipe, policy):
     if not gates_ok:
         failures.extend(candidate.get("promotion_blockers", []))
     failures.extend(regressions)
-    return improvement >= minimum and gates_ok and regress_ok, failures
+    lifelong_ok = True
+    if candidate_entry:
+        metadata = candidate_entry.get("metadata") or {}
+        focus_target = metadata.get("focus_target") or {}
+        if focus_target.get("lifelong_mode"):
+            lifelong_ok = bool((metadata.get("lifelong_acceptance") or {}).get("passed"))
+            if not lifelong_ok:
+                failures.append("fresh lifelong acceptance exam did not pass")
+    return improvement >= minimum and gates_ok and regress_ok and lifelong_ok, failures
 
 
 def evaluate_candidate(target_version: str | None, recipe: dict):
@@ -254,8 +294,8 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
     print_benchmark(metrics)
 
     policy = load_promotion_policy()
-    active_ok, active_failures = _active_check(metrics, active_baseline, recipe, policy)
-    lab_ok, lab_failures = _lab_focus_check(metrics, seed_baseline, recipe, policy)
+    active_ok, active_failures = _active_check(metrics, active_baseline, recipe, policy, candidate_entry=candidate)
+    lab_ok, lab_failures = _lab_focus_check(metrics, seed_baseline, recipe, policy, candidate_entry=candidate)
 
     report = {
         "suite_id": BENCHMARK_SUITE_ID,
@@ -267,6 +307,7 @@ def evaluate_candidate(target_version: str | None, recipe: dict):
         "candidate": metrics,
         "active_promotion": {"eligible": active_ok, "failures": active_failures},
         "lab_acceptance": {"eligible": lab_ok, "failures": lab_failures},
+        "lifelong_acceptance": (candidate.get("metadata") or {}).get("lifelong_acceptance"),
         "created_at": time.time(),
     }
     report_path = _comparison_path(active, seed, candidate)
