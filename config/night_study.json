@@ -5,7 +5,7 @@
   "max_blocks_per_session": 0,
   "max_minutes_per_session": 0,
   "min_free_disk_gb": 2.0,
-  "stop_file": ".butterfly/STOP_NIGHT_STUDY",
+  "stop_file": ".butterfly/STOP_AUTONOMY",
   "stop_after_active_promotion": false,
   "retry_same_capability_in_session": true,
   "verified_experiences": {

@@ -13,7 +13,7 @@ def test_night_study_runtime_retention_prunes_old_outputs(tmp_path, monkeypatch)
     monkeypatch.setattr(night_study, "ROOT", tmp_path)
 
     for i in range(5):
-        _touch(tmp_path / "logs" / f"night-study-20260812-00000{i}.log", 100 + i)
+        _touch(tmp_path / "logs" / f"autonomy-20260812-00000{i}.log", 100 + i)
     for i in range(8):
         _touch(tmp_path / "reports" / f"brain-0.000{i}-training.json", 200 + i)
         _touch(tmp_path / "reports" / f"brain-0.000{i}-evaluation.json", 300 + i)
@@ -23,7 +23,7 @@ def test_night_study_runtime_retention_prunes_old_outputs(tmp_path, monkeypatch)
 
     removed = night_study.prune_runtime_outputs(log_keep=3, report_keep=6)
 
-    assert len(list((tmp_path / "logs").glob("night-study-*.log"))) == 3
+    assert len(list((tmp_path / "logs").glob("autonomy-*.log"))) == 3
     assert len(list((tmp_path / "reports").glob("brain-*-training.json"))) == 6
     assert len(list((tmp_path / "reports").glob("brain-*-evaluation.json"))) == 6
     assert len(list((tmp_path / "reports").glob("study-profile-*.json"))) == 6

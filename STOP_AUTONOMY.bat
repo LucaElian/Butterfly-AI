@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 if not exist ".butterfly" mkdir ".butterfly"
-type nul > ".butterfly\STOP_NIGHT_STUDY"
+type nul > ".butterfly\STOP_AUTONOMY"
 echo Stop requested.
-echo Butterfly terminara de forma segura antes del proximo bloque.
+echo Butterfly terminara de forma segura apenas llegue al proximo punto seguro.
 pause

@@ -150,7 +150,7 @@ def command_night_study(args):
         }, indent=2, ensure_ascii=False))
 
 
-def command_night_plan(_args):
+def command_autonomy_plan(_args):
     from .learning.night_study import capability_snapshot, print_plan
     print_plan(capability_snapshot(force_baseline=False))
 
@@ -246,10 +246,10 @@ def build_parser():
     sp = sub.add_parser("capabilities")
     sp.set_defaults(func=command_capabilities)
 
-    sp = sub.add_parser("night-plan")
-    sp.set_defaults(func=command_night_plan)
+    sp = sub.add_parser("autonomy-plan")
+    sp.set_defaults(func=command_autonomy_plan)
 
-    sp = sub.add_parser("night-study")
+    sp = sub.add_parser("autonomy")
     sp.add_argument("--max-blocks", type=int, default=None)
     sp.add_argument("--max-minutes", type=float, default=None)
     sp.add_argument("--dry-run", action="store_true")

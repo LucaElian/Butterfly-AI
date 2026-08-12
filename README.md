@@ -15,20 +15,20 @@ Una candidata puede pasar a LAB si mejora las métricas foco de su receta sin ro
 capacidades protegidas. Solo pasa a ACTIVE si además cumple la política global y todos los
 hard gates del evaluador.
 
-## Night Study
+## Autonomy
 
-`RUN_NIGHT_STUDY.bat` ejecuta el estudio autonomo con los limites definidos en
+`RUN_AUTONOMY.bat` ejecuta el aprendizaje autonomo con los limites definidos en
 `config/night_study.json`. En modo Lifelong puede continuar hasta que se pida una parada
-segura con `STOP_NIGHT_STUDY.bat`.
+segura con `STOP_AUTONOMY.bat`.
 
-`LIFELONG_STATUS.bat` muestra el estado del curriculum graph y hace un chequeo rapido del
+`AUTONOMY_STATUS.bat` muestra el estado del curriculum graph y hace un chequeo rapido del
 motor de examenes dinamicos.
 
-`CRASH_RECOVERY_STATUS.bat` muestra si hay una corrida interrumpida que Night Study puede
+`CRASH_RECOVERY_STATUS.bat` muestra si hay una corrida interrumpida que Autonomy puede
 reanudar, y `SKILL_CREDIT_STATUS.bat` resume el ledger de aprendizajes parciales seguros.
 
 El flujo manual por pasos fue retirado: prepare/build/train/evaluate siguen existiendo como
-primitivas internas, pero el entrypoint normal de aprendizaje es Night Study.
+primitivas internas, pero el entrypoint normal de aprendizaje es Autonomy.
 
 ## Estado vs configuración
 
@@ -64,9 +64,9 @@ Si cambia el examen, cambia su fingerprint.
 
 ## Logs y reportes
 
-Night Study mantiene limpia la salida runtime automaticamente:
+Autonomy mantiene limpia la salida runtime automaticamente:
 
-- `logs/night-study-*.log`: conserva la sesion actual y las dos anteriores.
+- `logs/autonomy-*.log`: conserva la sesion actual y las dos anteriores.
 - `reports/brain-*-training.json`: conserva los ultimos 6.
 - `reports/brain-*-evaluation.json`: conserva los ultimos 6.
 - `reports/study-profile-*.json`: conserva los ultimos 6.

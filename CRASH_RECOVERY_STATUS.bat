@@ -11,6 +11,6 @@ echo ButterflyAI Crash Recovery Diagnostic
 echo -------------------------------------
 echo Este comando NO entrena.
 echo.
-".venv\Scripts\python.exe" -m butterfly night-study --dry-run
+".venv\Scripts\python.exe" -m butterfly autonomy --dry-run
 echo.
 pause

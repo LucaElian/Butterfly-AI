@@ -4,26 +4,26 @@ chcp 65001 >nul
 cd /d "%~dp0"
 
 echo ==================================================
-echo  ButterflyAI - NIGHT STUDY
+echo  ButterflyAI - AUTONOMY
 echo ==================================================
 echo.
 echo La sesion elegira autonomamente que capacidad estudiar.
 echo La sesion usa los limites configurados en config/night_study.json.
-echo En modo Lifelong puede continuar hasta STOP_NIGHT_STUDY.bat.
+echo Puede continuar hasta que pidas parada segura con STOP_AUTONOMY.bat.
 echo Para pedir parada segura durante la noche ejecuta:
-echo   STOP_NIGHT_STUDY.bat
+echo   STOP_AUTONOMY.bat
 echo.
 echo Starting...
 echo.
 
-".venv\Scripts\python.exe" -m butterfly night-study
+".venv\Scripts\python.exe" -m butterfly autonomy
 set ERR=%ERRORLEVEL%
 
 echo.
 if not "%ERR%"=="0" (
-  echo Night Study termino con error %ERR%.
+  echo Autonomy termino con error %ERR%.
 ) else (
-  echo Night Study termino.
+  echo Autonomy termino.
 )
 echo.
 pause

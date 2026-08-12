@@ -27,8 +27,8 @@ from .lifelong_bridge import (
 
 
 CONFIG_PATH = ROOT / "config" / "night_study.json"
-LATEST_PLAN_PATH = ROOT / "reports" / "night-study-plan.json"
-LATEST_REPORT_PATH = ROOT / "reports" / "night-study-latest.json"
+LATEST_PLAN_PATH = ROOT / "reports" / "autonomy-plan.json"
+LATEST_REPORT_PATH = ROOT / "reports" / "autonomy-latest.json"
 HISTORY_PATH = ROOT / ".butterfly" / "night_study_history.json"
 LOG_RETENTION_COUNT = 3
 REPORT_RETENTION_COUNT = 6
@@ -294,7 +294,7 @@ def choose_lifelong_lesson(
     return curriculum[0] if curriculum else None
 
 def _stop_file(cfg: dict[str, Any]) -> Path:
-    value = str(cfg.get("stop_file") or ".butterfly/STOP_NIGHT_STUDY")
+    value = str(cfg.get("stop_file") or ".butterfly/STOP_AUTONOMY")
     return ROOT / Path(value)
 
 
@@ -323,7 +323,7 @@ def prune_runtime_outputs(
 ) -> dict[str, list[str]]:
     reports = ROOT / "reports"
     removed = {
-        "logs": _prune_old_files(ROOT / "logs", "night-study-*.log", log_keep),
+        "logs": _prune_old_files(ROOT / "logs", "autonomy-*.log", log_keep),
         "training_reports": _prune_old_files(reports, "brain-*-training.json", report_keep),
         "evaluation_reports": _prune_old_files(reports, "brain-*-evaluation.json", report_keep),
         "study_profiles": _prune_old_files(reports, "study-profile-*.json", report_keep),
@@ -622,7 +622,7 @@ def _append_history(report: dict[str, Any]):
 
 
 def print_plan(snapshot: dict[str, Any]):
-    print("ButterflyAI Autonomous Night Study plan")
+    print("ButterflyAI Autonomy plan")
     print(f"Seed             : {snapshot['seed_version']} ({snapshot['seed_slot']})")
     print(f"Suite            : {snapshot['suite_id']}")
     print(f"System score     : {float(snapshot.get('score') or 0):.4f}")
@@ -653,7 +653,7 @@ def run_night_study(
 ) -> dict[str, Any]:
     cfg = load_night_config()
     if not bool(cfg.get("enabled", True)):
-        raise RuntimeError("Night Study is disabled in config/night_study.json")
+        raise RuntimeError("Autonomy is disabled in config/night_study.json")
 
     current = load_current_experiment()
     recovery_experiment = (
@@ -739,7 +739,7 @@ def run_night_study(
     stop_requested = lambda: stop_path.exists()
 
     session_id = datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_path = ROOT / "logs" / f"night-study-{session_id}.log"
+    log_path = ROOT / "logs" / f"autonomy-{session_id}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     started_wall = _utcnow()
     started_mono = time.monotonic()
@@ -752,7 +752,7 @@ def run_night_study(
         tee_err = _Tee(sys.stderr, log)
         with redirect_stdout(tee_out), redirect_stderr(tee_err):
             print("=" * 72)
-            print(" ButterflyAI LIFELONG NIGHT STUDY V4.2")
+            print(" ButterflyAI AUTONOMY V4.2")
             print("=" * 72)
             print(f"Session          : {session_id}")
             print(f"Maximum blocks   : {'unlimited' if max_blocks == 0 else max_blocks}")
@@ -842,21 +842,21 @@ def run_night_study(
                         stop_reason = "stop_file"
                         recovery_halt = True
                         print(
-                            "STOP_NIGHT_STUDY detected; recovery block interrupted "
+                            "STOP_AUTONOMY detected; recovery block interrupted "
                             "after the current safe boundary."
                         )
-                        blocks.append(block_record)
-                    block_record.update({
-                        "finished_at": _utcnow(),
-                        "status": "error",
-                        "error": f"{type(exc).__name__}: {exc}",
-                    })
-                    stop_reason = "error"
-                    recovery_failed = True
-                    print(
-                        "Crash recovery stopped safely; runtime/autosave state was "
-                        f"left intact: {block_record['error']}"
-                    )
+                    else:
+                        block_record.update({
+                            "finished_at": _utcnow(),
+                            "status": "error",
+                            "error": f"{type(exc).__name__}: {exc}",
+                        })
+                        stop_reason = "error"
+                        recovery_failed = True
+                        print(
+                            "Crash recovery stopped safely; runtime/autosave state was "
+                            f"left intact: {block_record['error']}"
+                        )
                 blocks.append(block_record)
 
                 if (
@@ -879,7 +879,7 @@ def run_night_study(
                 allowed, reason = _resource_check(cfg, started_mono, max_minutes)
                 if not allowed:
                     stop_reason = reason
-                    print(f"Night Study stopping before block {block_index}: {reason}")
+                    print(f"Autonomy stopping before block {block_index}: {reason}")
                     break
 
                 snapshot = capability_snapshot(force_baseline=False)
@@ -958,7 +958,7 @@ def run_night_study(
                         blocks.append(block_record)
                         stop_reason = "stop_file"
                         print(
-                            "STOP_NIGHT_STUDY detected; block interrupted after "
+                            "STOP_AUTONOMY detected; block interrupted after "
                             "the current safe boundary."
                         )
                         break
@@ -969,7 +969,7 @@ def run_night_study(
                     })
                     blocks.append(block_record)
                     stop_reason = "error"
-                    print(f"Night Study block failed safely: {block_record['error']}")
+                    print(f"Autonomy block failed safely: {block_record['error']}")
                     break
 
                 blocks.append(block_record)
@@ -990,7 +990,7 @@ def run_night_study(
                 final_lifelong = strict_dynamic_diagnostic(force=False)
             print("")
             print("=" * 72)
-            print(" NIGHT STUDY SESSION COMPLETE")
+            print(" AUTONOMY SESSION COMPLETE")
             print("=" * 72)
             print(f"Stop reason: {stop_reason}")
             print(f"Blocks run : {len(blocks)}")

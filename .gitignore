@@ -61,6 +61,7 @@ Thumbs.db
 .butterfly/night_study_history.json
 .butterfly/skill_credit_ledger.json
 .butterfly/STOP_NIGHT_STUDY
+.butterfly/STOP_AUTONOMY
 
 # Interrupted installer rollback state
 .butterfly/*_install_state.json

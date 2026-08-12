@@ -39,7 +39,7 @@ class TrainingStopRequested(RuntimeError):
         self.step = int(step)
         self.total_steps = int(total_steps)
         super().__init__(
-            f"STOP_NIGHT_STUDY requested during {stage} epoch {self.epoch} "
+            f"STOP_AUTONOMY requested during {stage} epoch {self.epoch} "
             f"batch {self.step}/{self.total_steps}"
         )
 
@@ -398,7 +398,7 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
                   "best_validation_loss":None if best_loss == float("inf") else best_loss,"bad_epochs":bad_epochs,
                   "completed_stages":completed,"updated_at":time.time(),**extra_state()}
         try:
-            _save_resume(model, progress, f"STOP_NIGHT_STUDY detected at {name} epoch {epoch} batch {step}/{total_steps}")
+            _save_resume(model, progress, f"STOP_AUTONOMY detected at {name} epoch {epoch} batch {step}/{total_steps}")
         except Exception as exc:
             print(f"WARNING: emergency autosave failed: {type(exc).__name__}: {exc}")
         raise TrainingStopRequested(name, epoch, step, total_steps)
