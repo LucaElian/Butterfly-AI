@@ -55,7 +55,7 @@ LEGACY_TOKENIZER_PATH = STATE_DIR / "tokenizer-v2.json"
 BENCHMARKS_DIR = ROOT / "benchmarks"
 INHERITED_DIR = DATA_DIR / "inherited"
 CONFIG_DIR = ROOT / "config"
-PIPELINE_CONFIG_PATH = CONFIG_DIR / "pipeline.json"
+AUTONOMY_CONFIG_PATH = CONFIG_DIR / "autonomy.json"
 PROMOTION_POLICY_PATH = CONFIG_DIR / "promotion_policy.json"
 RECIPES_DIR = CONFIG_DIR / "recipes"
 
@@ -100,10 +100,10 @@ def save_json(path: Path, value):
     os.replace(tmp, path)
 
 
-def load_pipeline_config() -> dict:
-    cfg = load_json(PIPELINE_CONFIG_PATH, {})
+def load_autonomy_config() -> dict:
+    cfg = load_json(AUTONOMY_CONFIG_PATH, {})
     if not isinstance(cfg, dict):
-        raise RuntimeError("config/pipeline.json must contain a JSON object.")
+        raise RuntimeError("config/autonomy.json must contain a JSON object.")
     return cfg
 
 

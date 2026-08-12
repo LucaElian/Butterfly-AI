@@ -15,24 +15,6 @@ Una candidata puede pasar a LAB si mejora las métricas foco de su receta sin ro
 capacidades protegidas. Solo pasa a ACTIVE si además cumple la política global y todos los
 hard gates del evaluador.
 
-## Pipeline permanente
-
-```text
-01_PREPARE.bat
-02_BUILD_DATASET.bat
-03_TRAIN.bat
-04_EVALUATE_AND_PROMOTE.bat
-RUN_PIPELINE.bat
-```
-
-`RUN_PIPELINE.bat` ofrece:
-
-1. **AUTOMATICO**: busca la primera etapa pendiente y continúa hasta el final.
-2. **PAUSADO**: igual que automático, pero espera ENTER entre etapas.
-3. **UNA ETAPA**: ejecuta solo la etapa elegida y deja el estado listo para continuar.
-
-No existe un modo `REANUDAR` separado: reanudar es el comportamiento normal.
-
 ## Night Study
 
 `RUN_NIGHT_STUDY.bat` ejecuta el estudio autonomo con los limites definidos en
@@ -42,9 +24,16 @@ segura con `STOP_NIGHT_STUDY.bat`.
 `LIFELONG_STATUS.bat` muestra el estado del curriculum graph y hace un chequeo rapido del
 motor de examenes dinamicos.
 
+`CRASH_RECOVERY_STATUS.bat` muestra si hay una corrida interrumpida que Night Study puede
+reanudar, y `SKILL_CREDIT_STATUS.bat` resume el ledger de aprendizajes parciales seguros.
+
+El flujo manual por pasos fue retirado: prepare/build/train/evaluate siguen existiendo como
+primitivas internas, pero el entrypoint normal de aprendizaje es Night Study.
+
 ## Estado vs configuración
 
-`config/pipeline.json` describe comportamiento permanente. No guarda target ni suite.
+`config/autonomy.json` guarda defaults autonomos generales, como la receta fallback y la
+fraccion de CPU permitida. No guarda target ni suite.
 
 El experimento actual vive localmente en:
 
@@ -73,26 +62,17 @@ La suite no tiene un número manual que haya que incrementar. Su ID se calcula
 automáticamente a partir de casos, thresholds, valores reservados y reglas semánticas.
 Si cambia el examen, cambia su fingerprint.
 
-## Logs
+## Logs y reportes
 
-Cada etapa escribe un log descriptivo independiente:
+Night Study mantiene limpia la salida runtime automaticamente:
 
-```text
-AAAA-MM-DD_HH-MM-SS__prepare__target-vX__recipe-NOMBRE.log
-AAAA-MM-DD_HH-MM-SS__build-dataset__target-vX__recipe-NOMBRE.log
-AAAA-MM-DD_HH-MM-SS__train__target-vX__recipe-NOMBRE.log
-AAAA-MM-DD_HH-MM-SS__evaluate-and-promote__target-vX__recipe-NOMBRE.log
-```
+- `logs/night-study-*.log`: conserva la sesion actual y las dos anteriores.
+- `reports/brain-*-training.json`: conserva los ultimos 6.
+- `reports/brain-*-evaluation.json`: conserva los ultimos 6.
+- `reports/study-profile-*.json`: conserva los ultimos 6.
+- `reports/lifelong/*.json`: conserva los ultimos 6.
 
-`latest.log` conserva la salida completa de las etapas ejecutadas en la invocación actual.
-
-También se mantienen:
-
-```text
-logs/latest.log
-logs/latest-error.log
-reports/latest-summary.txt
-```
+Los `latest-*.json` se mantienen como punteros al estado mas reciente.
 
 ## Auditoría de hardcodes
 

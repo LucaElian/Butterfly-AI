@@ -9,7 +9,7 @@ import secrets
 import time
 import uuid
 
-from .config import ROOT, RECIPES_DIR, load_pipeline_config, load_json, save_json
+from .config import ROOT, RECIPES_DIR, load_autonomy_config, load_json, save_json
 from .registry import get_seed_entry, load_history, load_registry
 
 CURRENT_EXPERIMENT_PATH = ROOT / ".butterfly" / "current_experiment.json"
@@ -76,10 +76,10 @@ def save_current_experiment(value: dict):
 
 
 def _default_recipe_name() -> str:
-    cfg = load_pipeline_config()
+    cfg = load_autonomy_config()
     name = cfg.get("default_recipe")
     if not name:
-        raise RuntimeError("config/pipeline.json has no default_recipe.")
+        raise RuntimeError("config/autonomy.json has no default_recipe.")
     return str(name)
 
 

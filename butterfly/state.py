@@ -6,7 +6,6 @@ from .registry import load_registry, load_history
 
 def system_snapshot() -> dict:
     from .learning.evaluator import BENCHMARK_SUITE_ID
-    from .pipeline import pipeline_status
 
     reg = load_registry()
     return {
@@ -16,6 +15,5 @@ def system_snapshot() -> dict:
         "candidate_brain": reg.get("candidate"),
         "evaluator_suite": BENCHMARK_SUITE_ID,
         "experiment": load_current_experiment(),
-        "pipeline": pipeline_status(),
         "history": load_history().get("versions", [])[-12:],
     }

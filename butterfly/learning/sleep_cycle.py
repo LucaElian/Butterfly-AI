@@ -5,7 +5,7 @@ import json
 
 from ..memory import MemoryStore
 from ..checkpoint import load_entry, save_stable_model
-from ..config import MODELS_DIR, CORPUS_DIR, ROOT, load_pipeline_config
+from ..config import MODELS_DIR, CORPUS_DIR, ROOT, load_autonomy_config
 from ..experiments import create_experiment, load_current_experiment, load_recipe, mark_experiment_status
 from ..registry import get_entry, register_model
 from ..training.runtime import continue_training, best_device
@@ -35,12 +35,12 @@ def _replay_text(limit_chars=250_000):
 
 
 def _sleep_allowed():
-    return bool(load_pipeline_config().get("allow_sleep_learning", False))
+    return bool(load_autonomy_config().get("allow_sleep_learning", False))
 
 
 def run_sleep_cycle(steps=120):
     if not _sleep_allowed():
-        print("Sleep learning is paused by pipeline configuration.")
+        print("Sleep learning is paused by autonomous learning configuration.")
         print("Verified experiences remain stored and unused.")
         return False
 

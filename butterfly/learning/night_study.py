@@ -30,6 +30,8 @@ CONFIG_PATH = ROOT / "config" / "night_study.json"
 LATEST_PLAN_PATH = ROOT / "reports" / "night-study-plan.json"
 LATEST_REPORT_PATH = ROOT / "reports" / "night-study-latest.json"
 HISTORY_PATH = ROOT / ".butterfly" / "night_study_history.json"
+LOG_RETENTION_COUNT = 3
+REPORT_RETENTION_COUNT = 6
 
 
 def _utcnow() -> str:
@@ -294,6 +296,40 @@ def choose_lifelong_lesson(
 def _stop_file(cfg: dict[str, Any]) -> Path:
     value = str(cfg.get("stop_file") or ".butterfly/STOP_NIGHT_STUDY")
     return ROOT / Path(value)
+
+
+def _prune_old_files(directory: Path, pattern: str, keep: int) -> list[str]:
+    if keep <= 0 or not directory.exists():
+        return []
+    files = sorted(
+        (path for path in directory.glob(pattern) if path.is_file()),
+        key=lambda path: (path.stat().st_mtime, path.name),
+        reverse=True,
+    )
+    removed = []
+    for path in files[keep:]:
+        try:
+            path.unlink()
+            removed.append(str(path.relative_to(ROOT)).replace("\\", "/"))
+        except OSError:
+            pass
+    return removed
+
+
+def prune_runtime_outputs(
+    *,
+    log_keep: int = LOG_RETENTION_COUNT,
+    report_keep: int = REPORT_RETENTION_COUNT,
+) -> dict[str, list[str]]:
+    reports = ROOT / "reports"
+    removed = {
+        "logs": _prune_old_files(ROOT / "logs", "night-study-*.log", log_keep),
+        "training_reports": _prune_old_files(reports, "brain-*-training.json", report_keep),
+        "evaluation_reports": _prune_old_files(reports, "brain-*-evaluation.json", report_keep),
+        "study_profiles": _prune_old_files(reports, "study-profile-*.json", report_keep),
+        "lifelong_reports": _prune_old_files(reports / "lifelong", "*.json", report_keep),
+    }
+    return {key: value for key, value in removed.items() if value}
 
 
 def _resource_check(cfg: dict[str, Any], started_monotonic: float, max_minutes: float) -> tuple[bool, str]:
@@ -979,4 +1015,11 @@ def run_night_study(
     LATEST_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     save_json(LATEST_REPORT_PATH, report)
     _append_history(report)
+    pruned = prune_runtime_outputs()
+    if pruned:
+        report["pruned_runtime_outputs"] = pruned
+        save_json(LATEST_REPORT_PATH, report)
+        print("Runtime output retention pruned old files:")
+        for group, paths in pruned.items():
+            print(f"  {group}: {len(paths)}")
     return report

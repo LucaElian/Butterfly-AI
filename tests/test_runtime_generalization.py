@@ -14,9 +14,9 @@ def test_evaluator_suite_is_fingerprint_not_manual_brain_style_version():
     assert re.fullmatch(r"suite-[0-9a-f]{12}", BENCHMARK_SUITE_ID)
 
 
-def test_pipeline_config_contains_behavior_not_runtime_target():
+def test_autonomy_config_contains_behavior_not_runtime_target():
     root = Path(__file__).resolve().parents[1]
-    cfg = json.loads((root / "config" / "pipeline.json").read_text(encoding="utf-8"))
+    cfg = json.loads((root / "config" / "autonomy.json").read_text(encoding="utf-8"))
     assert cfg["schema_version"] == 2
     assert "target_brain" not in cfg
     assert "benchmark_suite" not in cfg

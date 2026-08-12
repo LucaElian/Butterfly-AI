@@ -4,7 +4,7 @@ import os
 import torch
 from torch.utils.data import DataLoader
 
-from ..config import load_pipeline_config
+from ..config import load_autonomy_config
 from ..data import BlockTokenDataset
 
 
@@ -15,7 +15,7 @@ def best_device():
 def configure_cpu():
     if torch.cuda.is_available():
         return None
-    cfg = load_pipeline_config()
+    cfg = load_autonomy_config()
     runtime = cfg.get("runtime") or {}
     fraction = float(runtime.get("cpu_thread_fraction", 0.67))
     fraction = min(1.0, max(0.10, fraction))

@@ -1,0 +1,8 @@
+{
+  "schema_version": 2,
+  "default_recipe": "intent_routing",
+  "allow_sleep_learning": false,
+  "runtime": {
+    "cpu_thread_fraction": 0.67
+  }
+}
