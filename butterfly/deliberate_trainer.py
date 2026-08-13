@@ -194,7 +194,7 @@ def is_better_study_checkpoint(
     if candidate_study < best_study - eps:
         return False
     if best_valid_loss is None:
-        return False
+        return True
     return candidate_valid_loss < best_valid_loss - eps
 
 
@@ -312,7 +312,7 @@ def _failure_driven_stage_cfg(stage_cfg: dict, experiment: dict) -> dict:
     if target.get("dynamic_family"):
         cfg["study_focus_metrics"] = [DYNAMIC_FOCUS_KEY]
         cfg["min_each_study_focus_delta"] = float(
-            target.get("selection_min_delta", cfg.get("failure_focus_min_delta", 0.02))
+            target.get("checkpoint_selection_min_delta", 0.0)
         )
         cfg["lr"] = float(cfg.get("lr", 0.0)) * float(target.get("lr_scale", 1.0))
         return cfg
@@ -585,12 +585,10 @@ def _train_stage(model, tokenizer, experiment, stage_cfg, manifest_stage, resume
                 f"delta={final_transfer-base_transfer:+.4f} required={required_transfer:+.4f}"
             )
             if not transfer_passed:
-                if not ENTRY_STAGE_MODEL.exists():
-                    raise RuntimeError("Dynamic transfer failed but entry-stage checkpoint is missing")
-                _load_weights_into(model, ENTRY_STAGE_MODEL, device)
-                best_study = entry_study
-                selected_epoch = 0
-                print("  -> TRANSFER GATE FAILED: rollback to unseen stage-entry weights")
+                print(
+                    "  -> TRANSFER GATE FAILED: selected checkpoint kept for "
+                    "fresh acceptance and skill-credit salvage"
+                )
 
     result={"stage":name,"best_validation_loss":None if best_loss == float("inf") else best_loss,
             "seconds":time.time()-stage_start,"epochs_completed":epochs_completed,

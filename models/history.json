@@ -657,6 +657,344 @@
           "reason": "no_safe_interpolation"
         }
       }
+    },
+    {
+      "version": "0.00075",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786576407.794205,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00075-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00076",
+      "status": "rejected",
+      "score": 0.9130533872406521,
+      "recorded_at": 1786589966.5803347,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00076-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.short",
+          "family": "short",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00077",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786591499.7621555,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00077-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.short",
+          "family": "short",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00078",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786592874.87575,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00078-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00079",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786593764.6130273,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00079-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.cpu",
+          "family": "cpu",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00080",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786595404.630757,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00080-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00081",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786596798.6403925,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00081-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00082",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786598476.152257,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00082-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00083",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786600014.2840261,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00083-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00084",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786600961.0364842,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00084-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00085",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786601976.543136,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00085-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00086",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786602950.544986,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00086-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00087",
+      "status": "rejected",
+      "score": 0.9108787796260445,
+      "recorded_at": 1786612000.296264,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00087-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
     }
   ]
 }

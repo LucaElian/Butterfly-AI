@@ -60,3 +60,11 @@ def test_study_checkpoint_ignores_better_dynamic_score():
         best["study"],
         best["valid_loss"],
     )
+
+def test_entry_checkpoint_tie_accepts_first_trained_validation_loss():
+    assert is_better_study_checkpoint(
+        candidate_study=0.4814,
+        candidate_valid_loss=1.20,
+        best_study=0.4814,
+        best_valid_loss=None,
+    )

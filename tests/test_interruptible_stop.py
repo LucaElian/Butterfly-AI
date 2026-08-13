@@ -32,7 +32,7 @@ class _FakeModel:
         self.param = _FakeParam()
 
     def parameters(self):
-        return [self.param]
+        return iter([self.param])
 
     def train(self):
         pass
@@ -218,3 +218,47 @@ def test_post_epoch_study_exam_stop_rolls_back_before_resume_save(monkeypatch):
     assert saved["progress"]["epoch"] == 2
     assert saved["progress"]["step"] == 0
     assert saved["progress"]["best_study_exam"] == entry_exam
+
+def test_transfer_gate_failure_keeps_selected_checkpoint_for_salvage(monkeypatch):
+    from butterfly import deliberate_trainer as dt
+
+    _patch_light_train_stage(monkeypatch, dt)
+    monkeypatch.setattr(dt, "_clean_best", lambda: None)
+    monkeypatch.setattr(dt, "_clean_entry", lambda: None)
+    monkeypatch.setattr(dt, "_save_best", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(dt, "_save_resume", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(dt, "_atomic_weights", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(dt, "_validation_loss", lambda *_args, **_kwargs: 0.5)
+    monkeypatch.setattr(dt, "_dynamic_stage_banks", lambda *_args, **_kwargs: ({"fingerprint": "selection"}, {"fingerprint": "transfer"}))
+    monkeypatch.setattr(dt, "evaluate_bank", lambda *_args, **_kwargs: {"score": 0.60, "semantic": 0.0})
+
+    calls = {"study": 0}
+
+    def study_exam(*_args, **_kwargs):
+        calls["study"] += 1
+        return {
+            "study_score": 0.5,
+            dt.DYNAMIC_FOCUS_KEY: 0.60,
+            "dynamic_selection": {"family": "file", "score": 0.60, "fingerprint": "selection"},
+            "dynamic_transfer_entry": {"family": "file", "score": 0.60, "fingerprint": "transfer-entry"},
+        }
+
+    monkeypatch.setattr(dt, "_study_with_dynamic_focus", study_exam)
+
+    experiment, stage_cfg, manifest_stage = _stage_inputs()
+    experiment["focus_target"] = {
+        "dynamic_family": "file",
+        "checkpoint_selection_min_delta": 0.0,
+        "transfer_min_delta": 0.015,
+        "selection_cases": 2,
+    }
+
+    result, _completed = dt._train_stage(
+        _FakeModel(), object(), experiment, stage_cfg, manifest_stage,
+        resume_progress=None, completed=[], stop_requested=lambda: False,
+    )
+
+    assert result["selected_study_epoch"] == 1
+    assert result["stage_rolled_back"] is False
+    assert result["dynamic_transfer"]["passed"] is False
+    assert calls["study"] == 2

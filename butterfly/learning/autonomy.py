@@ -332,6 +332,12 @@ def prune_runtime_outputs(
     return {key: value for key, value in removed.items() if value}
 
 
+def _final_session_snapshots(stop_reason: str, first_snapshot: dict[str, Any], first_lifelong: dict[str, Any]):
+    if stop_reason in {"stop_file", "error"}:
+        return first_snapshot, first_lifelong
+    return capability_snapshot(force_baseline=False), strict_dynamic_diagnostic(force=False)
+
+
 def _resource_check(cfg: dict[str, Any], started_monotonic: float, max_minutes: float) -> tuple[bool, str]:
     if _stop_file(cfg).exists():
         return False, "stop_file"
@@ -982,12 +988,9 @@ def run_autonomy(
                     print("ACTIVE promotion achieved; configured stop-after-promotion requested a safe stop.")
                     break
 
-            if stop_reason == "stop_file":
-                final_snapshot = first_snapshot
-                final_lifelong = first_lifelong
-            else:
-                final_snapshot = capability_snapshot(force_baseline=False)
-                final_lifelong = strict_dynamic_diagnostic(force=False)
+            final_snapshot, final_lifelong = _final_session_snapshots(
+                stop_reason, first_snapshot, first_lifelong
+            )
             print("")
             print("=" * 72)
             print(" AUTONOMY SESSION COMPLETE")

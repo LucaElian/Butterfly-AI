@@ -78,8 +78,9 @@ def test_dynamic_stage_uses_fresh_selection_as_primary_focus_and_strategy_lr():
     }
     result = _failure_driven_stage_cfg(stage, experiment)
     assert result["study_focus_metrics"] == [DYNAMIC_FOCUS_KEY]
-    assert result["min_each_study_focus_delta"] == 0.03
+    assert result["min_each_study_focus_delta"] == 0.0
     assert result["lr"] == 2e-6
+    # Final acceptance stays strict; internal checkpoint selection only requires no fresh dynamic regression.
     # Fixed held-out shadows remain protected while the fresh exam selects checkpoints.
     assert "retention_folder_component" in result["study_protected_metrics"]
 

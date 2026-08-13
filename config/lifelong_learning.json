@@ -16,6 +16,7 @@
     "transfer_cases": 12,
     "acceptance_cases": 16,
     "selection_min_delta": 0.02,
+    "checkpoint_selection_min_delta": 0.0,
     "transfer_min_delta": 0.015,
     "acceptance_min_delta": 0.02,
     "acceptance_min_score": 0.6

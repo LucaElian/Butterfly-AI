@@ -1,8 +1,7 @@
 from pathlib import Path
-import json
 import re
 
-from butterfly.config import ROOT, project_relpath
+from butterfly.config import ROOT, load_json, project_relpath
 
 
 def _is_portable(value: str) -> bool:
@@ -26,7 +25,7 @@ def test_tracked_history_benchmark_paths_are_portable():
     if not path.exists():
         return
 
-    history = json.loads(path.read_text(encoding="utf-8"))
+    history = load_json(path, {})
     bad = []
 
     for row in history.get("versions", []):
@@ -60,6 +59,6 @@ def test_runtime_persisted_metadata_paths_are_portable_when_present():
 
     for path in files:
         if path.exists():
-            walk(json.loads(path.read_text(encoding="utf-8")), path.name)
+            walk(load_json(path, {}), path.name)
 
     assert not bad, "Non-portable runtime paths found: " + repr(bad)
