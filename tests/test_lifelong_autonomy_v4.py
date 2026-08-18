@@ -73,6 +73,8 @@ def test_dynamic_stage_uses_fresh_selection_as_primary_focus_and_strategy_lr():
         "focus_target": {
             "dynamic_family": "folder",
             "selection_min_delta": 0.03,
+            "checkpoint_protected_slack": 0.005,
+            "learning_packet_cases": 48,
             "lr_scale": 0.5,
         }
     }
@@ -80,6 +82,8 @@ def test_dynamic_stage_uses_fresh_selection_as_primary_focus_and_strategy_lr():
     assert result["study_focus_metrics"] == [DYNAMIC_FOCUS_KEY]
     assert result["min_each_study_focus_delta"] == 0.0
     assert result["lr"] == 2e-6
+    assert result["study_protected_slack"] == 0.005
+    assert experiment["focus_target"]["learning_packet_cases"] == 48
     # Final acceptance stays strict; internal checkpoint selection only requires no fresh dynamic regression.
     # Fixed held-out shadows remain protected while the fresh exam selects checkpoints.
     assert "retention_folder_component" in result["study_protected_metrics"]

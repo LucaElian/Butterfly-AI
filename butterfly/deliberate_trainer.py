@@ -155,13 +155,17 @@ def _study_avg(exam: dict, names: list[str]) -> float:
 def _study_protected_ok(candidate: dict, entry: dict, stage_cfg: dict) -> tuple[bool, list[str]]:
     default_budget = float(stage_cfg.get("max_study_protected_regression", 0.08))
     per_metric = dict(stage_cfg.get("study_protected_regression_budgets", {}))
+    slack = float(stage_cfg.get("study_protected_slack", 0.0))
     blockers = []
     for name in stage_cfg.get("study_protected_metrics", []):
         cur = float(candidate.get(name, 0.0))
         base = float(entry.get(name, 0.0))
         budget = float(per_metric.get(name, default_budget))
-        if cur < base - budget:
-            blockers.append(f"{name} {cur:.4f} < entry {base:.4f} - {budget:.4f}")
+        floor = base - budget - slack
+        if cur < floor:
+            blockers.append(
+                f"{name} {cur:.4f} < entry {base:.4f} - {budget:.4f} - slack {slack:.4f}"
+            )
     return not blockers, blockers
 
 
@@ -314,6 +318,7 @@ def _failure_driven_stage_cfg(stage_cfg: dict, experiment: dict) -> dict:
         cfg["min_each_study_focus_delta"] = float(
             target.get("checkpoint_selection_min_delta", 0.0)
         )
+        cfg["study_protected_slack"] = float(target.get("checkpoint_protected_slack", 0.0))
         cfg["lr"] = float(cfg.get("lr", 0.0)) * float(target.get("lr_scale", 1.0))
         return cfg
     metric = target.get("study_metric")

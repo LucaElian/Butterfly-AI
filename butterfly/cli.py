@@ -5,7 +5,6 @@ import json
 
 from .config import ensure_dirs, project_relpath
 from .memory import MemoryStore
-from .agent.preflight import PreflightEvaluator
 
 
 def command_init(_args):
@@ -104,33 +103,83 @@ def command_verify(args):
     }, indent=2, ensure_ascii=False))
 
 
-def command_preflight(args):
-    print(json.dumps(
-        PreflightEvaluator().evaluate(args.task).to_dict(),
-        indent=2,
-        ensure_ascii=False,
-    ))
 
 
 def command_experience(args):
-    MemoryStore().add_experience(
+    metadata = {
+        key: value for key, value in {
+            "context": args.context,
+            "curriculum_node": args.curriculum_node,
+            "dynamic_family": args.dynamic_family,
+            "source": args.source,
+            "source_url": args.source_url,
+            "source_title": args.source_title,
+        }.items()
+        if value
+    }
+    context = json.dumps(metadata, ensure_ascii=False) if metadata else args.context
+    actions = []
+    if args.curriculum_node or args.dynamic_family or args.source or args.source_url:
+        actions.append({
+            "type": "verified_learning_material",
+            "curriculum_node": args.curriculum_node,
+            "dynamic_family": args.dynamic_family,
+            "source": args.source,
+            "source_url": args.source_url,
+            "source_title": args.source_title,
+        })
+    experience_id = MemoryStore().add_experience(
         task=args.task,
         result=args.result,
         lesson=args.lesson,
-        context=args.context,
+        context=context,
+        actions=actions,
         verified=args.verified,
         quality=args.quality,
     )
-    print("Experience stored.")
+    if args.verified and args.curriculum_node:
+        from .learning.curriculum_graph import mark_material
+        mark_material(args.curriculum_node, "verified_packet")
+    print(f"Experience stored: {experience_id}")
 
 
-def command_experiment_new(args):
-    from .experiments import clear_terminal_experiment, create_experiment, load_current_experiment
-    current = load_current_experiment()
-    if current:
-        clear_terminal_experiment()
-    exp = create_experiment(args.recipe)
-    print(json.dumps(exp, indent=2, ensure_ascii=False))
+def command_research_seed(args):
+    from .learning.research_seed import install_curated_research_seed
+
+    report = install_curated_research_seed(
+        nodes=args.node,
+        limit=args.limit,
+        dry_run=args.dry_run,
+    )
+    print(json.dumps({
+        "dry_run": report["dry_run"],
+        "available": report["available"],
+        "selected": report["selected"],
+        "added": len(report["added"]),
+        "skipped": len(report["skipped"]),
+        "added_nodes": sorted({row["curriculum_node"] for row in report["added"]}),
+    }, indent=2, ensure_ascii=False))
+
+
+def command_teacher_lessons(args):
+    from .learning.teacher import install_teacher_lessons
+
+    report = install_teacher_lessons(
+        node=args.node,
+        dynamic_family=args.dynamic_family,
+        count=args.count,
+        dry_run=args.dry_run,
+    )
+    print(json.dumps({
+        "enabled": report.get("enabled"),
+        "provider": report.get("provider"),
+        "model": report.get("model"),
+        "dry_run": report.get("dry_run", False),
+        "targets": report.get("targets", []),
+        "planned_lessons": report.get("planned_lessons"),
+        "added": len(report.get("added", [])),
+        "skipped": len(report.get("skipped", [])),
+    }, indent=2, ensure_ascii=False))
 
 
 def command_audit(_args):
@@ -222,9 +271,6 @@ def build_parser():
     sp.add_argument("--web", action="store_true")
     sp.set_defaults(func=command_verify)
 
-    sp = sub.add_parser("preflight")
-    sp.add_argument("task")
-    sp.set_defaults(func=command_preflight)
 
     sp = sub.add_parser("experience")
     sp.add_argument("--task", required=True)
@@ -233,11 +279,25 @@ def build_parser():
     sp.add_argument("--context", default="")
     sp.add_argument("--verified", action="store_true")
     sp.add_argument("--quality", type=float, default=.8)
+    sp.add_argument("--curriculum-node", default=None)
+    sp.add_argument("--dynamic-family", default=None)
+    sp.add_argument("--source", default=None)
+    sp.add_argument("--source-url", default=None)
+    sp.add_argument("--source-title", default=None)
     sp.set_defaults(func=command_experience)
 
-    sp = sub.add_parser("experiment-new")
-    sp.add_argument("--recipe", default=None)
-    sp.set_defaults(func=command_experiment_new)
+    sp = sub.add_parser("research-seed")
+    sp.add_argument("--node", action="append", default=[])
+    sp.add_argument("--limit", type=int, default=None)
+    sp.add_argument("--dry-run", action="store_true")
+    sp.set_defaults(func=command_research_seed)
+
+    sp = sub.add_parser("teacher-lessons")
+    sp.add_argument("--node", default=None)
+    sp.add_argument("--dynamic-family", default=None)
+    sp.add_argument("--count", type=int, default=None)
+    sp.add_argument("--dry-run", action="store_true")
+    sp.set_defaults(func=command_teacher_lessons)
 
     sp = sub.add_parser("audit-hardcodes")
     sp.set_defaults(func=command_audit)

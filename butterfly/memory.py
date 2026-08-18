@@ -55,10 +55,11 @@ class MemoryStore:
 
     def add_experience(self, task, result, context="", actions=None, lesson="", verified=False, quality=0.0):
         with self.connect() as c:
-            c.execute(
+            cur = c.execute(
                 "INSERT INTO experiences(created_at,task,context,actions,result,lesson,verified,quality) VALUES(?,?,?,?,?,?,?,?)",
                 (utcnow(), task, context, json.dumps(actions or [], ensure_ascii=False), result, lesson, int(verified), quality),
             )
+            return int(cur.lastrowid)
 
     def add_claim(self, claim, status, confidence, method="", sources=None, evidence=""):
         with self.connect() as c:
@@ -67,11 +68,11 @@ class MemoryStore:
                 (utcnow(), claim, status, confidence, method, json.dumps(sources or [], ensure_ascii=False), evidence, utcnow()),
             )
 
-    def approved_experiences(self, limit=5000):
+    def approved_experiences(self, limit=5000, minimum_quality=0.7):
         with self.connect() as c:
             rows = c.execute(
-                "SELECT id,task,context,actions,result,lesson,quality FROM experiences WHERE verified=1 AND quality>=0.7 AND used_for_training=0 ORDER BY id LIMIT ?",
-                (limit,),
+                "SELECT id,task,context,actions,result,lesson,quality FROM experiences WHERE verified=1 AND quality>=? AND used_for_training=0 ORDER BY id LIMIT ?",
+                (float(minimum_quality), limit),
             ).fetchall()
         return rows
 

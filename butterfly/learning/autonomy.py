@@ -5,6 +5,8 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import os
+import re
 import shutil
 import sys
 import time
@@ -293,47 +295,359 @@ def choose_lifelong_lesson(
         return hard[0]
     return curriculum[0] if curriculum else None
 
+def _teacher_material_key(lesson: dict[str, Any]) -> str:
+    node = str(lesson.get("curriculum_node") or "")
+    family = str(lesson.get("dynamic_family") or lesson.get("focus_family") or "")
+    return f"{node or '*'}:{family or '*'}"
+
+
+def _choose_teacher_material_lesson(
+    snapshot: dict[str, Any],
+    attempted: set[str],
+) -> dict[str, Any] | None:
+    for raw in snapshot.get("capabilities", []):
+        if not raw.get("trainable", True):
+            continue
+        if float(raw.get("gap", 0.0)) <= 0 and int(raw.get("critical_count", 0)) <= 0:
+            continue
+        lesson = enrich_legacy_lesson(raw)
+        if not (lesson.get("curriculum_node") or lesson.get("dynamic_family") or lesson.get("focus_family")):
+            continue
+        key = _teacher_material_key(lesson)
+        if key in attempted:
+            continue
+        return lesson
+    return None
+
+
+def _install_local_teacher_material(
+    snapshot: dict[str, Any],
+    attempted: set[str],
+) -> dict[str, Any] | None:
+    lesson = _choose_teacher_material_lesson(snapshot, attempted)
+    if lesson is None:
+        return None
+
+    key = _teacher_material_key(lesson)
+    attempted.add(key)
+    node = lesson.get("curriculum_node")
+    family = lesson.get("dynamic_family") or lesson.get("focus_family")
+    try:
+        from .teacher import install_teacher_lessons, load_teacher_config
+
+        teacher_cfg = load_teacher_config()
+        if not teacher_cfg.get("enabled", True):
+            print("Local teacher material is disabled in config/teacher.json.")
+            return None
+
+        print(
+            "No safe internal lesson remains; asking local Ollama teacher for "
+            f"{lesson.get('capability')}/{family or 'general'} material."
+        )
+        report = install_teacher_lessons(
+            node=str(node) if node else None,
+            dynamic_family=None if node else (str(family) if family else None),
+            cfg=teacher_cfg,
+        )
+    except Exception as exc:
+        print(f"Local teacher material failed safely: {type(exc).__name__}: {exc}")
+        return None
+
+    added = len(report.get("added") or [])
+    skipped = len(report.get("skipped") or [])
+    targets = report.get("targets") or []
+    target_label = ", ".join(
+        f"{item.get('curriculum_node')}/{item.get('dynamic_family')}"
+        for item in targets
+        if isinstance(item, dict)
+    )
+    print(
+        f"Local teacher material: added={added} skipped={skipped}"
+        + (f" target={target_label}" if target_label else "")
+    )
+    return report if added > 0 else None
+
 def _stop_file(cfg: dict[str, Any]) -> Path:
     value = str(cfg.get("stop_file") or ".butterfly/STOP_AUTONOMY")
     return ROOT / Path(value)
 
 
-def _prune_old_files(directory: Path, pattern: str, keep: int) -> list[str]:
+def _project_label(path: Path) -> str:
+    return str(Path(path).resolve().relative_to(ROOT.resolve())).replace("\\", "/")
+
+
+def _unlink_runtime_file(path: Path) -> str | None:
+    try:
+        path.unlink()
+        return _project_label(path)
+    except OSError:
+        return None
+
+
+def _prune_old_files(
+    directory: Path,
+    pattern: str,
+    keep: int,
+    *,
+    preserve: set[Path] | None = None,
+) -> list[str]:
     if keep <= 0 or not directory.exists():
         return []
+    preserve_resolved = {path.resolve() for path in (preserve or set())}
     files = sorted(
         (path for path in directory.glob(pattern) if path.is_file()),
         key=lambda path: (path.stat().st_mtime, path.name),
         reverse=True,
     )
+    candidates = [path for path in files if path.resolve() not in preserve_resolved]
     removed = []
-    for path in files[keep:]:
+    for path in candidates[keep:]:
+        label = _unlink_runtime_file(path)
+        if label:
+            removed.append(label)
+    return removed
+
+
+def _retention_policy(cfg: dict[str, Any] | None = None) -> dict[str, Any]:
+    raw = (cfg or {}).get("runtime_retention") if isinstance(cfg, dict) else None
+    raw = raw if isinstance(raw, dict) else {}
+
+    def as_int(name: str, default: int) -> int:
         try:
-            path.unlink()
-            removed.append(str(path.relative_to(ROOT)).replace("\\", "/"))
+            return max(0, int(raw.get(name, default)))
+        except (TypeError, ValueError):
+            return default
+
+    def as_bool(name: str, default: bool) -> bool:
+        value = raw.get(name, default)
+        if isinstance(value, str):
+            return value.strip().lower() not in {"0", "false", "no", "off"}
+        return bool(value)
+
+    return {
+        "logs": as_int("logs", LOG_RETENTION_COUNT),
+        "reports": as_int("reports", REPORT_RETENTION_COUNT),
+        "benchmark_comparisons": as_int("benchmark_comparisons", 15),
+        "stale_model_artifacts": as_bool("stale_model_artifacts", True),
+        "stale_training_state": as_bool("stale_training_state", True),
+        "dev_caches": as_bool("dev_caches", True),
+        "python_caches": as_bool("python_caches", True),
+    }
+
+
+def _benchmark_paths_from_value(value: Any) -> set[Path]:
+    found: set[Path] = set()
+    if isinstance(value, dict):
+        for item in value.values():
+            found.update(_benchmark_paths_from_value(item))
+    elif isinstance(value, list):
+        for item in value:
+            found.update(_benchmark_paths_from_value(item))
+    elif isinstance(value, str):
+        normalized = value.replace("\\", "/")
+        if normalized.startswith("benchmarks/") and normalized.endswith(".json"):
+            found.add((ROOT / normalized).resolve())
+    return found
+
+
+def _referenced_benchmark_paths() -> set[Path]:
+    from ..registry import load_registry
+
+    reg = load_registry()
+    keep_versions = {
+        str(value) for value in (reg.get("active"), reg.get("lab"), reg.get("candidate")) if value
+    }
+    keep: set[Path] = set()
+    for entry in reg.get("versions") or []:
+        if str(entry.get("version")) in keep_versions:
+            keep.update(_benchmark_paths_from_value(entry))
+    keep.update(_benchmark_paths_from_value(load_current_experiment() or {}))
+    return keep
+
+
+def _prune_legacy_migration_benchmarks(*, preserve: set[Path] | None = None) -> list[str]:
+    benchmarks = ROOT / "benchmarks"
+    if not benchmarks.exists():
+        return []
+    preserve_resolved = {path.resolve() for path in (preserve or set())}
+    removed: list[str] = []
+    for path in sorted(benchmarks.glob("migration-*.json")):
+        if path.resolve() in preserve_resolved:
+            continue
+        label = _unlink_runtime_file(path)
+        if label:
+            removed.append(label)
+    return removed
+
+def _registered_model_artifact_paths() -> set[Path]:
+    from ..registry import load_registry, resolve_tokenizer_path
+
+    reg = load_registry()
+    keep_versions = {
+        str(value) for value in (reg.get("active"), reg.get("lab"), reg.get("candidate")) if value
+    }
+    keep: set[Path] = set()
+    for entry in reg.get("versions") or []:
+        if str(entry.get("version")) not in keep_versions:
+            continue
+        rel = entry.get("path")
+        if rel:
+            model_path = (ROOT / "models" / str(rel)).resolve()
+            keep.add(model_path)
+            keep.add(Path(str(model_path) + ".json"))
+        tokenizer_path = resolve_tokenizer_path(entry)
+        if tokenizer_path:
+            keep.add(tokenizer_path.resolve())
+    return keep
+
+
+def _prune_stale_model_artifacts() -> list[str]:
+    models = ROOT / "models"
+    if not models.exists():
+        return []
+    keep = _registered_model_artifact_paths()
+    removed: list[str] = []
+    for path in sorted(models.glob("butterfly-v*.safetensors")):
+        if path.resolve() in keep:
+            continue
+        label = _unlink_runtime_file(path)
+        if label:
+            removed.append(label)
+        metadata = Path(str(path) + ".json")
+        if metadata.exists():
+            label = _unlink_runtime_file(metadata)
+            if label:
+                removed.append(label)
+    for path in sorted(models.glob("butterfly-v*.safetensors.json")):
+        model_path = Path(str(path)[:-5])
+        if path.resolve() in keep or model_path.resolve() in keep or model_path.exists():
+            continue
+        label = _unlink_runtime_file(path)
+        if label:
+            removed.append(label)
+    return removed
+
+
+def _has_recoverable_experiment() -> bool:
+    current = load_current_experiment()
+    if not isinstance(current, dict):
+        return False
+    return str(current.get("status") or "") not in {"promoted", "lab_accepted", "rejected", "cancelled"}
+
+
+def _remove_runtime_tree(path: Path, *, preserve_gitkeep: bool = True) -> list[str]:
+    if not path.exists():
+        return []
+    removed: list[str] = []
+    if path.is_file():
+        label = _unlink_runtime_file(path)
+        return [label] if label else []
+    for child in sorted(path.iterdir(), key=lambda item: item.name):
+        if preserve_gitkeep and child.name == ".gitkeep":
+            continue
+        try:
+            if child.is_dir():
+                labels = [
+                    _project_label(item)
+                    for item in child.rglob("*")
+                    if not (preserve_gitkeep and item.name == ".gitkeep")
+                ]
+                shutil.rmtree(child)
+                removed.extend(labels or [_project_label(child)])
+            else:
+                label = _unlink_runtime_file(child)
+                if label:
+                    removed.append(label)
         except OSError:
-            pass
+            continue
+    return removed
+
+
+def _prune_stale_training_state() -> list[str]:
+    if _has_recoverable_experiment():
+        return []
+    return _remove_runtime_tree(ROOT / "training_state")
+
+
+def _is_within_ignored_runtime_dir(path: Path) -> bool:
+    parts = set(path.relative_to(ROOT).parts)
+    return bool(parts & {".git", ".venv"})
+
+
+def _prune_python_caches() -> list[str]:
+    removed: list[str] = []
+    for path in sorted(ROOT.rglob("__pycache__")):
+        if _is_within_ignored_runtime_dir(path):
+            continue
+        try:
+            labels = [_project_label(item) for item in path.rglob("*")]
+            shutil.rmtree(path)
+            removed.extend(labels or [_project_label(path)])
+        except OSError:
+            continue
+    return removed
+
+
+def _prune_dev_caches() -> list[str]:
+    removed: list[str] = []
+    for name in (".pytest_cache", ".mypy_cache", ".ruff_cache"):
+        removed.extend(_remove_runtime_tree(ROOT / name, preserve_gitkeep=False))
     return removed
 
 
 def prune_runtime_outputs(
     *,
-    log_keep: int = LOG_RETENTION_COUNT,
-    report_keep: int = REPORT_RETENTION_COUNT,
+    log_keep: int | None = None,
+    report_keep: int | None = None,
+    benchmark_keep: int | None = None,
+    prune_stale_model_artifacts: bool | None = None,
+    prune_stale_training_state: bool | None = None,
+    prune_dev_caches: bool | None = None,
+    prune_python_caches: bool | None = None,
+    cfg: dict[str, Any] | None = None,
 ) -> dict[str, list[str]]:
+    policy = _retention_policy(cfg)
+    log_keep = policy["logs"] if log_keep is None else max(0, int(log_keep))
+    report_keep = policy["reports"] if report_keep is None else max(0, int(report_keep))
+    benchmark_keep = policy["benchmark_comparisons"] if benchmark_keep is None else max(0, int(benchmark_keep))
+    prune_stale_model_artifacts = (
+        policy["stale_model_artifacts"] if prune_stale_model_artifacts is None else bool(prune_stale_model_artifacts)
+    )
+    prune_stale_training_state = (
+        policy["stale_training_state"] if prune_stale_training_state is None else bool(prune_stale_training_state)
+    )
+    prune_dev_caches = policy["dev_caches"] if prune_dev_caches is None else bool(prune_dev_caches)
+    prune_python_caches = policy["python_caches"] if prune_python_caches is None else bool(prune_python_caches)
+
     reports = ROOT / "reports"
+    benchmark_preserve = _referenced_benchmark_paths()
     removed = {
         "logs": _prune_old_files(ROOT / "logs", "autonomy-*.log", log_keep),
         "training_reports": _prune_old_files(reports, "brain-*-training.json", report_keep),
         "evaluation_reports": _prune_old_files(reports, "brain-*-evaluation.json", report_keep),
         "study_profiles": _prune_old_files(reports, "study-profile-*.json", report_keep),
         "lifelong_reports": _prune_old_files(reports / "lifelong", "*.json", report_keep),
+        "benchmark_comparisons": _prune_old_files(
+            ROOT / "benchmarks",
+            "comparison-*.json",
+            benchmark_keep,
+            preserve=benchmark_preserve,
+        ),
+        "legacy_migration_benchmarks": _prune_legacy_migration_benchmarks(preserve=benchmark_preserve),
     }
+    if prune_stale_model_artifacts:
+        removed["stale_model_artifacts"] = _prune_stale_model_artifacts()
+    if prune_stale_training_state:
+        removed["stale_training_state"] = _prune_stale_training_state()
+    if prune_dev_caches:
+        removed["dev_caches"] = _prune_dev_caches()
+    if prune_python_caches:
+        removed["python_caches"] = _prune_python_caches()
     return {key: value for key, value in removed.items() if value}
 
 
 def _final_session_snapshots(stop_reason: str, first_snapshot: dict[str, Any], first_lifelong: dict[str, Any]):
-    if stop_reason in {"stop_file", "error"}:
+    if stop_reason == "error":
         return first_snapshot, first_lifelong
     return capability_snapshot(force_baseline=False), strict_dynamic_diagnostic(force=False)
 
@@ -351,6 +665,155 @@ def _resource_check(cfg: dict[str, Any], started_monotonic: float, max_minutes: 
         return False, f"low_disk:{free_gb:.2f}GB"
 
     return True, "ok"
+
+
+class _CompactConsole:
+    """Human console view; full fidelity still goes to the session log."""
+
+    _LIVE_PREFIXES = (
+        "=== STAGE ",
+        "=== STUDY ENTRY EXAM",
+        "Failure-driven focus:",
+        "train rows:",
+        "assistant target tokens:",
+        "batch:",
+        "trainable parameters:",
+        "Skipping first ",
+        "RESUME ",
+        "Starting candidate ",
+        "Seed brain:",
+        "Device:",
+        "CPU threads:",
+        "Parameters:",
+        "Tokenizer vocab:",
+        "=== FRESH CANDIDATE ACCEPTANCE EXAM",
+        "node   :",
+        "family :",
+        "bank   :",
+        "score  :",
+        "gate   :",
+    )
+
+    _IMPORTANT_PREFIXES = (
+        " ButterflyAI AUTONOMY",
+        "Session          :",
+        "Maximum blocks   :",
+        "Maximum minutes  :",
+        "Stop file        :",
+        "Seed             :",
+        "System score     :",
+        "Verified backlog :",
+        "RECOVERY BLOCK",
+        "BLOCK ",
+        "Target ",
+        "Resume target ",
+        "Crash recovery",
+        "No safe internal lesson",
+        "Local teacher material",
+        "Autonomy block failed safely",
+        "STOP_AUTONOMY detected",
+        "ACTIVE promotion achieved",
+        "Runtime output retention",
+        "Stop reason:",
+        "Blocks run :",
+        "Final seed :",
+        "Final score:",
+    )
+    _LIVE_CLEAR_PREFIXES = (
+        " ButterflyAI AUTONOMY",
+        "RECOVERY BLOCK",
+        "BLOCK ",
+        "=== STUDY ENTRY EXAM",
+        "=== STAGE ",
+        "=== FRESH CANDIDATE ACCEPTANCE EXAM",
+    )
+
+    _IMPORTANT_CONTAINS = (
+        "Final result:",
+        " result:",
+        "LAB_ACCEPTED",
+        "SUBJECT CREDIT ACCEPTED",
+        "PROMOTED to ACTIVE",
+        "ACCEPTED as LAB",
+        "REJECTED:",
+        "Rejected subject gain distilled",
+        "Skill-credit salvage warning",
+        "new BEST STUDY checkpoint",
+        "STAGE ROLLBACK",
+        "early stopping",
+        "rollback to previous best",
+        "fresh TRANSFER exam",
+        "selected checkpoint:",
+        "autosave:",
+    )
+
+    def __init__(self, stream, *, live: bool = False):
+        self.stream = stream
+        self.live = live
+        self._buffer = ""
+        self._last_progress_len = 0
+        self._progress_active = False
+
+    def write(self, text):
+        self._buffer += str(text)
+        while "\n" in self._buffer:
+            line, self._buffer = self._buffer.split("\n", 1)
+            self._emit_line(line.rstrip("\r"))
+        return len(text)
+
+    def flush(self):
+        if self._buffer:
+            self._emit_line(self._buffer.rstrip("\r\n"))
+            self._buffer = ""
+        self.stream.flush()
+
+    def _emit_line(self, line: str) -> None:
+        if not line:
+            return
+        if self._is_progress(line):
+            padded = line[:140].ljust(self._last_progress_len)
+            self.stream.write("\r" + padded)
+            self.stream.flush()
+            self._last_progress_len = len(padded)
+            self._progress_active = True
+            return
+        if not self._should_show(line):
+            return
+        if self._progress_active:
+            self.stream.write("\n")
+            self._progress_active = False
+            self._last_progress_len = 0
+        if self.live and line.startswith(self._LIVE_CLEAR_PREFIXES):
+            self._clear_live_screen()
+        self.stream.write(line + "\n")
+        self.stream.flush()
+
+    def _clear_live_screen(self) -> None:
+        try:
+            if getattr(self.stream, "isatty", lambda: False)():
+                if os.name == "nt":
+                    os.system("cls")
+                else:
+                    self.stream.write("\033[2J\033[H")
+        except Exception:
+            pass
+        self._last_progress_len = 0
+        self._progress_active = False
+
+    @staticmethod
+    def _is_progress(line: str) -> bool:
+        return " | " in line and "answer-loss" in line and " ETA " in line
+
+    def _should_show(self, line: str) -> bool:
+        if self.live and line.startswith(self._LIVE_PREFIXES):
+            return True
+        if line.startswith(self._IMPORTANT_PREFIXES):
+            return True
+        if any(marker in line for marker in self._IMPORTANT_CONTAINS):
+            return True
+        if re.search(r" epoch \d+: answer-train=", line):
+            return True
+        return False
 
 
 class _Tee:
@@ -382,6 +845,14 @@ class _Tee:
             except OSError:
                 self._failed_streams.add(stream_id)
 
+
+def _autonomy_console_stream(stream):
+    mode = str(os.environ.get("BUTTERFLY_AUTONOMY_CONSOLE") or "full").strip().lower()
+    if mode in {"live", "progress"}:
+        return _CompactConsole(stream, live=True)
+    if mode in {"compact", "clean", "human"}:
+        return _CompactConsole(stream)
+    return stream
 
 def _raise_if_training_stop(stop_requested, stage: str):
     if stop_requested is not None and stop_requested():
@@ -417,7 +888,7 @@ def _run_deliberate_block(stop_requested=None):
     command_evaluate()
 
 
-# CRASH/DISCONNECT RECOVERY V4.2
+# Crash/disconnect recovery helpers
 TERMINAL_EXPERIMENT_STATUSES = {"promoted", "lab_accepted", "rejected", "cancelled"}
 RECOVERABLE_EXPERIMENT_STATUSES = {"planned", "prepared", "dataset_ready", "candidate_ready"}
 
@@ -616,6 +1087,25 @@ def _recover_incomplete_experiment(experiment: dict[str, Any], stop_requested=No
     return current
 
 
+def _accepted_training_status(status: str | None) -> bool:
+    return str(status or "") in {"promoted", "lab_accepted"}
+
+
+def _finalize_verified_experience_usage(block_record: dict[str, Any]) -> None:
+    if not _accepted_training_status(block_record.get("status")):
+        return
+    experiment_id = block_record.get("experiment_id")
+    if not experiment_id:
+        return
+    from ..corpus.deliberate import verified_experience_ids_for_experiment
+    from ..corpus.verified_experiences import mark_verified_experiences_used
+
+    ids = verified_experience_ids_for_experiment(str(experiment_id))
+    if not ids:
+        return
+    mark_verified_experiences_used(ids)
+    block_record["verified_experience_ids_marked_used"] = ids
+
 def _append_history(report: dict[str, Any]):
     history = load_json(HISTORY_PATH, {"schema_version": 1, "sessions": []})
     if not isinstance(history, dict):
@@ -750,15 +1240,17 @@ def run_autonomy(
     started_wall = _utcnow()
     started_mono = time.monotonic()
     attempted: set[str] = set()
+    teacher_material_attempted: set[str] = set()
+    teacher_material_reports: list[dict[str, Any]] = []
     blocks: list[dict[str, Any]] = []
     stop_reason = "completed"
 
     with log_path.open("a", encoding="utf-8") as log:
-        tee_out = _Tee(sys.stdout, log)
+        tee_out = _Tee(_autonomy_console_stream(sys.stdout), log)
         tee_err = _Tee(sys.stderr, log)
         with redirect_stdout(tee_out), redirect_stderr(tee_err):
             print("=" * 72)
-            print(" ButterflyAI AUTONOMY V4.2")
+            print(f" ButterflyAI AUTONOMY engine v{cfg.get('engine_version', '?')}")
             print("=" * 72)
             print(f"Session          : {session_id}")
             print(f"Maximum blocks   : {'unlimited' if max_blocks == 0 else max_blocks}")
@@ -779,7 +1271,7 @@ def run_autonomy(
                 artifacts = _recovery_artifacts(recovery_experiment)
                 print("-" * 72)
                 print(
-                    f"RECOVERY BLOCK {block_index}/{('âˆž' if max_blocks == 0 else max_blocks)}: "
+                    f"RECOVERY BLOCK {block_index}/{('unlimited' if max_blocks == 0 else max_blocks)}: "
                     f"{lesson['capability']}/{lesson.get('focus_family') or 'general'} "
                     f"-> {lesson['recipe']}"
                 )
@@ -829,6 +1321,7 @@ def run_autonomy(
                         if isinstance(comparison, dict):
                             block_record["lifelong_acceptance"] = comparison.get("lifelong_acceptance")
                     try:
+                        _finalize_verified_experience_usage(block_record)
                         record_block_outcome(lesson, block_record)
                     except Exception as memory_exc:
                         block_record["strategy_memory_warning"] = (
@@ -892,6 +1385,12 @@ def run_autonomy(
                 print_plan(snapshot)
                 lesson = choose_lifelong_lesson(snapshot, attempted, prefer_curriculum=(block_index % 2 == 0))
                 if lesson is None:
+                    if research_needed():
+                        teacher_report = _install_local_teacher_material(snapshot, teacher_material_attempted)
+                        if teacher_report is not None:
+                            teacher_material_reports.append(teacher_report)
+                            block_index -= 1
+                            continue
                     stop_reason = "research_required" if research_needed() else "curriculum_exhausted"
                     print(
                         "No safe internal lesson remains. "
@@ -910,7 +1409,7 @@ def run_autonomy(
                 print("")
                 print("-" * 72)
                 print(
-                    f"BLOCK {block_index}/{('âˆž' if max_blocks == 0 else max_blocks)}: {lesson['capability']}/{lesson.get('focus_family') or 'general'} "
+                    f"BLOCK {block_index}/{('unlimited' if max_blocks == 0 else max_blocks)}: {lesson['capability']}/{lesson.get('focus_family') or 'general'} "
                     f"-> {lesson['recipe']}"
                 )
                 print(
@@ -950,6 +1449,7 @@ def run_autonomy(
                         if isinstance(comparison, dict):
                             block_record["lifelong_acceptance"] = comparison.get("lifelong_acceptance")
                     try:
+                        _finalize_verified_experience_usage(block_record)
                         record_block_outcome(lesson, block_record)
                     except Exception as memory_exc:
                         block_record["strategy_memory_warning"] = f"{type(memory_exc).__name__}: {memory_exc}"
@@ -1009,6 +1509,7 @@ def run_autonomy(
         "max_blocks": max_blocks,
         "max_minutes": max_minutes,
         "blocks": blocks,
+        "teacher_material": teacher_material_reports,
         "initial_snapshot": first_snapshot,
         "initial_lifelong": first_lifelong,
         "final_snapshot": final_snapshot,
@@ -1018,7 +1519,7 @@ def run_autonomy(
     LATEST_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     save_json(LATEST_REPORT_PATH, report)
     _append_history(report)
-    pruned = prune_runtime_outputs()
+    pruned = prune_runtime_outputs(cfg=cfg)
     if pruned:
         report["pruned_runtime_outputs"] = pruned
         save_json(LATEST_REPORT_PATH, report)

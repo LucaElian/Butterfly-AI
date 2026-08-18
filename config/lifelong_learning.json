@@ -19,7 +19,9 @@
     "checkpoint_selection_min_delta": 0.0,
     "transfer_min_delta": 0.015,
     "acceptance_min_delta": 0.02,
-    "acceptance_min_score": 0.6
+    "acceptance_min_score": 0.6,
+    "checkpoint_protected_slack": 0.005,
+    "learning_packet_cases": 48
   },
   "curriculum": {
     "enabled": true,
@@ -244,8 +246,20 @@
     "minimum_skill_score": 0.6,
     "max_overall_regression": 0.005,
     "max_component_regression": 0.01,
+    "allow_positive_tradeoffs": true,
+    "tradeoff_min_skill_delta": 0.1,
+    "tradeoff_max_overall_regression": 0.008,
+    "tradeoff_max_component_regression": 0.04,
+    "tradeoff_max_regressed_components": 3,
     "require_no_new_critical": true,
     "ledger_max_entries": 500,
-    "policy": "A globally rejected Lifelong candidate may preserve only the independently verified curriculum skill that survives fresh subject-credit exams and strict fixed-capability non-regression gates."
+    "policy": "A globally rejected Lifelong candidate may preserve only the independently verified curriculum skill that survives fresh subject-credit exams and fixed-capability safety gates, including bounded positive tradeoffs when verified skill gain is large.",
+    "rejected_subject_distillation": {
+      "enabled": true,
+      "min_skill_delta": 0.04,
+      "min_skill_score": 0.6,
+      "quality": 0.88,
+      "policy": "When a rejected candidate shows verified subject gain but fails fixed safety, store a small provenance packet for future training; never preserve rejected weights."
+    }
   }
 }

@@ -35,6 +35,23 @@ def test_protected_metrics_are_checked_independently():
     assert not ok
     assert any("retention_conversation_component" in blocker for blocker in blockers)
 
+
+def test_protected_slack_allows_tiny_internal_exam_noise():
+    entry = exam(0, .2, c=.6383, d=.90)
+    candidate = exam(.1, .3, c=.5867, d=.91)
+    near_miss_stage = {
+        **STAGE,
+        "study_protected_metrics": ["retention_conversation_component"],
+        "study_protected_regression_budgets": {"retention_conversation_component": 0.05},
+        "study_protected_slack": 0.005,
+    }
+    assert _study_protected_ok(candidate, entry, near_miss_stage)[0]
+
+    strict_stage = {**near_miss_stage, "study_protected_slack": 0.0}
+    ok, blockers = _study_protected_ok(candidate, entry, strict_stage)
+    assert not ok
+    assert "slack 0.0000" in blockers[0]
+
 def test_valid_loss_breaks_global_study_tie():
     entry = exam(0, .2)
     best = exam(.08, .30)

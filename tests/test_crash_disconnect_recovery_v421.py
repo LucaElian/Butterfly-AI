@@ -9,6 +9,7 @@ from butterfly.learning.autonomy import (
     _recovery_artifacts,
     _recovery_lesson,
     _recovery_steps,
+    _accepted_training_status,
 )
 
 
@@ -126,3 +127,11 @@ def test_training_stop_is_recorded_as_interrupted_block():
     assert fields["resume_stage"] == "comprehension_repair_v2"
     assert fields["resume_epoch"] == 2
     assert fields["resume_step"] == 174
+
+
+def test_verified_experience_usage_only_finalizes_for_accepted_statuses():
+    assert _accepted_training_status("promoted")
+    assert _accepted_training_status("lab_accepted")
+    assert not _accepted_training_status("rejected")
+    assert not _accepted_training_status("interrupted")
+    assert not _accepted_training_status("error")

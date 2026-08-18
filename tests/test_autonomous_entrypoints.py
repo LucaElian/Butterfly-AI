@@ -20,6 +20,8 @@ def test_manual_pipeline_entrypoints_are_retired():
         "04_EVALUATE_AND_PROMOTE.bat",
         "RUN_PIPELINE.bat",
         "SLEEP_AND_LEARN.bat",
+        "CRASH_RECOVERY_STATUS.bat",
+        "SKILL_CREDIT_STATUS.bat",
     }
     for name in retired:
         assert not (root / name).exists()
@@ -43,20 +45,19 @@ def test_public_learning_cli_is_autonomy():
     args = parser.parse_args(["autonomy", "--dry-run"])
     assert args.func.__name__ == "command_autonomy"
 
-    retired_command = "ni" + "ght" + "-study"
-    try:
-        parser.parse_args([retired_command])
-    except SystemExit:
-        pass
-    else:
-        raise AssertionError(f"{retired_command} should no longer be a public CLI command")
-
-    try:
-        parser.parse_args(["sleep"])
-    except SystemExit:
-        pass
-    else:
-        raise AssertionError("sleep should no longer be a public CLI command")
+    retired_commands = (
+        "ni" + "ght" + "-study",
+        "sleep",
+        "experiment-new",
+        "preflight",
+    )
+    for retired_command in retired_commands:
+        try:
+            parser.parse_args([retired_command])
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"{retired_command} should no longer be a public CLI command")
 
 
 def test_cli_imports_are_lightweight_for_diagnostics():
@@ -91,6 +92,7 @@ def test_legacy_learning_modules_are_retired():
         "butterfly/agent/postflight.py",
         "butterfly/corpus/builder.py",
         "butterfly/trainer.py",
+        "butterfly/agent/preflight.py",
         "config/recipes/sleep_learning.json",
     }
     for rel in retired:

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "provider": "ollama",
+  "model": "qwen2.5:3b",
+  "temperature": 0.35,
+  "quality": 0.86,
+  "limits": {
+    "targets_per_run": 1,
+    "lessons_per_target": 6,
+    "max_lesson_chars": 720,
+    "retry_attempts": 2
+  },
+  "ollama": {
+    "base_url": "http://127.0.0.1:11434",
+    "timeout_seconds": 120
+  },
+  "notes": "Free local teacher. It generates small verified practice packets for Autonomy; no API keys or paid providers are used."
+}

@@ -995,6 +995,2411 @@
           "reason": "no_safe_interpolation"
         }
       }
+    },
+    {
+      "version": "0.00088",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786615433.2432008,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00088-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0115 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.9286 < 0.9643 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00089",
+      "status": "rejected",
+      "score": 0.9130533872406521,
+      "recorded_at": 1786617887.449897,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00089-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0115 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00090",
+      "status": "rejected",
+      "score": 0.9019840884348825,
+      "recorded_at": 1786620223.0023882,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00090-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "lab_failures": [
+          "intent_routing_component: 0.9286 < 0.9643 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "ai.tokens",
+          "family": "token",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00091",
+      "status": "lab_accepted",
+      "score": 0.9173486319958968,
+      "recorded_at": 1786621651.1513896,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00054-candidate-0.00091-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00054",
+        "focus_metrics": [
+          "conversation_component"
+        ],
+        "accepted_by": "skill_credit_partial_consolidation",
+        "skill_credit": {
+          "node": "conversation.identity",
+          "family": "identity",
+          "alpha": 0.5,
+          "skill_delta": 0.19374999999999998
+        }
+      }
+    },
+    {
+      "version": "0.00092",
+      "status": "rejected",
+      "score": 0.9019840884348825,
+      "recorded_at": 1786623535.050623,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00091-candidate-0.00092-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00091",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0115 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 0.9643 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.folders",
+          "family": "folder",
+          "reason": null
+        }
+      }
+    },
+    {
+      "version": "0.00093",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786625186.9519775,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00091-candidate-0.00093-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00091",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 0.9643 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.8889 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.short",
+          "family": "short",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00094",
+      "status": "rejected",
+      "score": 0.8995592496135731,
+      "recorded_at": 1786629043.9918437,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00091-candidate-0.00094-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00091",
+        "lab_failures": [
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 0.9643 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8586 < 0.8889 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.folders",
+          "family": "folder",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00095",
+      "status": "rejected",
+      "score": 0.9130533872406521,
+      "recorded_at": 1786660346.6952176,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00091-candidate-0.00095-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00091",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.short",
+          "family": "short",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00096",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786663121.6827404,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00091-candidate-0.00096-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00091",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 0.9643 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.8889 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.short",
+          "family": "short",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00097",
+      "status": "lab_accepted",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786664554.8293004,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00091-candidate-0.00097-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00091",
+        "focus_metrics": [
+          "comprehension_component"
+        ],
+        "accepted_by": "skill_credit_partial_consolidation",
+        "skill_credit": {
+          "node": "computing.folders",
+          "family": "folder",
+          "alpha": 0.5,
+          "skill_delta": 0.30999999999999994
+        }
+      }
+    },
+    {
+      "version": "0.00098",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786665658.138894,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00098-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00099",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786666835.392556,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00099-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00100",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786681172.1912136,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00100-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00101",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786682179.4912496,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00101-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00102",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786683295.9984002,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00102-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00103",
+      "status": "rejected",
+      "score": 0.913539661750456,
+      "recorded_at": 1786684365.6213615,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00103-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9643 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00104",
+      "status": "rejected",
+      "score": 0.8986074222252752,
+      "recorded_at": 1786685470.966091,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00104-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.8906 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00105",
+      "status": "rejected",
+      "score": 0.913539661750456,
+      "recorded_at": 1786686657.2875288,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00105-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9643 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00106",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786687819.839812,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00106-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00107",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786689249.5853288,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00107-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00108",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786690981.7882395,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00108-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00109",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786692557.9998374,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00109-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00110",
+      "status": "rejected",
+      "score": 0.9042585402845881,
+      "recorded_at": 1786693914.8927274,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00110-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: conversation_component=-0.0729 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9643 < 1.0000 - 0.0300",
+          "semantic_component: 0.8611 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: how_are_you_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.thanks",
+          "family": "thanks",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00111",
+      "status": "rejected",
+      "score": 0.92025974532701,
+      "recorded_at": 1786717582.7915013,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00111-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.thanks",
+          "family": "thanks",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00112",
+      "status": "rejected",
+      "score": 0.92025974532701,
+      "recorded_at": 1786719010.790749,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00112-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.thanks",
+          "family": "thanks",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00113",
+      "status": "rejected",
+      "score": 0.8995592496135731,
+      "recorded_at": 1786724859.2800388,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00113-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8852 < 0.9196 - 0.0300",
+          "semantic_component: 0.8586 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00114",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786726299.563295,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00114-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.short",
+          "family": "short",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00115",
+      "status": "rejected",
+      "score": 0.8968303472252752,
+      "recorded_at": 1786727780.242694,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00115-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=-0.0498 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.8906 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.9004 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6454 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00116",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786729498.4040937,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00116-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.short",
+          "family": "short",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00117",
+      "status": "rejected",
+      "score": 0.8946557396106677,
+      "recorded_at": 1786731257.27149,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00117-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=-0.0498 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.8906 < 1.0000 - 0.0300",
+          "semantic_component: 0.8460 < 0.9040 - 0.0300",
+          "robustness_component: 0.8972 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6454 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00118",
+      "status": "rejected",
+      "score": 0.9178349065057008,
+      "recorded_at": 1786732844.5043275,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00118-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.9643 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.short",
+          "family": "short",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00119",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786733846.0106473,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00119-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.cpu",
+          "family": "cpu",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00120",
+      "status": "rejected",
+      "score": 0.8930893972437208,
+      "recorded_at": 1786735531.0870268,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00120-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8737 < 0.9196 - 0.0300",
+          "semantic_component: 0.8460 < 0.9040 - 0.0300",
+          "robustness_component: 0.8955 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00121",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786736746.7064373,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00121-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.cpu",
+          "family": "cpu",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00122",
+      "status": "rejected",
+      "score": 0.8930893972437208,
+      "recorded_at": 1786738339.1434438,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00122-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8737 < 0.9196 - 0.0300",
+          "semantic_component: 0.8460 < 0.9040 - 0.0300",
+          "robustness_component: 0.8955 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00123",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786739412.2006674,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00123-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.cpu",
+          "family": "cpu",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00124",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786747401.165364,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00124-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00125",
+      "status": "rejected",
+      "score": 0.8995592496135731,
+      "recorded_at": 1786769746.604324,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00125-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8852 < 0.9196 - 0.0300",
+          "semantic_component: 0.8586 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00126",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786771250.07285,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00126-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00127",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786773154.085504,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00127-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00128",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786774438.4932442,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00128-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00129",
+      "status": "rejected",
+      "score": 0.8870518489097018,
+      "recorded_at": 1786776202.4367168,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00129-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.8906 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8737 < 0.9196 - 0.0300",
+          "semantic_component: 0.8308 < 0.9040 - 0.0300",
+          "robustness_component: 0.8860 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00130",
+      "status": "rejected",
+      "score": 0.8995592496135731,
+      "recorded_at": 1786777897.3301837,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00130-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8852 < 0.9196 - 0.0300",
+          "semantic_component: 0.8586 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00131",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786779152.1150672,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00131-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00132",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786780539.0707507,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00132-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00133",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786792222.297856,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00133-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.memory",
+          "family": "ram",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00134",
+      "status": "rejected",
+      "score": 0.9024703629446865,
+      "recorded_at": 1786793330.3283796,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00134-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0115 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8611 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": null,
+          "family": null,
+          "reason": "skill_credit_engine_error"
+        }
+      }
+    },
+    {
+      "version": "0.00135",
+      "status": "rejected",
+      "score": 0.913539661750456,
+      "recorded_at": 1786794542.745772,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00135-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9643 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": null,
+          "family": null,
+          "reason": "skill_credit_engine_error"
+        }
+      }
+    },
+    {
+      "version": "0.00136",
+      "status": "rejected",
+      "score": 0.8892264565243095,
+      "recorded_at": 1786795931.9279776,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00136-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.8906 < 1.0000 - 0.0300",
+          "semantic_component: 0.8359 < 0.9040 - 0.0300",
+          "robustness_component: 0.8891 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": null,
+          "family": null,
+          "reason": "skill_credit_engine_error"
+        }
+      }
+    },
+    {
+      "version": "0.00137",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786797369.1286707,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00137-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00138",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786799090.6588833,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00138-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00139",
+      "status": "rejected",
+      "score": 0.8930893972437208,
+      "recorded_at": 1786800682.624172,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00139-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8737 < 0.9196 - 0.0300",
+          "semantic_component: 0.8460 < 0.9040 - 0.0300",
+          "robustness_component: 0.8955 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.sentence",
+          "family": "sentence",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00140",
+      "status": "rejected",
+      "score": 0.9046449705592942,
+      "recorded_at": 1786834719.1070504,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00140-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00141",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786836173.6013792,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00141-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00142",
+      "status": "rejected",
+      "score": 0.9046449705592942,
+      "recorded_at": 1786841124.9769418,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00142-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00143",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786842407.1271808,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00143-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": null
+        }
+      }
+    },
+    {
+      "version": "0.00144",
+      "status": "lab_accepted",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786843698.171607,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00097-candidate-0.00144-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00097",
+        "focus_metrics": [
+          "comprehension_component"
+        ],
+        "accepted_by": "skill_credit_partial_consolidation",
+        "skill_credit": {
+          "node": "programming.api_basics",
+          "family": "api",
+          "alpha": 0.15,
+          "skill_delta": 0.03874999999999995
+        }
+      }
+    },
+    {
+      "version": "0.00145",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786845071.8991961,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00145-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00146",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786846526.7777076,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00146-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00147",
+      "status": "rejected",
+      "score": 0.8995592496135731,
+      "recorded_at": 1786847933.11001,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00147-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8852 < 0.9196 - 0.0300",
+          "semantic_component: 0.8586 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.missing",
+          "family": "missing",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00148",
+      "status": "rejected",
+      "score": 0.8959117686796378,
+      "recorded_at": 1786849433.18725,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00148-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: conversation_component=-0.0365 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "instruction_format_component: 0.6454 < 0.6952 - 0.0300",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8737 < 0.9196 - 0.0300",
+          "semantic_component: 0.8535 < 0.9040 - 0.0300",
+          "robustness_component: 0.9020 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: folder_new",
+          "instruction_format_component 0.6454 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.state",
+          "family": "state",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00149",
+      "status": "rejected",
+      "score": 0.8864343864810387,
+      "recorded_at": 1786850955.5723333,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00149-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: conversation_component=-0.1094 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "instruction_format_component: 0.6454 < 0.6952 - 0.0300",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "semantic_component: 0.8384 < 0.9040 - 0.0300",
+          "robustness_component: 0.8924 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, how_are_you_new",
+          "instruction_format_component 0.6454 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.identity",
+          "family": "identity",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00150",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786852294.9138324,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00150-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: conversation_component=-0.0729 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8852 < 0.9196 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.state",
+          "family": "state",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00151",
+      "status": "rejected",
+      "score": 0.8886437655168721,
+      "recorded_at": 1786854033.8300586,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00151-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: conversation_component=-0.1459 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "semantic_component: 0.8359 < 0.9040 - 0.0300",
+          "robustness_component: 0.8891 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, how_are_you_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.identity",
+          "family": "identity",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00152",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786855561.4683459,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00152-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: conversation_component=-0.0729 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8852 < 0.9196 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.state",
+          "family": "state",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00153",
+      "status": "rejected",
+      "score": 0.8886437655168721,
+      "recorded_at": 1786857105.3898299,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00153-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: conversation_component=-0.1459 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "semantic_component: 0.8359 < 0.9040 - 0.0300",
+          "robustness_component: 0.8891 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, how_are_you_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "conversation.identity",
+          "family": "identity",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00154",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786858152.68972,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00154-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00155",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786859319.1489427,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00155-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00156",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786862077.2591836,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00156-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00157",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786863213.4055102,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00157-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00158",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786864433.3815093,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00158-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00159",
+      "status": "rejected",
+      "score": 0.8986074222252752,
+      "recorded_at": 1786865587.514457,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00159-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.8906 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00160",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786866923.508945,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00160-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00161",
+      "status": "rejected",
+      "score": 0.9041586960494902,
+      "recorded_at": 1786870363.5474286,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00161-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9635 < 1.0000 - 0.0300",
+          "semantic_component: 0.8662 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00162",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786871530.8925765,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00162-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00163",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786872842.2451742,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00163-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "computing.files",
+          "family": "file",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00164",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786874066.901703,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00164-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00165",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786875453.477621,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00165-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00166",
+      "status": "rejected",
+      "score": 0.8973846419989655,
+      "recorded_at": 1786877010.1405241,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00166-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "comprehension_component: 0.8737 < 0.9196 - 0.0300",
+          "semantic_component: 0.8535 < 0.9040 - 0.0300",
+          "robustness_component: 0.9003 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, folder_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00167",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786878676.3950183,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00167-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00168",
+      "status": "rejected",
+      "score": 0.9035504308018294,
+      "recorded_at": 1786880464.5823617,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00168-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=-0.0498 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.9643 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8611 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6454 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00169",
+      "status": "rejected",
+      "score": 0.8986074222252752,
+      "recorded_at": 1786950570.1876433,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00169-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.8906 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00170",
+      "status": "rejected",
+      "score": 0.9267295976968624,
+      "recorded_at": 1786951852.169658,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00170-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)"
+        ],
+        "active_failures": [
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00171",
+      "status": "rejected",
+      "score": 0.8952640048583285,
+      "recorded_at": 1786956172.2623394,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00171-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: comprehension_component=-0.0344 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "epistemic_dialogue_component: 0.8140 < 0.8450 - 0.0300",
+          "intent_routing_component: 0.8929 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8510 < 0.9040 - 0.0300",
+          "robustness_component: 0.8987 < 0.9321 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new, route_file_2",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "programming.api_basics",
+          "family": "api",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00172",
+      "status": "rejected",
+      "score": 0.9067656076999313,
+      "recorded_at": 1786957713.3506532,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00172-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=+0.0000 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8687 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6952 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00173",
+      "status": "rejected",
+      "score": 0.9006932879446865,
+      "recorded_at": 1786959374.6174712,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00173-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=-0.0498 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.9286 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8611 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6454 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
+    },
+    {
+      "version": "0.00174",
+      "status": "rejected",
+      "score": 0.9035504308018294,
+      "recorded_at": 1786961373.741051,
+      "metadata": {
+        "benchmark": "benchmarks/comparison-active-0.0004-seed-0.00144-candidate-0.00174-suite-c3162d01e58e.json",
+        "suite_id": "suite-c3162d01e58e",
+        "seed_brain": "0.00144",
+        "lab_failures": [
+          "fresh lifelong acceptance exam did not pass",
+          "focus delta: instruction_format_component=-0.0498 (required +0.0500; no configured alternate LAB acceptance passed)",
+          "intent_routing_component: 0.9643 < 1.0000 - 0.0300",
+          "conversation_component: 0.9271 < 1.0000 - 0.0300",
+          "semantic_component: 0.8611 < 0.9040 - 0.0300"
+        ],
+        "active_failures": [
+          "critical failures: thanks_new",
+          "instruction_format_component 0.6454 < 0.7200",
+          "fresh lifelong acceptance exam did not pass"
+        ],
+        "skill_credit_salvage": {
+          "passed": false,
+          "node": "instruction.two_steps",
+          "family": "two_steps",
+          "reason": "no_safe_interpolation"
+        }
+      }
     }
   ]
 }

@@ -10,8 +10,9 @@
   "retry_same_capability_in_session": true,
   "verified_experiences": {
     "minimum_quality": 0.7,
-    "automatic_training_enabled": false,
-    "reason": "V3 tracks verified experiences but does not auto-train factual material until provenance-aware lesson construction is integrated."
+    "automatic_training_enabled": true,
+    "max_packets_per_stage": 32,
+    "reason": "Verified experiences are converted into provenance-aware learning packets; raw web/data is never trained directly."
   },
   "curriculum": {
     "conversation": {
@@ -164,5 +165,15 @@
     "strategy_memory": true,
     "research_engine_enabled": false,
     "unlimited_zero_value": true
+  },
+  "runtime_retention": {
+    "logs": 3,
+    "reports": 3,
+    "benchmark_comparisons": 15,
+    "stale_model_artifacts": true,
+    "stale_training_state": true,
+    "dev_caches": true,
+    "python_caches": true,
+    "reason": "Autonomy keeps durable brains, memory, registry and reusable config; old runtime artifacts are pruned so cloud runners do not grow without bound."
   }
 }

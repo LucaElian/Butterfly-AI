@@ -4,24 +4,174 @@ import argparse
 import copy
 from datetime import datetime, timezone
 import hashlib
+import json
 from typing import Any
 
 import torch
 
 from ..checkpoint import load_entry
 from ..config import ROOT, load_json, save_json
+from ..memory import MemoryStore
 from .dynamic_exam import (
     evaluate_bank,
     fresh_bank_excluding,
     normalize_surface,
     record_bank_use,
 )
+from .curriculum_graph import mark_material
 from .evaluator import behavior_benchmark
 
 
 CONFIG_PATH = ROOT / "config" / "lifelong_learning.json"
 LEDGER_PATH = ROOT / ".butterfly" / "skill_credit_ledger.json"
 
+
+
+DISTILLATION_LESSONS: dict[str, str] = {
+    "file": "Un archivo guarda datos o contenido con un nombre; una carpeta organiza archivos y otras carpetas. Responde sobre archivos sin confundirlos con carpetas.",
+    "folder": "Una carpeta organiza archivos y subcarpetas; no es el contenido final en si, sino un contenedor de organizacion.",
+    "api": "Una API es una interfaz documentada para pedir funciones o datos sin depender de la implementacion interna.",
+    "parameter": "Un parametro es un nombre o valor que configura una funcion, modelo o sistema; no es necesariamente el resultado final.",
+    "token": "Un token es una unidad de texto procesada por un modelo; puede ser una palabra, parte de palabra, espacio o signo.",
+    "dataset": "Un dataset es una coleccion organizada de ejemplos o datos usados para analizar, evaluar o entrenar.",
+    "epoch": "Un epoch es una pasada completa de entrenamiento sobre el conjunto de datos disponible.",
+    "ram": "La RAM es memoria temporal de trabajo: mantiene datos que los programas necesitan usar rapido mientras se ejecutan.",
+    "cpu": "La CPU ejecuta instrucciones y coordina tareas de programas y del sistema.",
+    "missing": "Si falta un dato necesario para actuar con seguridad, hay que pedir aclaracion antes de inventar o ejecutar la accion.",
+    "two_steps": "Cuando una instruccion pide pasos ordenados, responde con dos pasos claros y numerados, uno por accion.",
+    "sentence": "Si la consigna exige una sola oracion, responde en una unica oracion clara sin lista ni parrafos extra.",
+    "short": "Si la consigna pide brevedad, responde solo lo esencial y evita explicaciones accesorias.",
+}
+
+
+def _distillation_enabled(cfg: dict[str, Any]) -> bool:
+    value = cfg.get("rejected_subject_distillation")
+    if not isinstance(value, dict):
+        return False
+    return bool(value.get("enabled", False))
+
+
+def _distillation_config(cfg: dict[str, Any]) -> dict[str, Any]:
+    value = cfg.get("rejected_subject_distillation")
+    return dict(value) if isinstance(value, dict) else {}
+
+
+def _existing_distillation_signatures(store: MemoryStore) -> set[str]:
+    signatures: set[str] = set()
+    with store.connect() as conn:
+        rows = conn.execute("SELECT context FROM experiences").fetchall()
+    for (context,) in rows:
+        if not isinstance(context, str) or not context.strip().startswith("{"):
+            continue
+        try:
+            data = json.loads(context)
+        except Exception:
+            continue
+        if data.get("source") == "rejected_subject_credit" and data.get("distillation_signature"):
+            signatures.add(str(data["distillation_signature"]))
+    return signatures
+
+
+def _best_distillable_attempt(
+    search_attempts: list[dict[str, Any]],
+    cfg: dict[str, Any],
+) -> dict[str, Any] | None:
+    distill_cfg = _distillation_config(cfg)
+    min_delta = float(distill_cfg.get("min_skill_delta", 0.04))
+    min_score = float(distill_cfg.get("min_skill_score", cfg.get("minimum_skill_score", 0.60)))
+    candidates = [
+        row for row in search_attempts
+        if bool(row.get("skill_gate_passed"))
+        and float(row.get("skill_delta") or 0.0) >= min_delta
+        and float(row.get("skill_score") or 0.0) >= min_score
+    ]
+    if not candidates:
+        return None
+    return max(
+        candidates,
+        key=lambda row: (float(row.get("skill_delta") or 0.0), float(row.get("alpha") or 0.0)),
+    )
+
+
+def record_rejected_subject_distillation(
+    *,
+    node_id: str,
+    family: str,
+    experiment_id: str,
+    target_version: str,
+    seed_version: str,
+    attempt: dict[str, Any],
+    cfg: dict[str, Any],
+    store: MemoryStore | None = None,
+    mark_material_func=mark_material,
+) -> list[int]:
+    if not _distillation_enabled(cfg):
+        return []
+    lesson = DISTILLATION_LESSONS.get(str(family))
+    if not lesson:
+        return []
+    store = store or MemoryStore()
+    signature = hashlib.sha256(
+        ":".join([
+            "rejected_subject_credit",
+            str(experiment_id),
+            str(target_version),
+            str(node_id),
+            str(family),
+            f"{float(attempt.get('skill_delta') or 0.0):.4f}",
+        ]).encode("utf-8")
+    ).hexdigest()[:16]
+    if signature in _existing_distillation_signatures(store):
+        return []
+
+    fixed_failures = list(attempt.get("fixed_failures") or [])[:4]
+    task = (
+        f"Consolidar {node_id} sin degradar capacidades protegidas. "
+        f"El candidato rechazo pesos pero mostro mejora local en {family}."
+    )
+    result = (
+        f"Refuerza {family} con respuestas estables y protege habilidades relacionadas. "
+        "No aceptes el peso rechazado; usa esta evidencia como material para un nuevo intento seguro."
+    )
+    context = json.dumps(
+        {
+            "context": "A rejected candidate showed subject gain, but fixed safety failed. This packet keeps the lesson, not the rejected weights.",
+            "curriculum_node": node_id,
+            "dynamic_family": family,
+            "source": "rejected_subject_credit",
+            "source_url": f"local://skill-credit/{experiment_id}",
+            "source_title": "Rejected subject-credit distillation",
+            "seed_version": seed_version,
+            "target_version": target_version,
+            "alpha": attempt.get("alpha"),
+            "skill_score": attempt.get("skill_score"),
+            "skill_delta": attempt.get("skill_delta"),
+            "fixed_failures": fixed_failures,
+            "distillation_signature": signature,
+        },
+        ensure_ascii=False,
+    )
+    actions = [{
+        "type": "rejected_subject_credit_distillation",
+        "curriculum_node": node_id,
+        "dynamic_family": family,
+        "source": "rejected_subject_credit",
+        "skill_delta": attempt.get("skill_delta"),
+        "fixed_failures": fixed_failures,
+    }]
+    quality = float(_distillation_config(cfg).get("quality", 0.88))
+    experience_id = store.add_experience(
+        task=task,
+        result=result,
+        lesson=lesson,
+        context=context,
+        actions=actions,
+        verified=True,
+        quality=max(0.0, min(1.0, quality)),
+    )
+    if mark_material_func is not None:
+        mark_material_func(str(node_id), "verified_packet")
+    return [experience_id]
 
 def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -51,23 +201,63 @@ def fixed_safety_check(
     trial: dict[str, Any],
     seed: dict[str, Any],
     cfg: dict[str, Any],
+    *,
+    skill_delta: float | None = None,
 ) -> tuple[bool, list[str]]:
+    ok, failures, _ = _fixed_safety_decision(
+        trial,
+        seed,
+        cfg,
+        skill_delta=skill_delta,
+    )
+    return ok, failures
+
+
+def _fixed_safety_decision(
+    trial: dict[str, Any],
+    seed: dict[str, Any],
+    cfg: dict[str, Any],
+    *,
+    skill_delta: float | None = None,
+) -> tuple[bool, list[str], bool]:
     failures: list[str] = []
+    hard_failures: list[str] = []
+    regressed_components = 0
 
     max_overall = float(cfg.get("max_overall_regression", 0.005))
+    tradeoff_enabled = bool(cfg.get("allow_positive_tradeoffs", False))
+    tradeoff_min_delta = float(cfg.get("tradeoff_min_skill_delta", 0.10))
+    tradeoff_skill_delta = float(skill_delta or 0.0)
+    tradeoff_eligible = tradeoff_enabled and tradeoff_skill_delta >= tradeoff_min_delta
+    tradeoff_max_overall = float(
+        cfg.get("tradeoff_max_overall_regression", max_overall)
+    )
+    tradeoff_max_component = float(
+        cfg.get(
+            "tradeoff_max_component_regression",
+            cfg.get("max_component_regression", 0.01),
+        )
+    )
+    tradeoff_max_components = int(cfg.get("tradeoff_max_regressed_components", 0))
+
     trial_score = float(trial.get("score", 0.0))
     seed_score = float(seed.get("score", 0.0))
     if trial_score < seed_score - max_overall:
-        failures.append(
+        message = (
             f"overall score {trial_score:.4f} < seed {seed_score:.4f} - {max_overall:.4f}"
         )
+        failures.append(message)
+        if not tradeoff_eligible or trial_score < seed_score - tradeoff_max_overall:
+            hard_failures.append(message)
 
     if bool(cfg.get("require_no_new_critical", True)):
         seed_critical = set(seed.get("critical_failures") or [])
         trial_critical = set(trial.get("critical_failures") or [])
         new_critical = sorted(trial_critical - seed_critical)
         if new_critical:
-            failures.append("new critical failures: " + ", ".join(new_critical))
+            message = "new critical failures: " + ", ".join(new_critical)
+            failures.append(message)
+            hard_failures.append(message)
 
     max_component = float(cfg.get("max_component_regression", 0.01))
     for name in _component_metrics(seed):
@@ -76,11 +266,32 @@ def fixed_safety_check(
         current = float(trial[name])
         baseline = float(seed[name])
         if current < baseline - max_component:
-            failures.append(
+            regression = baseline - current
+            message = (
                 f"{name} {current:.4f} < seed {baseline:.4f} - {max_component:.4f}"
             )
+            failures.append(message)
+            regressed_components += 1
+            if not tradeoff_eligible or regression > tradeoff_max_component:
+                hard_failures.append(message)
 
-    return not failures, failures
+    if not failures:
+        return True, [], False
+
+    if (
+        tradeoff_eligible
+        and not hard_failures
+        and tradeoff_max_components > 0
+        and regressed_components <= tradeoff_max_components
+    ):
+        return True, [], True
+
+    if tradeoff_eligible and regressed_components > tradeoff_max_components:
+        hard_failures.append(
+            f"regressed components {regressed_components} > tradeoff limit {tradeoff_max_components}"
+        )
+
+    return False, hard_failures or failures, False
 
 
 def dynamic_credit_gate(
@@ -233,20 +444,25 @@ def attempt_skill_credit_salvage(
             continue
 
         fixed_metrics = behavior_benchmark(trial, tokenizer)
-        fixed_ok, fixed_failures = fixed_safety_check(
-            fixed_metrics, seed_baseline, cfg
+        fixed_ok, fixed_failures, fixed_tradeoff = _fixed_safety_decision(
+            fixed_metrics,
+            seed_baseline,
+            cfg,
+            skill_delta=trial_search_score - seed_search_score,
         )
         row.update({
             "fixed_score": float(fixed_metrics.get("score", 0.0)),
             "fixed_gate_passed": bool(fixed_ok),
+            "fixed_tradeoff_accepted": bool(fixed_tradeoff),
             "fixed_failures": list(fixed_failures),
         })
         search_attempts.append(row)
+        fixed_label = "TRADEOFF SAFE" if fixed_tradeoff else ("SAFE" if fixed_ok else "FIXED FAIL")
         print(
             f"alpha={alpha:.3f} skill={trial_search_score:.4f} "
             f"delta={trial_search_score-seed_search_score:+.4f} "
             f"fixed={float(fixed_metrics.get('score',0)):.4f} "
-            f"-> {'SAFE' if fixed_ok else 'FIXED FAIL'}"
+            f"-> {fixed_label}"
         )
         if not fixed_ok:
             del trial
@@ -259,6 +475,23 @@ def attempt_skill_credit_salvage(
 
     if chosen_model is None:
         print("No alpha preserved the studied skill while keeping fixed capabilities safe.")
+        distilled_ids: list[int] = []
+        best_distillable = _best_distillable_attempt(search_attempts, cfg)
+        if best_distillable is not None:
+            distilled_ids = record_rejected_subject_distillation(
+                node_id=node_id,
+                family=family,
+                experiment_id=experiment_id,
+                target_version=target_version,
+                seed_version=str(seed_entry.get("version")),
+                attempt=best_distillable,
+                cfg=cfg,
+            )
+            if distilled_ids:
+                print(
+                    "Rejected subject gain distilled into verified material: "
+                    + ", ".join(str(value) for value in distilled_ids)
+                )
         return {
             "schema_version": 1,
             "passed": False,
@@ -267,6 +500,7 @@ def attempt_skill_credit_salvage(
             "reason": "no_safe_interpolation",
             "search_bank": search_bank["fingerprint"],
             "search_attempts": search_attempts,
+            "distilled_experience_ids": distilled_ids,
         }, None
 
     forbidden = {

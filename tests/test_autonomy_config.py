@@ -29,6 +29,7 @@ def test_autonomy_recipes_exist_and_have_no_binding_training_skill():
         assert "binding" not in skills
 
 
-def test_verified_experience_autotraining_is_off_in_v1():
+def test_verified_experience_autotraining_uses_provenance_packets():
     cfg = json.loads((ROOT / "config" / "autonomy_learning.json").read_text(encoding="utf-8"))
-    assert cfg["verified_experiences"]["automatic_training_enabled"] is False
+    assert cfg["verified_experiences"]["automatic_training_enabled"] is True
+    assert cfg["verified_experiences"]["max_packets_per_stage"] >= 1

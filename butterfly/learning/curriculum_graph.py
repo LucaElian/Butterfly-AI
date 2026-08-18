@@ -257,7 +257,19 @@ def mark_material(node_id: str, status: str) -> None:
     state, seed = load_graph()
     if node_id not in state["nodes"]:
         raise KeyError(node_id)
-    state["nodes"][node_id]["material_status"] = str(status)
+    row = state["nodes"][node_id]
+    row["material_status"] = str(status)
+    if str(status) in {"verified_packet", "internal_verified"}:
+        row["plateau"] = False
+        row["strategy_failures"] = {}
+        state["history"].append({
+            "event": "material_verified",
+            "node": node_id,
+            "status": str(status),
+            "at": _utcnow(),
+        })
+        state["history"] = state["history"][-500:]
+    _refresh_statuses(state, seed)
     state["updated_at"] = _utcnow()
     save_json(STATE_PATH, state)
 
